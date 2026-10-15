@@ -1,10 +1,12 @@
 ## Interface: 120105
 ## Title: Transmog Hub
-## Notes: Делитесь трансмогом, примеряйте чужие образы и голосуйте за лучшие.
+## Notes: Save your transmog, try outfits on any race and vote for the best looks.
+## Notes-ruRU: Делитесь трансмогом, примеряйте чужие образы и голосуйте за лучшие.
 ## Version: 0.4.2
 ## SavedVariables: TransmogHubDB
 ## IconTexture: Interface\Icons\INV_Chest_Cloth_17
 ## AddonCompartmentFunc: TransmogHub_OnAddonCompartmentClick
+## X-Curse-Project-ID: 1747053
 
 # База наборов из обновления аддона (раздаётся через CurseForge)
 Data\Bundled.lua
