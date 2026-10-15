@@ -115,26 +115,33 @@ local function CountKeys(t, skipTest)
 	return n
 end
 
+-- Места в рейтинге имеют смысл только в живой сети: иначе в маленькой
+-- сети единственный набор сразу «первый» и даёт легендарное достижение.
+local MIN_RATED_SETS = 30 -- наборов с оценками в ленте
+local MIN_OWN_VOTES = 5   -- голосов у своего набора
+
 -- Лучшее место моих опубликованных наборов в реальной ленте (без тестовых)
 local function BestRank(view)
 	local sets = {}
-	for _, set in ipairs(TH.feed.sets) do sets[#sets + 1] = set end
+	for _, set in ipairs(TH.feed.sets) do
+		if set.rating and (set.rating.n or 0) > 0 then sets[#sets + 1] = set end
+	end
+	if #sets < MIN_RATED_SETS then return nil end
 	if view == "trending" then
 		table.sort(sets, function(a, b) return (a.trend or 0) > (b.trend or 0) end)
 	else
 		table.sort(sets, function(a, b) return TH:GetScore(a) > TH:GetScore(b) end)
 	end
 	for i, set in ipairs(sets) do
-		if TH:IsMine(set) then return i end
+		if TH:IsMine(set) and set.rating.n >= MIN_OWN_VOTES then return i end
 	end
 end
 
 -- Сохраняем лучший результат: место в рейтинге со временем может упасть
 function TH:UpdateRankStats()
 	local s = self.db.stats
-	local server = self.user and self.user.stats or {}
 	for stat, view in pairs({ trendRank = "trending", topRank = "top" }) do
-		local candidates = { s[stat], server[stat], BestRank(view) }
+		local candidates = { s[stat], BestRank(view) }
 		for _, r in pairs(candidates) do
 			if r and (not s[stat] or r < s[stat]) then s[stat] = r end
 		end
@@ -143,11 +150,10 @@ end
 
 function TH:GetAchievementStat(stat)
 	local s = self.db.stats
-	local server = self.user and self.user.stats or {}
 	if stat == "saved" then
 		return s.saved
 	elseif stat == "published" then
-		return math.max(s.published, server.published or 0)
+		return s.published
 	elseif stat == "votesCast" then
 		return CountKeys(self.db.myVotes, true)
 	elseif stat == "favorites" then
@@ -159,13 +165,21 @@ function TH:GetAchievementStat(stat)
 	elseif stat == "hidden" then
 		return s.maxHidden
 	elseif stat == "ratingsReceived" then
-		local localSum = 0
+		local n = 0
 		for _, set in ipairs(self.feed.sets) do
-			if set.rating and self:IsMine(set) then localSum = localSum + (set.rating.n or 0) end
+			if set.rating and self:IsMine(set) then n = n + (set.rating.n or 0) end
 		end
-		return math.max(localSum, server.ratingsReceived or 0)
+		return n
 	elseif stat == "fiveStars" then
-		return server.fiveStarsReceived or 0
+		local n = 0
+		for setId, votes in pairs(self.db.net.votes) do
+			if self:IsMine(self.byId[setId]) then
+				for _, v in pairs(votes) do
+					if v[1] == 5 then n = n + 1 end
+				end
+			end
+		end
+		return n
 	elseif stat == "trendRank" or stat == "topRank" then
 		return s[stat]
 	elseif stat == "earned" then

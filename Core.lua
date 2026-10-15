@@ -94,14 +94,16 @@ end
 -- SavedVariables
 ---------------------------------------------------------------------------
 local DEFAULTS = {
-	schema = 1,
-	mySets = {},     -- [localId] = set
-	outbox = {       -- то, что компаньон должен отправить на сервер
-		publish = {},   -- { uid, localId, t, set }
-		unpublish = {}, -- { uid, serverId, t }
-		votes = {},     -- [setId] = { uid, stars, t }
-		reports = {},   -- { uid, setId, t }
+	schema = 2,
+	mySets = {},     -- [localId] = set; у опубликованных serverId = id в сети
+	net = {          -- копия сетевой базы (см. Network.lua)
+		sets = {},       -- [id] = set
+		votes = {},      -- [setId] = { [игрок] = { звёзды, время } }
+		tombstones = {}, -- [id] = время снятия с публикации
+		lastSync = 0,
 	},
+	myChars = {},    -- [Имя-Сервер] = true — все свои персонажи (для «свой набор»)
+	hidden = {},     -- [setId] = true — наборы, скрытые игроком
 	myVotes = {},    -- [setId] = 1..5 (локальная копия для интерфейса)
 	favorites = {},  -- [setId] = true
 	testSets = {},   -- тестовая лента (/thub test)
@@ -124,34 +126,49 @@ end
 -- Лента наборов
 ---------------------------------------------------------------------------
 local PRIOR_MEAN, PRIOR_WEIGHT = 3.5, 10
+local TREND_WINDOW = 7 * 86400
 
 -- Байесовское среднее: один голос 5★ не обгоняет сотню голосов 4.8★.
--- Сервер присылает готовый score, это запасной вариант.
 function TH:GetScore(set)
-	if set.score then return set.score end
 	local r = set.rating
 	if not r or not r.n or r.n == 0 then return 0 end
 	return (r.avg * r.n + PRIOR_MEAN * PRIOR_WEIGHT) / (r.n + PRIOR_WEIGHT)
 end
 
-function TH:LoadFeed()
-	local bundled, live = TransmogHub_Bundled, TransmogHub_Live
-	local src = bundled
-	if type(live) == "table" and (not bundled or (live.generated or 0) >= (bundled.generated or 0)) then
-		src = live
+-- Рейтинг и «в тренде» по голосам из сети. «В тренде» — сумма звёзд
+-- за последние 7 дней. У наборов из подборок без голосов в сети
+-- остаётся рейтинг из подборки.
+local function ApplyVotes(set, votes, now)
+	if not votes or not next(votes) then return end
+	local n, sum, trend = 0, 0, 0
+	for _, v in pairs(votes) do
+		n, sum = n + 1, sum + v[1]
+		if now - v[2] < TREND_WINDOW then trend = trend + v[1] end
 	end
-	self.feed = src or { generated = 0, sets = {} }
-	self.feed.sets = self.feed.sets or {}
-	self.feedSource = (src == live) and "live" or "bundled"
-	self.user = type(live) == "table" and live.user or nil
+	set.rating = { avg = sum / n, n = n }
+	set.trend = trend
+end
 
+-- Лента = подборки из обновления аддона + сетевая база
+function TH:LoadFeed()
+	local now = self.Net.Now()
+	local net = self.db.net
+	local sets = {}
 	self.byId = {}
-	for _, set in ipairs(self.feed.sets) do
+	local function add(set)
+		if self.byId[set.id] or self.db.hidden[set.id] or net.tombstones[set.id] then return end
+		ApplyVotes(set, net.votes[set.id], now)
+		sets[#sets + 1] = set
 		self.byId[set.id] = set
 	end
+	for _, set in pairs(net.sets) do add(set) end
+	for _, set in ipairs(TransmogHub_Bundled and TransmogHub_Bundled.sets or {}) do add(set) end
+	self.feed = { sets = sets }
+
 	for _, set in ipairs(self.db.testSets) do
 		self.byId[set.id] = set
 	end
+	self.Net.dirty = false
 end
 
 function TH:GetSet(id)
@@ -161,7 +178,7 @@ end
 
 function TH:IsMine(set)
 	if not set then return false end
-	if self.db.mySets[set.id] then return true end
+	if self.db.mySets[set.id] or (set.author and self.db.myChars[set.author]) then return true end
 	for _, mine in pairs(self.db.mySets) do
 		if mine.serverId and mine.serverId == set.id then return true end
 	end
@@ -230,11 +247,11 @@ function TH:CreateMySet(name, desc, tags, items)
 		desc = desc,
 		tags = tags,
 		items = items,
-		author = UnitName("player") .. "-" .. (GetNormalizedRealmName() or ""),
+		author = self.Net.Me(),
 		race = raceID,
 		sex = (UnitSex("player") or 2) - 2, -- 0 муж., 1 жен.
 		class = classFile,
-		created = time(),
+		created = self.Net.Now(),
 		status = "draft",
 	}
 	self.db.mySets[id] = set
@@ -244,40 +261,41 @@ function TH:CreateMySet(name, desc, tags, items)
 	return set
 end
 
-local EXPORT_FIELDS = { "name", "desc", "tags", "items", "author", "race", "sex", "class", "created" }
+local EXPORT_FIELDS = { "name", "desc", "tags", "items", "author", "race", "sex", "class" }
 
+-- Публикация: набор сразу уходит в сеть, перезагрузка не нужна
 function TH:Publish(localId)
 	local set = self.db.mySets[localId]
-	if not set or set.status == "pending" then return end
-	local payload = {}
+	if not set or set.status == "published" then return end
+	local payload = { id = "n" .. self:NewUid(), created = self.Net.Now() }
 	for _, k in ipairs(EXPORT_FIELDS) do
 		payload[k] = type(set[k]) == "table" and CopyTable(set[k]) or set[k]
 	end
-	tinsert(self.db.outbox.publish, { uid = self:NewUid(), localId = localId, t = time(), set = payload })
-	set.status = "pending"
+	self.Net:PublishSet(payload)
+	set.serverId = payload.id
+	set.status = "published"
 	if not set.everPublished then
 		set.everPublished = true
 		self.db.stats.published = self.db.stats.published + 1
 	end
+	self:LoadFeed()
 	self:NotifyChanged()
 	self:CheckAchievements()
-	self:SuggestReload()
+	if not self.Net:IsConnected() then
+		self:Print("Сеть ещё подключается — набор уйдёт другим игрокам автоматически.")
+	end
 end
 
 function TH:DeleteMySet(localId)
 	local set = self.db.mySets[localId]
 	if not set then return end
-	for i = #self.db.outbox.publish, 1, -1 do
-		if self.db.outbox.publish[i].localId == localId then
-			tremove(self.db.outbox.publish, i)
-		end
-	end
 	if set.serverId then
-		tinsert(self.db.outbox.unpublish, { uid = self:NewUid(), serverId = set.serverId, t = time() })
-		self:SuggestReload()
+		self.Net:Unpublish(set.serverId)
+		self.db.favorites[set.serverId] = nil
 	end
 	self.db.mySets[localId] = nil
 	self.db.favorites[localId] = nil
+	self:LoadFeed()
 	self:NotifyChanged()
 end
 
@@ -285,6 +303,30 @@ function TH:CanVote(set)
 	if not set or self:IsLocalId(set.id) then return false, "Набор ещё не опубликован" end
 	if self:IsMine(set) then return false, "Нельзя голосовать за свой набор" end
 	return true
+end
+
+-- Скрыть набор только у себя (например, неприличное название)
+-- Строка состояния сети для окна и кнопки у миникарты
+function TH:NetworkStatusText()
+	local Net = self.Net
+	local base = string.format("наборов в базе: %d", Net:SetCount())
+	if not Net:IsConnected() then
+		return "|cff999999Сеть: подключение…|r · " .. base
+	end
+	local text = string.format("|cff40ff40Сеть подключена|r · игроков с аддоном: %d · %s", Net:PeerCount(), base)
+	if Net:IsLocked() and Net:QueueLength() > 0 then
+		text = text .. " · |cffffd100отправка на паузе (бой или подземелье)|r"
+	elseif Net:QueueLength() > 0 then
+		text = text .. string.format(" · |cffffd100отправляется: %d|r", Net:QueueLength())
+	end
+	return text
+end
+
+function TH:HideSet(setId)
+	self.db.hidden[setId] = true
+	self.db.favorites[setId] = nil
+	self:LoadFeed()
+	self:NotifyChanged()
 end
 
 function TH:Vote(setId, stars)
@@ -296,7 +338,8 @@ function TH:Vote(setId, stars)
 	end
 	self.db.myVotes[setId] = stars
 	if not self:IsTestId(setId) then
-		self.db.outbox.votes[setId] = { uid = self:NewUid(), stars = stars, t = time() }
+		self.Net:SendVote(setId, stars)
+		self:LoadFeed()
 	end
 	self:NotifyChanged()
 	self:CheckAchievements()
@@ -306,65 +349,6 @@ function TH:ToggleFavorite(setId)
 	self.db.favorites[setId] = not self.db.favorites[setId] or nil
 	self:NotifyChanged()
 	self:CheckAchievements()
-end
-
-function TH:Report(setId)
-	if self:IsTestId(setId) or self:IsLocalId(setId) then return end
-	tinsert(self.db.outbox.reports, { uid = self:NewUid(), setId = setId, t = time() })
-	self:Print("Жалоба отправится вместе с остальными изменениями. Спасибо!")
-	self:NotifyChanged()
-end
-
-function TH:GetPendingCounts()
-	local ob = self.db.outbox
-	local votes = 0
-	for _ in pairs(ob.votes) do votes = votes + 1 end
-	return #ob.publish + #ob.unpublish + #ob.reports, votes
-end
-
--- Компаньон кладёт в Live.lua список обработанных uid; убираем их из очереди.
-function TH:ApplyServerAcks()
-	local user = self.user
-	if not user then return end
-	local acked = user.acked or {}
-	local ob = self.db.outbox
-
-	for _, queue in ipairs({ ob.publish, ob.unpublish, ob.reports }) do
-		for i = #queue, 1, -1 do
-			if acked[queue[i].uid] then tremove(queue, i) end
-		end
-	end
-	for setId, v in pairs(ob.votes) do
-		if acked[v.uid] then ob.votes[setId] = nil end
-	end
-
-	for localId, info in pairs(user.published or {}) do
-		local set = self.db.mySets[localId]
-		if set then
-			set.serverId = info.id
-			set.status = info.status or "published"
-			set.rejectReason = info.reason
-		end
-	end
-
-	-- Серверные голоса считаем истиной, если локально нет неотправленного
-	for setId, stars in pairs(user.votes or {}) do
-		if not ob.votes[setId] then self.db.myVotes[setId] = stars end
-	end
-end
-
-StaticPopupDialogs["TRANSMOGHUB_RELOAD"] = {
-	text = "Transmog Hub: изменения отправятся на сервер после перезагрузки интерфейса (или при выходе из игры).\n\nПерезагрузить сейчас?",
-	button1 = "Перезагрузить",
-	button2 = "Позже",
-	OnAccept = function() ReloadUI() end,
-	timeout = 0,
-	whileDead = true,
-	hideOnEscape = true,
-}
-
-function TH:SuggestReload()
-	StaticPopup_Show("TRANSMOGHUB_RELOAD")
 end
 
 ---------------------------------------------------------------------------
@@ -378,9 +362,11 @@ local refreshPending = false
 function TH:RequestRefresh()
 	if refreshPending then return end
 	refreshPending = true
-	C_Timer.After(0.25, function()
+	C_Timer.After(0.5, function()
 		refreshPending = false
+		if TH.Net.dirty then TH:LoadFeed() end
 		TH:NotifyChanged()
+		TH:CheckAchievements()
 	end)
 end
 
@@ -448,12 +434,23 @@ function TH:ADDON_LOADED(name)
 	TransmogHubDB = TransmogHubDB or {}
 	ApplyDefaults(TransmogHubDB, DEFAULTS)
 	self.db = TransmogHubDB
+	-- Версии до сети отправляли наборы через компаньон: очередь больше не нужна,
+	-- а «отправляющиеся» наборы становятся черновиками — их можно опубликовать в сеть.
+	if self.db.outbox then
+		self.db.outbox = nil
+		for _, set in pairs(self.db.mySets) do
+			if set.status ~= "published" then set.status = "draft" end
+		end
+	end
+	self.db.schema = DEFAULTS.schema
 	self:UnregisterEvent("ADDON_LOADED")
 end
 
 function TH:PLAYER_LOGIN()
+	self.db.myChars[self.Net.Me()] = true
+	self.Net:Prune()
 	self:LoadFeed()
-	self:ApplyServerAcks()
+	self.Net:Start()
 	self:UpdateMinimapButton()
 	C_Timer.After(5, function()
 		self:RebuildStatsFromSets()
@@ -493,6 +490,19 @@ SlashCmdList.TRANSMOGHUB = function(msg)
 		TH:LoadFeed()
 		TH:NotifyChanged()
 		TH:Print("Тестовые наборы удалены.")
+	elseif msg == "sync" then
+		TH.Net:RequestSync()
+		TH:Print("Запрос синхронизации отправлен.")
+	elseif msg == "net" then
+		local Net = TH.Net
+		TH:Print(string.format("Сеть: %s, канал %d, игроков с аддоном: %d, наборов в базе: %d, в очереди: %d%s",
+			Net:IsConnected() and "подключено" or "нет подключения", Net.channelId, Net:PeerCount(),
+			Net:SetCount(), Net:QueueLength(), Net:IsLocked() and ", отправка на паузе (бой или подземелье)" or ""))
+	elseif msg == "unhide" then
+		wipe(TH.db.hidden)
+		TH:LoadFeed()
+		TH:NotifyChanged()
+		TH:Print("Скрытые наборы снова показываются.")
 	elseif msg == "capture" then
 		TH:CaptureCurrent(function(items, method)
 			if not items then

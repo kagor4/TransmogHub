@@ -13,6 +13,7 @@
 ### Возможности
 
 - **Сохранение облика** с названием, описанием и тегами (тема, цвет).
+- **Обмен наборами прямо в игре**: опубликованный набор получают все игроки с аддоном. Без сервера, сайтов и сторонних программ.
 - **Лента наборов**: «Лучшие», «В тренде», «Новые», «Избранное», «Мои»; поиск и фильтр по тегам.
 - **Примерка** на своём персонаже и на любой другой расе (кнопка «Как у автора»).
 - **Откуда каждая вещь**: торговец, задание, добыча с босса (подземелье и сложность), Торговая лавка; отметка «собрано / не собрано» и итог «Собрано 9 из 12».
@@ -27,6 +28,9 @@
 |---|---|
 | `/thub` | открыть или закрыть окно |
 | `/thub minimap` | скрыть или показать кнопку у миникарты |
+| `/thub net` | состояние сети |
+| `/thub sync` | запросить новое у других игроков |
+| `/thub unhide` | вернуть скрытые наборы |
 | `/thub test` | тестовая лента из 25 наборов |
 | `/thub capture` | показать в чате снятый облик (отладка) |
 
@@ -43,6 +47,7 @@ Save your transmog in one click, browse other players' outfits, try them on your
 ### Features
 
 - **Save your look** with a name, description and tags (theme, colour).
+- **In-game sharing**: published outfits reach every player with the addon. No server, website or external software.
 - **Outfit feed**: Top, Trending, New, Favourites, Mine; search and tag filter.
 - **Try on** your own character or any other race ("As the author" button).
 - **Where every item comes from**: vendor, quest, boss drop (instance and difficulty), Trading Post; collected / not collected marks and a "9 of 12 collected" summary.
@@ -57,6 +62,9 @@ Save your transmog in one click, browse other players' outfits, try them on your
 |---|---|
 | `/thub` | toggle the window |
 | `/thub minimap` | hide or show the minimap button |
+| `/thub net` | network status |
+| `/thub sync` | ask other players for news |
+| `/thub unhide` | show hidden outfits again |
 | `/thub test` | fill the feed with 25 test outfits |
 | `/thub capture` | print the captured look to chat (debug) |
 

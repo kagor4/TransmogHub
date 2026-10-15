@@ -26,7 +26,6 @@ local EMPTY_TEXT = {
 
 local STATUS_TEXT = {
 	draft = "|cff999999черновик|r",
-	pending = "|cffffd100отправляется|r",
 	published = "|cff40ff40опубликован|r",
 	rejected = "|cffff4040отклонён|r",
 }
@@ -110,9 +109,12 @@ function UI:Build()
 
 	self.status = Label(self, "GameFontHighlightSmall", 760)
 	self.status:SetPoint("BOTTOMLEFT", 14, 13)
-	self.reloadBtn = Button(self, "Отправить (/reload)", 170)
-	self.reloadBtn:SetPoint("BOTTOMRIGHT", -12, 8)
-	self.reloadBtn:SetScript("OnClick", function() ReloadUI() end)
+	self.syncBtn = Button(self, "Синхронизировать", 150)
+	self.syncBtn:SetPoint("BOTTOMRIGHT", -12, 8)
+	self.syncBtn:SetScript("OnClick", function()
+		TH.Net:RequestSync()
+		TH:Print("Запрос синхронизации отправлен.")
+	end)
 end
 
 function UI:BuildToolbar()
@@ -420,10 +422,10 @@ function UI:RefreshAchievements()
 end
 
 StaticPopupDialogs["TRANSMOGHUB_REPORT"] = {
-	text = "Пожаловаться на набор «%s»?\n\nНапример, если в названии или описании оскорбления.",
-	button1 = "Пожаловаться",
+	text = "Скрыть набор «%s»?\n\nОн пропадёт только у вас. Вернуть все скрытые: /thub unhide",
+	button1 = "Скрыть",
 	button2 = CANCEL,
-	OnAccept = function(_, setId) TH:Report(setId) end,
+	OnAccept = function(_, setId) TH:HideSet(setId) end,
 	timeout = 0,
 	whileDead = true,
 	hideOnEscape = true,
@@ -459,7 +461,7 @@ function UI:OpenSetMenu(owner, setId)
 				StaticPopup_Show("TRANSMOGHUB_DELETE", mine.name, extra, mine.id)
 			end)
 		elseif not TH:IsTestId(set.id) and not TH:IsLocalId(set.id) then
-			root:CreateButton("Пожаловаться", function()
+			root:CreateButton("Скрыть набор", function()
 				StaticPopup_Show("TRANSMOGHUB_REPORT", set.name, nil, set.id)
 			end)
 		end
@@ -665,8 +667,11 @@ function UI:RefreshDetail()
 	self.authorRaceBtn:SetEnabled(set.race ~= nil)
 	self.wowheadBtn:SetEnabled(true)
 
-	local isLocal = TH:IsLocalId(set.id)
-	local r = set.rating
+	-- У своего опубликованного набора рейтинг берём с его копии в сети
+	local mineLocal = TH.db.mySets[set.id]
+	local netCopy = mineLocal and mineLocal.serverId and TH.byId[mineLocal.serverId]
+	local isLocal = TH:IsLocalId(set.id) and not netCopy
+	local r = netCopy and netCopy.rating or set.rating
 	if isLocal then
 		self.dRating:SetText("Рейтинг появится после публикации")
 	elseif r and r.n and r.n > 0 then
@@ -678,8 +683,6 @@ function UI:RefreshDetail()
 	local canVote, reason = TH:CanVote(set)
 	if not canVote then
 		self.dVoteHint:SetText(reason)
-	elseif TH.db.outbox.votes[set.id] then
-		self.dVoteHint:SetText("ждёт отправки")
 	else
 		self.dVoteHint:SetText("")
 	end
@@ -741,13 +744,11 @@ function UI:RefreshDetail()
 
 	local mine = TH.db.mySets[set.id]
 	self.deleteBtn:SetShown(mine ~= nil)
-	self.publishBtn:SetShown(mine ~= nil and (mine.status == "draft" or mine.status == "rejected"))
+	self.publishBtn:SetShown(mine ~= nil and mine.status ~= "published")
 	if mine then
 		local s = "Статус: " .. (STATUS_TEXT[mine.status] or mine.status or "?")
-		if mine.status == "pending" then
-			s = s .. "\n|cff999999Уйдёт на сервер после /reload или выхода из игры.|r"
-		elseif mine.status == "rejected" and mine.rejectReason then
-			s = s .. "\n|cffff8080" .. mine.rejectReason .. "|r"
+		if mine.status == "published" then
+			s = s .. "\n|cff999999Виден всем игрокам с аддоном.|r"
 		end
 		self.dStatus:SetText(s)
 	else
@@ -756,16 +757,6 @@ function UI:RefreshDetail()
 end
 
 function UI:RefreshStatus()
-	local parts = {}
-	if TH.feedSource == "live" and TH.user and TH.user.lastSync then
-		parts[1] = "Синхронизировано: " .. date("%d.%m %H:%M", TH.user.lastSync)
-	else
-		parts[1] = "|cff999999Компаньон не подключён — показана база из обновления аддона|r"
-	end
-	local sets, votes = TH:GetPendingCounts()
-	if sets + votes > 0 then
-		parts[2] = string.format("|cffffd100Ждут отправки: изменений %d, оценок %d|r", sets, votes)
-	end
-	self.status:SetText(table.concat(parts, "   ·   "))
-	self.reloadBtn:SetShown(sets + votes > 0)
+	self.status:SetText(TH:NetworkStatusText())
+	self.syncBtn:SetEnabled(TH.Net:IsConnected())
 end

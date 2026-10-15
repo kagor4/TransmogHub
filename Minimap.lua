@@ -27,11 +27,8 @@ local function ShowTooltip(self)
 	local earned, total, points = TH:GetAchievementTotals()
 	GameTooltip:AddLine(string.format("Достижения: %d из %d · очки стиля: %d", earned, total, points), 1, 0.82, 0)
 	GameTooltip:AddLine("Перетащите, чтобы сдвинуть", 0.6, 0.6, 0.6)
-	local sets, votes = TH:GetPendingCounts()
-	if sets + votes > 0 then
-		GameTooltip:AddLine(" ")
-		GameTooltip:AddLine(string.format("Ждут отправки: изменений %d, оценок %d", sets, votes), 1, 0.82, 0)
-	end
+	GameTooltip:AddLine(" ")
+	GameTooltip:AddLine(TH:NetworkStatusText(), 1, 1, 1, true)
 	GameTooltip:Show()
 end
 
