@@ -182,10 +182,11 @@ function Net:IsConnected()
 	return self.channelId > 0
 end
 
+-- Блокировка сообщений в бою и подземельях (Midnight). Не путать с
+-- AreOutgoingAddonChatMessagesRestricted: та запрещает аддонам ОБЫЧНЫЙ чат
+-- на всех обычных серверах и к сообщениям аддонов отношения не имеет.
 function Net:IsLocked()
-	if C_ChatInfo.InChatMessagingLockdown and C_ChatInfo.InChatMessagingLockdown() then return true end
-	if C_ChatInfo.AreOutgoingAddonChatMessagesRestricted and C_ChatInfo.AreOutgoingAddonChatMessagesRestricted() then return true end
-	return false
+	return C_ChatInfo.InChatMessagingLockdown and C_ChatInfo.InChatMessagingLockdown() or false
 end
 
 ---------------------------------------------------------------------------

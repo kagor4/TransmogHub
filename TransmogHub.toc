@@ -2,7 +2,7 @@
 ## Title: Transmog Hub
 ## Notes: Save your transmog, try outfits on any race and vote for the best looks.
 ## Notes-ruRU: Делитесь трансмогом, примеряйте чужие образы и голосуйте за лучшие.
-## Version: 0.5.0
+## Version: 0.5.1
 ## SavedVariables: TransmogHubDB
 ## IconTexture: Interface\Icons\INV_Chest_Cloth_17
 ## AddonCompartmentFunc: TransmogHub_OnAddonCompartmentClick

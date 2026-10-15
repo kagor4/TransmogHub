@@ -104,7 +104,8 @@ C_ChatInfo = {
     return 0
   end,
   InChatMessagingLockdown = function() return false end,
-  AreOutgoingAddonChatMessagesRestricted = function() return false end,
+  -- на обычных серверах Midnight обычный чат аддонам запрещён — сообщения аддонов это не должно останавливать
+  AreOutgoingAddonChatMessagesRestricted = function() return true end,
 }
 Enum.SendAddonMessageResult = { Success = 0, AddonMessageThrottle = 3, ChannelThrottle = 8, AddOnMessageLockdown = 11 }
 local tickers = {}
