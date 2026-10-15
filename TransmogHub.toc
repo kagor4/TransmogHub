@@ -1,0 +1,21 @@
+## Interface: 120105
+## Title: Transmog Hub
+## Notes: Делитесь трансмогом, примеряйте чужие образы и голосуйте за лучшие.
+## Version: 0.4.2
+## SavedVariables: TransmogHubDB
+## IconTexture: Interface\Icons\INV_Chest_Cloth_17
+## AddonCompartmentFunc: TransmogHub_OnAddonCompartmentClick
+
+# База наборов из обновления аддона (раздаётся через CurseForge)
+Data\Bundled.lua
+# База, которую пишет компаньон (свежее Bundled, если есть)
+Data\Live.lua
+
+Core.lua
+Appearance.lua
+Preview.lua
+UI.lua
+SaveDialog.lua
+Achievements.lua
+Wowhead.lua
+Minimap.lua

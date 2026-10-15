@@ -1,0 +1,6 @@
+package-as: TransmogHub
+
+ignore:
+  - docs
+  - tests
+  - README.md
