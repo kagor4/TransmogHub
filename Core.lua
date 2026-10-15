@@ -495,9 +495,10 @@ SlashCmdList.TRANSMOGHUB = function(msg)
 		TH:Print("Запрос синхронизации отправлен.")
 	elseif msg == "net" then
 		local Net = TH.Net
-		TH:Print(string.format("Сеть: %s, канал %d, игроков с аддоном: %d, наборов в базе: %d, в очереди: %d%s",
-			Net:IsConnected() and "подключено" or "нет подключения", Net.channelId, Net:PeerCount(),
-			Net:SetCount(), Net:QueueLength(), Net:IsLocked() and ", отправка на паузе (бой или подземелье)" or ""))
+		TH:Print(string.format("Сеть: %s, канал %d (участников: %s), игроков с аддоном: %d, наборов в базе: %d, в очереди: %d%s. Вы: %s",
+			Net:IsConnected() and "подключено" or "нет подключения", Net.channelId, tostring(Net:ChannelMemberCount() or "?"),
+			Net:PeerCount(), Net:SetCount(), Net:QueueLength(),
+			Net:IsLocked() and ", отправка на паузе (бой или подземелье)" or "", Net.Me()))
 	elseif msg == "unhide" then
 		wipe(TH.db.hidden)
 		TH:LoadFeed()

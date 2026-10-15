@@ -216,6 +216,17 @@ local reqId = q:match("^SQ(%w+)\t")
 receive({ "SA" .. reqId })
 assert(Net.synced and TH.db.net.lastSync == serverTime, "lastSync set after answer")
 
+-- presence: in a small network a newcomer's hello gets an "I'm here" reply
+receive({ "SH1" }, "Новичок-Гордунни")
+local pres = flush()
+local replied = false
+for _, m in ipairs(pres) do if m == "SI1" then replied = true end end
+assert(replied, "reply to hello in a small network")
+GetNumDisplayChannels = function() return 1 end
+GetChannelDisplayInfo = function() return "TransmogHubNet", false, false, 5, 3 end
+assert(Net:PeerCount() == 2, "peer count from channel roster")
+GetNumDisplayChannels = nil; GetChannelDisplayInfo = nil
+
 -- relayed votes (W)
 receive({ "SW" .. set.serverId .. "\tТретий-Гордунни,4," .. "zzz;Четвёртый-Гордунни,1,zzz" })
 TH:LoadFeed()

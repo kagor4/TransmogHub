@@ -335,6 +335,7 @@ end
 --   W<id>\t<голосующий>,<зв>,<вр>;… — пересланные голоса (при синхронизации)
 --   D<id>                          — снять с публикации (только автор)
 --   H<версия>                      — «я в сети»
+--   I<версия>                      — ответ на H в маленькой сети: «я тоже тут»
 --   Q<запрос>\t<с какого времени>  — пришлите новое
 --   A<запрос>                      — «я отвечаю на запрос», остальные молчат
 ---------------------------------------------------------------------------
@@ -447,10 +448,19 @@ handlers.D = function(self, body, sender)
 	if set and set.author == sender then self:RemoveSet(body) end
 end
 
--- Появился новый игрок: если мы ещё ни с кем не синхронизировались, спросим
+local SMALL_NETWORK = 20 -- в маленькой сети отвечаем новичку «я тоже тут»
+
+-- Появился новый игрок: если мы ещё ни с кем не синхронизировались, спросим.
+-- В маленькой сети ещё и отзываемся, чтобы он сразу нас увидел.
 handlers.H = function(self)
 	self:ScheduleSync(5 + math.random() * 10)
+	local members = self:ChannelMemberCount()
+	if (members or self:PeerCount() + 1) <= SMALL_NETWORK then
+		C_Timer.After(1 + math.random() * 4, function() self:Send("I" .. PROTOCOL) end)
+	end
 end
+
+handlers.I = function() end -- «я тоже тут»: отправитель уже учтён в peers
 
 handlers.Q = function(self, body, sender)
 	local reqId, since = body:match("^(%w+)\t(%w+)$")
@@ -488,7 +498,21 @@ function Net:OnMessage(prefix, text, channel, sender)
 	if self.dirty then TH:RequestRefresh() end
 end
 
+-- Сколько человек в скрытом канале (по данным игры), включая нас; nil — если неизвестно
+function Net:ChannelMemberCount()
+	if not (GetNumDisplayChannels and GetChannelDisplayInfo) or not self:IsConnected() then return nil end
+	for i = 1, GetNumDisplayChannels() do
+		local name, _, _, number, count = GetChannelDisplayInfo(i)
+		if (number == self.channelId or name == CHANNEL_NAME) and type(count) == "number" and count > 0 then
+			return count
+		end
+	end
+end
+
+-- Игроков с аддоном в сети, кроме нас: по списку канала, иначе — по сообщениям
 function Net:PeerCount()
+	local members = self:ChannelMemberCount()
+	if members then return members - 1 end
 	local now, n = Now(), 0
 	for _, t in pairs(self.peers) do
 		if now - t < PEER_TIMEOUT then n = n + 1 end
