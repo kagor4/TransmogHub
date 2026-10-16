@@ -3,4 +3,6 @@ package-as: TransmogHub
 ignore:
   - docs
   - tests
+  - tools
   - README.md
+  - VERSION

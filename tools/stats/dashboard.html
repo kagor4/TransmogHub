@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Статистика Transmog Hub</title>
+<!-- Шаблон: tools/stats/dashboard.lua подставляет данные вместо DATA ниже. Страница — только для закрытого репозитория. -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<style>
+:root {
+	--bg: #f6f5f2; --panel: #ffffff; --ink: #1d1c1a; --muted: #6b6860; --line: #e3e0d8;
+	--accent: #0d9b7a; --accent-soft: #d5f0e8; --warn: #c2410c;
+	--c1: #0d9b7a; --c2: #2563eb; --c3: #d97706; --c4: #9333ea; --c5: #dc2626;
+	--c6: #0891b2; --c7: #65a30d; --c8: #db2777; --c9: #4b5563; --c10: #ca8a04;
+}
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme="light"]) {
+		--bg: #121314; --panel: #1b1d1f; --ink: #ecebe7; --muted: #9a978f; --line: #2c2f32;
+		--accent: #2dd4a7; --accent-soft: #123a31; --warn: #fb923c;
+		--c1: #2dd4a7; --c2: #60a5fa; --c3: #fbbf24; --c4: #c084fc; --c5: #f87171;
+		--c6: #22d3ee; --c7: #a3e635; --c8: #f472b6; --c9: #9ca3af; --c10: #facc15;
+	}
+}
+:root[data-theme="dark"] {
+	--bg: #121314; --panel: #1b1d1f; --ink: #ecebe7; --muted: #9a978f; --line: #2c2f32;
+	--accent: #2dd4a7; --accent-soft: #123a31; --warn: #fb923c;
+	--c1: #2dd4a7; --c2: #60a5fa; --c3: #fbbf24; --c4: #c084fc; --c5: #f87171;
+	--c6: #22d3ee; --c7: #a3e635; --c8: #f472b6; --c9: #9ca3af; --c10: #facc15;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+header { padding: 20px 16px 8px; max-width: 1200px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; }
+header h1 { font-size: 20px; margin: 0; }
+header .meta { color: var(--muted); font-size: 13px; }
+nav { max-width: 1200px; margin: 0 auto; padding: 8px 16px; display: flex; gap: 6px; flex-wrap: wrap; position: sticky; top: 0; background: var(--bg); z-index: 5; border-bottom: 1px solid var(--line); }
+nav button, .chip, select, input[type=search] {
+	font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; cursor: pointer;
+}
+nav button[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+main { max-width: 1200px; margin: 0 auto; padding: 16px; }
+section { display: none; }
+section.on { display: block; }
+.grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); margin-bottom: 16px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+.kpi .v { font-size: 26px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.kpi .l { color: var(--muted); font-size: 12.5px; }
+.kpi .d { font-size: 12.5px; color: var(--accent); }
+.kpi .d.neg { color: var(--warn); }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+.panel h2 { font-size: 15px; margin: 0 0 4px; }
+.panel p.hint { margin: 0 0 12px; color: var(--muted); font-size: 12.5px; }
+.controls { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; align-items: center; }
+.chip { padding: 4px 10px; font-size: 12.5px; }
+.chip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
+.chip .x { margin-left: 6px; color: var(--muted); }
+.chart { position: relative; height: 320px; }
+.chart.tall { height: 520px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+th { color: var(--muted); font-weight: 500; }
+td.n { text-align: right; font-variant-numeric: tabular-nums; }
+.empty { color: var(--muted); padding: 24px 0; text-align: center; }
+.two { display: grid; gap: 16px; grid-template-columns: 1fr; }
+@media (min-width: 900px) { .two { grid-template-columns: 1fr 1fr; } }
+.scroll { overflow-x: auto; }
+</style>
+</head>
+<body>
+<header>
+	<h1>Статистика Transmog Hub</h1>
+	<span class="meta" id="meta"></span>
+</header>
+<nav id="tabs" role="tablist"></nav>
+<main>
+	<section id="overview">
+		<div class="grid" id="kpis"></div>
+		<div class="panel">
+			<h2>Рост сети</h2>
+			<p class="hint">По ежедневным снимкам модератора. Кликайте по показателям, чтобы включать и выключать линии.</p>
+			<div class="controls" id="growthSeries"></div>
+			<div class="controls"><label>Период <select id="growthRange"></select></label></div>
+			<div class="chart"><canvas id="growthChart"></canvas></div>
+		</div>
+	</section>
+
+	<section id="ratings">
+		<div class="panel">
+			<h2>Оценки по звёздам</h2>
+			<p class="hint">Все оценки в сети на дату снимка, столбцы — по звёздам, линия — средняя оценка.</p>
+			<div class="chart"><canvas id="starsChart"></canvas></div>
+		</div>
+		<div class="panel">
+			<h2>Новые оценки за день и порог чарта</h2>
+			<p class="hint">Прирост оценок к прошлому снимку, сколько игроков оценивали за сутки и сколько оценок нужно для чарта.</p>
+			<div class="chart"><canvas id="dailyChart"></canvas></div>
+		</div>
+		<div class="panel">
+			<h2>Лучшие образы последнего снимка</h2>
+			<div class="scroll"><table id="topTable"></table></div>
+		</div>
+	</section>
+
+	<section id="tags">
+		<div class="panel">
+			<h2>Теги во времени</h2>
+			<p class="hint">Сколько образов с тегом. Выберите теги поиском или группой; «доля» — процент от всех образов.</p>
+			<div class="controls">
+				<input type="search" id="tagSearch" placeholder="Найти тег…" list="tagList">
+				<datalist id="tagList"></datalist>
+				<select id="tagGroup"><option value="">Добавить группу…</option></select>
+				<button class="chip" id="tagTop">Топ-8</button>
+				<button class="chip" id="tagClear">Очистить</button>
+				<label><input type="checkbox" id="tagShare"> доля</label>
+			</div>
+			<div class="controls" id="tagChips"></div>
+			<div class="chart"><canvas id="tagChart"></canvas></div>
+		</div>
+		<div class="two">
+			<div class="panel">
+				<h2>Популярность тегов сейчас</h2>
+				<p class="hint">Последний снимок, топ-25.</p>
+				<div class="chart tall"><canvas id="tagBar"></canvas></div>
+			</div>
+			<div class="panel">
+				<h2>Быстрее всего растут</h2>
+				<p class="hint">Прирост образов с тегом за выбранный период.</p>
+				<div class="controls"><label>За <select id="growRange"></select></label></div>
+				<div class="scroll"><table id="growTable"></table></div>
+				<h2 style="margin-top:16px">Чаще гаснут</h2>
+				<p class="hint">Сколько образов, где игроки отметили тег как неподходящий (последний снимок).</p>
+				<div class="scroll"><table id="disputedTable"></table></div>
+			</div>
+		</div>
+		<div class="panel">
+			<h2>Предложенные теги</h2>
+			<p class="hint">Сколько разных персонажей просили. Тег добавляется от 5.</p>
+			<div class="scroll"><table id="suggestTable"></table></div>
+		</div>
+	</section>
+
+	<section id="achievements">
+		<div class="panel">
+			<h2>Распространённость достижений</h2>
+			<p class="hint" id="achHint"></p>
+			<div class="controls"><select id="achRarity"></select><select id="achSort"><option value="share">по доле</option><option value="list">по списку</option></select></div>
+			<div class="chart tall" id="achWrap"><canvas id="achChart"></canvas></div>
+		</div>
+	</section>
+
+	<section id="moderation">
+		<div class="grid" id="modKpis"></div>
+		<div class="panel">
+			<h2>По дням</h2>
+			<p class="hint">Только количества — без имён и текстов.</p>
+			<div class="controls" id="modKind"></div>
+			<div class="controls"><label>Период <select id="modRange"></select></label></div>
+			<div class="chart"><canvas id="modChart"></canvas></div>
+		</div>
+	</section>
+
+	<section id="usage">
+		<div class="panel">
+			<h2>Нажатия на кнопки</h2>
+			<p class="hint" id="usageHint"></p>
+			<div class="controls"><select id="usageWindow"><option value="">Все окна</option></select></div>
+			<div class="chart tall"><canvas id="usageChart"></canvas></div>
+		</div>
+	</section>
+</main>
+
+<script>
+const DATA = /*DATA*/null;
+
+// ---------- общее ----------
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const palette = () => Array.from({ length: 10 }, (_, i) => css("--c" + (i + 1)));
+const fmt = n => n == null ? "—" : Number(n).toLocaleString("ru-RU");
+const el = (tag, attrs = {}, text) => { const e = document.createElement(tag); Object.assign(e, attrs); if (text != null) e.textContent = text; return e; };
+const charts = {};
+function draw(id, config) {
+	if (charts[id]) charts[id].destroy();
+	const ink = css("--ink"), muted = css("--muted"), line = css("--line");
+	Chart.defaults.color = muted;
+	Chart.defaults.borderColor = line;
+	Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+	config.options = Object.assign({ responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
+		plugins: { legend: { labels: { color: ink, boxWidth: 12 } } } }, config.options || {});
+	charts[id] = new Chart(document.getElementById(id), config);
+}
+function rangeOptions(select, onChange) {
+	[["Всё время", 0], ["7 дней", 7], ["30 дней", 30], ["90 дней", 90]].forEach(([t, v]) => select.append(el("option", { value: v }, t)));
+	select.onchange = onChange;
+}
+function cut(list, days) { return days > 0 ? list.slice(-days) : list; }
+function emptyTable(table, text) { table.innerHTML = ""; const tr = table.insertRow(); const td = tr.insertCell(); td.className = "empty"; td.textContent = text; }
+function fillTable(table, head, rows) {
+	table.innerHTML = "";
+	if (!rows.length) return emptyTable(table, "Пока пусто");
+	const h = table.createTHead().insertRow();
+	head.forEach(([t, num]) => { const th = el("th", {}, t); if (num) th.style.textAlign = "right"; h.append(th); });
+	const b = table.createTBody();
+	rows.forEach(r => { const tr = b.insertRow(); r.forEach((v, i) => { const td = tr.insertCell(); td.textContent = v; if (head[i][1]) td.className = "n"; }); });
+}
+let store = {};
+try { store = JSON.parse(localStorage.getItem("thub-dash") || "{}"); } catch (e) {}
+function save() { try { localStorage.setItem("thub-dash", JSON.stringify(store)); } catch (e) {} }
+
+// ---------- вкладки ----------
+const TABS = [["overview", "Обзор"], ["ratings", "Оценки"], ["tags", "Теги"], ["achievements", "Достижения"], ["moderation", "Модерация"], ["usage", "Кнопки"]];
+const renderers = {};
+function openTab(id) {
+	document.querySelectorAll("nav button").forEach(b => b.setAttribute("aria-selected", b.dataset.id === id));
+	document.querySelectorAll("section").forEach(s => s.classList.toggle("on", s.id === id));
+	store.tab = id; save();
+	renderers[id] && renderers[id]();
+}
+TABS.forEach(([id, t]) => { const b = el("button", { role: "tab" }, t); b.dataset.id = id; b.onclick = () => openTab(id); document.getElementById("tabs").append(b); });
+
+const days = DATA.days || [];
+const last = days[days.length - 1] || {};
+const prevWeek = days.length > 7 ? days[days.length - 8] : days[0] || {};
+document.getElementById("meta").textContent = "Обновлено " + DATA.generated + (last.d ? " · последний снимок " + last.d + " · снимков " + days.length : " · снимков пока нет");
+
+// ---------- обзор ----------
+const SERIES = [
+	["known", "Известных игроков"], ["players", "Игроков в рейтинге"], ["authors", "Авторов"], ["voters", "Голосовавших"],
+	["active", "Голосовали за сутки"], ["sets", "Образов"], ["rated", "С оценками"], ["charted", "В чарте"], ["votes", "Оценок"], ["sus", "Подозрительных"],
+];
+store.series = store.series || ["known", "players", "sets", "charted"];
+function kpi(container, label, value, delta) {
+	const c = el("div", { className: "card kpi" });
+	c.append(el("div", { className: "v" }, fmt(value)), el("div", { className: "l" }, label));
+	if (delta != null && delta !== 0) c.append(el("div", { className: "d" + (delta < 0 ? " neg" : "") }, (delta > 0 ? "+" : "") + fmt(delta) + " за неделю"));
+	container.append(c);
+}
+renderers.overview = () => {
+	const k = document.getElementById("kpis"); k.innerHTML = "";
+	const d = key => last[key] != null && prevWeek[key] != null ? last[key] - prevWeek[key] : null;
+	kpi(k, "Известных игроков", last.known, d("known"));
+	kpi(k, "Игроков в рейтинге", last.players, d("players"));
+	kpi(k, "Образов", last.sets, d("sets"));
+	kpi(k, "Оценок", last.votes, d("votes"));
+	kpi(k, "В чарте", last.charted, d("charted"));
+	kpi(k, "Порог чарта, оценок", last.minVotes);
+	kpi(k, "Средняя оценка", last.avg);
+	kpi(k, "Жалоб ждут разбора", DATA.waiting);
+	const box = document.getElementById("growthSeries"); box.innerHTML = "";
+	SERIES.forEach(([key, t]) => {
+		const b = el("button", { className: "chip" }, t);
+		b.setAttribute("aria-pressed", store.series.includes(key));
+		b.onclick = () => { store.series = store.series.includes(key) ? store.series.filter(x => x !== key) : store.series.concat(key); save(); renderers.overview(); };
+		box.append(b);
+	});
+	const list = cut(days, +document.getElementById("growthRange").value);
+	const pal = palette();
+	draw("growthChart", { type: "line", data: { labels: list.map(x => x.d),
+		datasets: SERIES.filter(([k]) => store.series.includes(k)).map(([k, t], i) => ({ label: t, data: list.map(x => x[k] ?? null),
+			borderColor: pal[SERIES.findIndex(s => s[0] === k) % 10], backgroundColor: pal[SERIES.findIndex(s => s[0] === k) % 10], tension: 0.25, spanGaps: true, pointRadius: list.length > 40 ? 0 : 3 })) },
+		options: { scales: { y: { beginAtZero: true } } } });
+};
+rangeOptions(document.getElementById("growthRange"), () => renderers.overview());
+
+// ---------- оценки ----------
+renderers.ratings = () => {
+	const pal = palette();
+	const starColors = [pal[4], pal[2], pal[9], pal[1], pal[0]];
+	draw("starsChart", { data: { labels: days.map(x => x.d), datasets: [
+		...[0, 1, 2, 3, 4].map(i => ({ type: "bar", label: (i + 1) + "★", data: days.map(x => (x.dist || [])[i] || 0), backgroundColor: starColors[i], stack: "s", yAxisID: "y" })),
+		{ type: "line", label: "Средняя", data: days.map(x => x.avg), borderColor: css("--ink"), backgroundColor: css("--ink"), yAxisID: "y2", tension: 0.25 },
+	] }, options: { scales: { y: { stacked: true, beginAtZero: true }, x: { stacked: true }, y2: { position: "right", min: 1, max: 5, grid: { drawOnChartArea: false } } } } });
+	const delta = days.map((x, i) => i > 0 && x.votes != null && days[i - 1].votes != null ? Math.max(0, x.votes - days[i - 1].votes) : null);
+	draw("dailyChart", { data: { labels: days.map(x => x.d), datasets: [
+		{ type: "bar", label: "Новых оценок", data: delta, backgroundColor: pal[1] },
+		{ type: "line", label: "Голосовали за сутки", data: days.map(x => x.active ?? null), borderColor: pal[0], backgroundColor: pal[0], tension: 0.25, spanGaps: true },
+		{ type: "line", label: "Порог чарта", data: days.map(x => x.minVotes ?? null), borderColor: pal[2], backgroundColor: pal[2], borderDash: [6, 4], stepped: true, spanGaps: true },
+	] }, options: { scales: { y: { beginAtZero: true } } } });
+	const flags = { c: "в чарте", s: "подозрение", n: "мало оценок" };
+	fillTable(document.getElementById("topTable"), [["Образ"], ["Автор"], ["Оценок", 1], ["Средняя", 1], ["Балл", 1], ["Тренд", 1], ["Статус"]],
+		(DATA.top || []).map(t => [t.id, t.author, fmt(t.n), t.avg, t.score, fmt(t.trend), flags[t.flag] || t.flag]));
+};
+
+// ---------- теги ----------
+const tagSeries = DATA.tagSeries || [];
+const labels = DATA.tagLabels || {};
+const lastTags = (tagSeries[tagSeries.length - 1] || { counts: {}, total: 0 });
+const allTags = Object.keys(labels).sort((a, b) => (lastTags.counts[b] || 0) - (lastTags.counts[a] || 0));
+const tagName = k => labels[k] || k;
+const byName = {};
+allTags.forEach(k => { byName[tagName(k).toLowerCase()] = k; document.getElementById("tagList").append(el("option", { value: tagName(k) })); });
+(DATA.tagGroups || []).forEach((g, i) => document.getElementById("tagGroup").append(el("option", { value: i }, g.name)));
+const topTags = () => allTags.slice(0, 8);
+store.tags = (store.tags || topTags()).filter(k => labels[k]);
+function addTag(k) { if (k && !store.tags.includes(k)) { store.tags.push(k); save(); renderers.tags(); } }
+document.getElementById("tagSearch").onchange = e => { const k = byName[e.target.value.trim().toLowerCase()]; e.target.value = ""; addTag(k); };
+document.getElementById("tagGroup").onchange = e => { const g = DATA.tagGroups[e.target.value]; e.target.value = ""; if (g) { g.keys.forEach(k => { if (!store.tags.includes(k)) store.tags.push(k); }); save(); renderers.tags(); } };
+document.getElementById("tagTop").onclick = () => { store.tags = topTags(); save(); renderers.tags(); };
+document.getElementById("tagClear").onclick = () => { store.tags = []; save(); renderers.tags(); };
+document.getElementById("tagShare").onchange = () => renderers.tags();
+rangeOptions(document.getElementById("growRange"), () => renderers.tags());
+renderers.tags = () => {
+	const chips = document.getElementById("tagChips"); chips.innerHTML = "";
+	store.tags.forEach(k => { const b = el("button", { className: "chip", title: "Убрать" }); b.setAttribute("aria-pressed", "true"); b.append(tagName(k), el("span", { className: "x" }, "×")); b.onclick = () => { store.tags = store.tags.filter(x => x !== k); save(); renderers.tags(); }; chips.append(b); });
+	const share = document.getElementById("tagShare").checked;
+	const pal = palette();
+	draw("tagChart", { type: "line", data: { labels: tagSeries.map(s => s.d), datasets: store.tags.map((k, i) => ({ label: tagName(k),
+		data: tagSeries.map(s => share ? (s.total ? +(100 * (s.counts[k] || 0) / s.total).toFixed(1) : 0) : (s.counts[k] || 0)),
+		borderColor: pal[i % 10], backgroundColor: pal[i % 10], tension: 0.25, pointRadius: tagSeries.length > 40 ? 0 : 3 })) },
+		options: { scales: { y: { beginAtZero: true, ticks: { callback: v => share ? v + "%" : v } } } } });
+	const top = allTags.filter(k => lastTags.counts[k] > 0).slice(0, 25);
+	draw("tagBar", { type: "bar", data: { labels: top.map(tagName), datasets: [{ label: "Образов", data: top.map(k => lastTags.counts[k]), backgroundColor: css("--accent") }] },
+		options: { indexAxis: "y", plugins: { legend: { display: false } } } });
+	const span = +document.getElementById("growRange").value;
+	const from = span > 0 ? tagSeries[Math.max(0, tagSeries.length - 1 - span)] : tagSeries[0];
+	const grow = from ? allTags.map(k => [k, (lastTags.counts[k] || 0) - (from.counts[k] || 0)]).filter(x => x[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, 12) : [];
+	fillTable(document.getElementById("growTable"), [["Тег"], ["Прирост", 1], ["Сейчас", 1]], grow.map(([k, n]) => [tagName(k), "+" + fmt(n), fmt(lastTags.counts[k])]));
+	const dd = (DATA.disputed || []); const lastD = dd.reduce((m, x) => x.d > m ? x.d : m, "");
+	fillTable(document.getElementById("disputedTable"), [["Тег"], ["Образов", 1]], dd.filter(x => x.d === lastD).sort((a, b) => b.n - a.n).slice(0, 12).map(x => [tagName(x.tag), fmt(x.n)]));
+	fillTable(document.getElementById("suggestTable"), [["Тег"], ["Просили", 1], ["Последний раз"]], (DATA.suggested || []).slice(0, 40).map(s => [s.text, fmt(s.people), s.last || ""]));
+};
+
+// ---------- достижения ----------
+const rarity = DATA.rarity || {};
+const achRarity = document.getElementById("achRarity");
+achRarity.append(el("option", { value: "" }, "Все редкости"));
+Object.keys(rarity).sort((a, b) => a - b).forEach(q => achRarity.append(el("option", { value: q }, rarity[q])));
+achRarity.onchange = () => renderers.achievements();
+document.getElementById("achSort").onchange = () => renderers.achievements();
+renderers.achievements = () => {
+	const list0 = DATA.achievements || [];
+	const players = list0.reduce((m, a) => Math.max(m, a.players || 0), 0);
+	document.getElementById("achHint").textContent = DATA.achDay ? "Снимок " + DATA.achDay + ", игроков в рейтинге: " + fmt(players) + ". Доля — у скольких из них есть достижение." : "Снимков достижений пока нет.";
+	let list = list0.filter(a => achRarity.value === "" || String(a.rarity) === achRarity.value);
+	if (document.getElementById("achSort").value === "share") list = list.slice().sort((a, b) => b.count - a.count);
+	document.getElementById("achWrap").style.height = Math.max(320, list.length * 18 + 60) + "px";
+	draw("achChart", { type: "bar", data: { labels: list.map(a => a.name), datasets: [{ label: "Доля игроков, %", data: list.map(a => players ? +(100 * a.count / players).toFixed(1) : 0),
+		backgroundColor: list.map(a => a.shame ? css("--warn") : css("--accent")) }] },
+		options: { indexAxis: "y", plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.raw + "% (" + list[c.dataIndex].count + ")" } } }, scales: { x: { min: 0, max: 100 }, y: { ticks: { autoSkip: false, font: { size: 11 } } } } } });
+};
+
+// ---------- модерация ----------
+const MOD = {
+	reports: ["Жалобы", { a: "реклама", o: "оскорбление", x: "другое", c: "накрутка" }],
+	decisions: ["Решения модератора", { s: "блок образа", a: "блок автора", u: "разблок образа", v: "разблок автора", d: "жалобы ложные", n: "без решения", p: "убран из рейтинга", q: "возвращён", k: "оценки честные" }],
+	ideas: ["Письма", { i: "идея", b: "ошибка", o: "другое", e: "авто-ошибка", r: "пояснение к жалобе" }],
+	appeals: ["Обращения", { appeal: "обращение" }],
+	review: ["Разобрано", {}],
+};
+store.mod = store.mod && MOD[store.mod] ? store.mod : "reports";
+rangeOptions(document.getElementById("modRange"), () => renderers.moderation());
+renderers.moderation = () => {
+	const m = DATA.mod || {};
+	const total = key => Object.values(m[key] || {}).reduce((s, d) => s + Object.values(d).reduce((a, b) => a + b, 0), 0);
+	const k = document.getElementById("modKpis"); k.innerHTML = "";
+	kpi(k, "Жалоб всего", total("reports")); kpi(k, "Ждут разбора", DATA.waiting); kpi(k, "Решений модератора", total("decisions"));
+	kpi(k, "Писем", total("ideas")); kpi(k, "Обращений", total("appeals")); kpi(k, "Разобрано записей", total("review"));
+	const box = document.getElementById("modKind"); box.innerHTML = "";
+	Object.entries(MOD).forEach(([key, [t]]) => { const b = el("button", { className: "chip" }, t); b.setAttribute("aria-pressed", key === store.mod); b.onclick = () => { store.mod = key; save(); renderers.moderation(); }; box.append(b); });
+	const series = m[store.mod] || {};
+	let dates = Object.keys(series).sort();
+	dates = cut(dates, +document.getElementById("modRange").value);
+	const kinds = [...new Set(dates.flatMap(d => Object.keys(series[d])))].sort();
+	const names = MOD[store.mod][1]; const pal = palette();
+	draw("modChart", { type: "bar", data: { labels: dates, datasets: kinds.map((kd, i) => ({ label: names[kd] || kd, data: dates.map(d => series[d][kd] || 0), backgroundColor: pal[i % 10], stack: "m" })) },
+		options: { scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } } } } });
+};
+
+// ---------- кнопки ----------
+const usageWindow = document.getElementById("usageWindow");
+[...new Set((DATA.usage || []).map(u => u.name.split(" / ")[0]))].sort().forEach(w => usageWindow.append(el("option", { value: w }, w)));
+usageWindow.onchange = () => renderers.usage();
+renderers.usage = () => {
+	document.getElementById("usageHint").textContent = "Сумма по недельным отчётам игроков (" + fmt(DATA.usageReports || 0) + " отчётов). «Окно / кнопка», топ-40.";
+	const list = (DATA.usage || []).filter(u => !usageWindow.value || u.name.startsWith(usageWindow.value + " / ")).slice(0, 40);
+	draw("usageChart", { type: "bar", data: { labels: list.map(u => u.name), datasets: [{ label: "Нажатий", data: list.map(u => u.n), backgroundColor: css("--accent") }] },
+		options: { indexAxis: "y", plugins: { legend: { display: false } }, scales: { y: { ticks: { autoSkip: false, font: { size: 11 } } } } } });
+};
+
+// тема поменялась — перерисовать текущую вкладку другими цветами
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => openTab(store.tab || "overview"));
+openTab(TABS.some(t => t[0] === store.tab) ? store.tab : "overview");
+</script>
+</body>
+</html>

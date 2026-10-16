@@ -19,7 +19,7 @@ TH.SLOTS = {
 	{ id = 17, key = "SECONDARYHANDSLOT", hand = "SECONDARYHANDSLOT" },
 }
 
--- Строки карточки набора: слоты плюс левый наплечник (показывается, только если
+-- Строки карточки образа: слоты плюс левый наплечник (показывается, только если
 -- наплечники разные)
 TH.DETAIL_SLOTS = {}
 for _, slot in ipairs(TH.SLOTS) do
@@ -27,9 +27,13 @@ for _, slot in ipairs(TH.SLOTS) do
 	if slot.id == 3 then
 		TH.DETAIL_SLOTS[#TH.DETAIL_SLOTS + 1] = { id = 3, index = 2, slot = slot, label = "Лев. плечо" }
 	end
+	-- чары (иллюзия) на оружии — отдельной строкой под ним, если есть
+	if slot.id == 16 or slot.id == 17 then
+		TH.DETAIL_SLOTS[#TH.DETAIL_SLOTS + 1] = { id = slot.id, index = 3, slot = slot, label = "  Чары", illusion = true }
+	end
 end
 
--- Короткие подписи для карточки набора (полные — из игры, для подсказок)
+-- Короткие подписи для карточки образа (полные — из игры, для подсказок)
 local SHORT_LABELS = {
 	[4] = "Рубашка", [19] = "Накидка", [10] = "Кисти",
 	[16] = "Пр. рука", [17] = "Лев. рука",
@@ -136,6 +140,48 @@ local function JoinDifficulties(list)
 	return table.concat(list, ", ")
 end
 
+-- Игра не сообщает источник (жетоны комплектов, акции, магазин, события).
+-- Пробуем угадать: тот же облик у другой вещи с известным источником,
+-- комплект из коллекции, дополнение вещи.
+local function SetText(setID)
+	local si = C_TransmogSets and C_TransmogSets.GetSetInfo and C_TransmogSets.GetSetInfo(setID)
+	if not si or not si.name then return nil end
+	local extra = {}
+	if si.label and si.label ~= "" then extra[#extra + 1] = si.label end
+	if si.description and si.description ~= "" then extra[#extra + 1] = si.description end
+	return "«" .. si.name .. "»" .. (#extra > 0 and (" — " .. table.concat(extra, ", ")) or "")
+end
+
+function TH:GuessSource(d, info, sourceID)
+	-- тот же облик у другой вещи
+	local all = info.visualID and C_TransmogCollection.GetAllAppearanceSources
+		and C_TransmogCollection.GetAllAppearanceSources(info.visualID)
+	for _, other in ipairs(all or {}) do
+		local oi = other ~= sourceID and C_TransmogCollection.GetSourceInfo(other)
+		local text = oi and oi.sourceType and _G["TRANSMOG_SOURCE_" .. oi.sourceType]
+		if text then
+			d.typeText, d.sourceType = text, oi.sourceType
+			local name = oi.name ~= "" and oi.name or (oi.itemID and C_Item.GetItemNameByID(oi.itemID))
+			d.where = "Такой же облик у вещи " .. (name and ("«" .. name .. "»") or "другой вещи") .. " — источник: " .. text .. "."
+			return
+		end
+	end
+	-- комплект (классовые наборы рейдов выдаются за жетоны — источника у вещей нет)
+	local sets = C_TransmogSets and C_TransmogSets.GetSetsContainingSourceID
+		and C_TransmogSets.GetSetsContainingSourceID(sourceID)
+	local text = sets and sets[1] and SetText(sets[1])
+	if text then
+		d.typeText, d.fromSet = "Комплект", true
+		d.where = "Вещь из комплекта " .. text .. ". Подробности — в коллекции, вкладка «Комплекты»."
+		return
+	end
+	d.typeText = "Другое"
+	local exp = info.itemID and C_Item.GetItemInfo and select(15, C_Item.GetItemInfo(info.itemID))
+	local expName = exp and _G["EXPANSION_NAME" .. exp]
+	d.where = "Игра не сообщает, откуда эта вещь (обычно акции, магазин или события)."
+		.. (expName and (" Дополнение: " .. expName .. ".") or "")
+end
+
 -- Возвращает таблицу:
 -- name, quality, itemID, icon, typeText, where, collected, hidden, pending
 function TH:GetSourceDetails(sourceID)
@@ -170,11 +216,13 @@ function TH:GetSourceDetails(sourceID)
 		d.collected = true
 	else
 		d.typeText = info.sourceType and _G["TRANSMOG_SOURCE_" .. info.sourceType]
-		if not d.typeText then
-			-- Игра не сообщает источник: обычно акции, магазин, события
-			d.typeText = "Другое"
-			d.where = "Игра не сообщает, откуда эта вещь (обычно акции, магазин или события)."
+		-- артефактное оружие (Легион): игра не даёт источника, но качество «Артефакт»
+		if not d.typeText and info.quality == 6 then
+			d.typeText = "Артефакт"
+			d.artifact = true
+			d.where = "Артефактное оружие Легиона: облики открываются заданиями, достижениями и прокачкой артефакта."
 		end
+		if not d.typeText then self:GuessSource(d, info, sourceID) end
 		d.collected = info.isCollected
 		-- Облик мог быть собран с другой вещи
 		if not d.collected and C_TransmogCollection.GetAppearanceInfoBySource then
@@ -214,7 +262,31 @@ function TH:GetSourceDetails(sourceID)
 	return d
 end
 
--- Сколько вещей набора уже есть у игрока.
+-- Чары на оружии (иллюзия): название, иконка, собраны ли, откуда
+local illusions = {}
+function TH:GetIllusionDetails(illusionID)
+	if not illusionID or illusionID == 0 then return nil end
+	if illusions[illusionID] then return illusions[illusionID] end
+	local C = C_TransmogCollection
+	local info = C.GetIllusionInfo and C.GetIllusionInfo(illusionID)
+	local name, _, sourceText
+	if C.GetIllusionStrings then name, _, sourceText = C.GetIllusionStrings(illusionID) end
+	if not info and not name then return { pending = true, name = "Чары #" .. illusionID } end
+	local d = {
+		illusion = true,
+		name = (name and name ~= "") and name or ("Чары #" .. illusionID),
+		icon = info and info.icon or 135913,
+		collected = info and info.isCollected or false,
+		hidden = info and info.isHideVisual or false,
+		quality = 4,
+		typeText = "Чары для оружия (иллюзия)",
+		where = (sourceText and sourceText ~= "") and sourceText:gsub("|n", "\n") or "Игра не сообщает, откуда эти чары.",
+	}
+	illusions[illusionID] = d
+	return d
+end
+
+-- Сколько вещей образа уже есть у игрока.
 function TH:GetCollectedStats(set)
 	local have, total = 0, 0
 	for _, it in pairs(set.items or {}) do
@@ -229,4 +301,49 @@ function TH:GetCollectedStats(set)
 		end
 	end
 	return have, total
+end
+
+---------------------------------------------------------------------------
+-- Предзагрузка: при открытии окна просим у игры данные о вещах своих образов и
+-- верха чартов, порциями по кадрам. Это только сведения о предметах (кэш игры,
+-- килобайты) — модели вещей игра грузит сама, когда рисует их.
+---------------------------------------------------------------------------
+local PREFETCH_TOP, PREFETCH_PER_TICK = 20, 15
+local prefetched = {} -- [sourceID] = true — уже просили в этом сеансе
+
+function TH:PrefetchSets(sets)
+	local queue = {}
+	for _, set in ipairs(sets) do
+		for _, it in pairs(set.items or {}) do
+			local id = it[1]
+			if id and not prefetched[id] then
+				prefetched[id] = true
+				queue[#queue + 1] = id
+			end
+		end
+	end
+	local i = 1
+	local function Tick()
+		for _ = 1, PREFETCH_PER_TICK do
+			local id = queue[i]
+			if not id then return end
+			i = i + 1
+			local info = C_TransmogCollection.GetSourceInfo(id)
+			if info and info.itemID and C_Item.RequestLoadItemDataByID then C_Item.RequestLoadItemDataByID(info.itemID) end
+		end
+		C_Timer.After(0, Tick)
+	end
+	if #queue > 0 then Tick() end
+	return #queue
+end
+
+-- Свои образы и верх «Лучших» и «В тренде»
+function TH:PrefetchLikelySets()
+	local sets = {}
+	for _, set in pairs(self.db.mySets) do sets[#sets + 1] = set end
+	for _, view in ipairs({ "top", "trending" }) do
+		local list = self:QuerySets(view, {})
+		for n = 1, math.min(PREFETCH_TOP, #list) do sets[#sets + 1] = list[n] end
+	end
+	return self:PrefetchSets(sets)
 end

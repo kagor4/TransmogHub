@@ -2,21 +2,42 @@
 ## Title: Transmog Hub
 ## Notes: Save your transmog, try outfits on any race and vote for the best looks.
 ## Notes-ruRU: Делитесь трансмогом, примеряйте чужие образы и голосуйте за лучшие.
-## Version: 0.5.2
+## Version: @project-version@
 ## SavedVariables: TransmogHubDB
+## OptionalDeps: !BugGrabber, BugGrabber, BugSack
 ## IconTexture: Interface\Icons\INV_Chest_Cloth_17
 ## AddonCompartmentFunc: TransmogHub_OnAddonCompartmentClick
 ## X-Curse-Project-ID: 1747053
 
-# Подборки наборов, которые приходят с обновлением аддона
+# Подборки образов, которые приходят с обновлением аддона
 Data\Bundled.lua
+Data\Blocklist.lua
+Data\Charts.lua
+Data\Secrets.lua
+Data\TagIcons.lua
 
 Core.lua
+Moderation.lua
 Network.lua
 Appearance.lua
 Preview.lua
+TagPicker.lua
 UI.lua
 SaveDialog.lua
+IconPicker.lua
+Secret.lua
 Achievements.lua
+Charts.lua
+Profile.lua
+Help.lua
+Tour.lua
+Standing.lua
+Ideas.lua
 Wowhead.lua
 Minimap.lua
+Skin.lua
+Usage.lua
+Toasts.lua
+Follow.lua
+Fonts.lua
+Settings.lua
