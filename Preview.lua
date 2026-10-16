@@ -52,10 +52,66 @@ end
 local Preview = {}
 Preview.__index = Preview
 
+TH.previews = {}
 function TH:CreatePreview(parent)
 	local scene = CreateFrame("ModelScene", nil, parent, "PanningModelSceneMixinTemplate")
 	scene:TransitionToModelSceneID(SCENE_ID, CAMERA_TRANSITION_TYPE_IMMEDIATE, CAMERA_MODIFICATION_TYPE_DISCARD, true)
-	return setmetatable({ scene = scene }, Preview)
+	local preview = setmetatable({ scene = scene, parent = parent }, Preview)
+	self.previews[#self.previews + 1] = preview
+	-- двойной клик по модели — вернуть камеру как была (если отдалили колесом)
+	local lastClick = 0
+	scene:HookScript("OnMouseUp", function(_, button)
+		if button ~= "LeftButton" then return end
+		local now = GetTime()
+		if now - lastClick < 0.35 then preview:ResetCamera() end
+		lastClick = now
+	end)
+	return preview
+end
+
+-- Камера сцены — в исходное положение (приближение, поворот). Модель и вещи остаются:
+-- сцена переиспользует актёра с тем же тегом.
+function Preview:ResetCamera()
+	self.scene:TransitionToModelSceneID(SCENE_ID, CAMERA_TRANSITION_TYPE_IMMEDIATE, CAMERA_MODIFICATION_TYPE_DISCARD, true)
+end
+
+---------------------------------------------------------------------------
+-- Две 3D-модели из разных окон рисуются в общем пространстве глубины и режут
+-- друг друга, если окна наложить. Поэтому, пока окно трансмогрификации игры
+-- перекрывает нашу модель, свою прячем и пишем, почему.
+---------------------------------------------------------------------------
+local function ScreenRect(f)
+	local l, b, w, h = f:GetRect()
+	if not l then return end
+	local s = f:GetEffectiveScale()
+	return l * s, b * s, (l + w) * s, (b + h) * s
+end
+
+local function Overlaps(a, b)
+	local al, ab, ar, at = ScreenRect(a)
+	local bl, bb, br, bt = ScreenRect(b)
+	if not (al and bl) then return false end
+	return al < br and bl < ar and ab < bt and bb < at
+end
+
+function TH:UpdateModelOverlap()
+	local tf = _G.TransmogFrame
+	local blocking = tf and tf:IsShown() and tf
+	for _, preview in ipairs(self.previews) do
+		local hide = blocking and preview.parent:IsVisible() and Overlaps(preview.parent, blocking) or false
+		if hide ~= (preview.overlapHidden or false) then
+			preview.overlapHidden = hide
+			preview.scene:SetShown(not hide)
+			if not preview.overlapHint then
+				preview.overlapHint = preview.parent:CreateFontString(nil, "OVERLAY", "GameFontDisable")
+				preview.overlapHint:SetPoint("CENTER")
+				preview.overlapHint:SetWidth(220)
+				preview.overlapHint:SetText("Окно трансмогрификации перекрывает модель — отодвиньте окна друг от друга.")
+			end
+			preview.overlapHint:SetShown(hide)
+			if not hide then preview:Refresh() end
+		end
+	end
 end
 
 -- Загружает модель игрока (raceID = nil — своя раса) и вызывает onLoaded(actor).
@@ -94,13 +150,44 @@ function Preview:SetItems(items)
 	end
 end
 
+-- Пока модель грузится, она без одежды: прячем её и показываем, когда вещи надеты
+-- (или через секунду, если игра долго отдаёт вещи)
+-- Прячем всю сцену, а не модель: загрузка модели сбрасывает её прозрачность.
+-- Сцена остаётся показанной (alpha 0), поэтому модель в ней загружается как обычно.
+function Preview:SetHidden(hidden, fade)
+	if not hidden and fade and UIFrameFadeIn and self.scene:GetAlpha() < 1 then
+		UIFrameFadeIn(self.scene, 0.15, self.scene:GetAlpha(), 1)
+		return
+	end
+	if UIFrameFadeRemoveFrame then UIFrameFadeRemoveFrame(self.scene) end
+	self.scene:SetAlpha(hidden and 0 or 1)
+end
+
+-- Окно снова показали: если модель уже в этом образе, заново её не собираем
+-- (сборка с нуля — это персонаж без одежды, пока игра не отдаст вещи)
+function Preview:Refresh()
+	local actor = self.scene:GetPlayerActor()
+	if actor and actor:IsLoaded() and self.items and self.shownItems == self.items and self.shownRace == self.raceID then
+		-- на всякий случай надеваем вещи ещё раз, пока модель скрыта: игра могла сбросить её, пока окно было закрыто
+		self.loadToken = (self.loadToken or 0) + 1
+		local token = self.loadToken
+		self:SetHidden(true)
+		self:ApplyWithRetry(token)
+		C_Timer.After(1, function() if token == self.loadToken then self:SetHidden(false) end end)
+		return
+	end
+	self:Reload()
+end
+
 function Preview:Reload()
 	self.loadToken = (self.loadToken or 0) + 1
 	local token = self.loadToken
 	local autoDress = self.items == nil
+	if not autoDress then self:SetHidden(true) end
 	self:LoadPlayer(self.raceID, autoDress, function() self:ApplyWithRetry(token) end)
 	-- Запасной путь, если колбэк загрузки не придёт
 	C_Timer.After(0.2, function() self:ApplyWithRetry(token) end)
+	C_Timer.After(1, function() if token == self.loadToken then self:SetHidden(false) end end)
 end
 
 -- Модель другой расы и вещи грузятся не сразу: пока игра отвечает
@@ -110,7 +197,16 @@ function Preview:ApplyWithRetry(token, attempt)
 	attempt = attempt or 1
 	local actor = self.scene:GetPlayerActor()
 	if not actor then return end
-	local done = actor:IsLoaded() and self:ApplyItems(actor)
+	local loaded = actor:IsLoaded()
+	local done = loaded and self:ApplyItems(actor)
+	-- все вещи надеты — показываем модель чуть позже, когда игра их нарисует;
+	-- если часть вещей грузится долго, модель откроет таймер в Reload через секунду
+	-- вещи надеты, но их модели игра дорисовывает ещё долю секунды — показываем
+	-- чуть позже и плавно, иначе мелькает персонаж в белье
+	if done then
+		self.shownItems, self.shownRace = self.items, self.raceID
+		C_Timer.After(0.3, function() if token == self.loadToken then self:SetHidden(false, true) end end)
+	end
 	if not done and attempt < 20 then
 		C_Timer.After(0.15, function() self:ApplyWithRetry(token, attempt + 1) end)
 	end
@@ -143,7 +239,8 @@ function Preview:CaptureDisplayed(callback)
 	-- Пока идёт снимок, SetItems/SetRace только запоминают новое состояние
 	self.capture = { items = self.items, raceID = self.raceID }
 	self.items, self.raceID = nil, nil
-	self.loadToken = (self.loadToken or 0) + 1 -- останавливает повторы надевания старого набора
+	self.loadToken = (self.loadToken or 0) + 1 -- останавливает повторы надевания старого образа
+	self:SetHidden(false) -- снимок — на видимой модели в своей одежде
 
 	local done, loaded = false, false
 	local function finish(items)
@@ -155,7 +252,7 @@ function Preview:CaptureDisplayed(callback)
 		callback(items)
 	end
 	-- Читаем только после загрузки новой модели: до этого на актёре
-	-- ещё надет набор, который был в примерке.
+	-- ещё надет образ, который был в примерке.
 	local function try(attempt)
 		if done or not loaded then return end
 		local actor = self.scene:GetPlayerActor()

@@ -10,7 +10,7 @@ local TH = ns.TH
 -- (выбирается случайной задержкой) присылает недостающее всему каналу.
 --
 -- Игра гарантирует имя отправителя, поэтому:
---   * снять набор с публикации может только его автор;
+--   * снять образ с публикации может только его автор;
 --   * прямой голос — «один персонаж — один голос». Голоса, пересланные
 --     при синхронизации, проверить нельзя; это осознанное допущение.
 
@@ -24,8 +24,8 @@ local PROTOCOL = 1
 local MAX_MESSAGE = 250          -- лимит игры 255 байт
 local CHUNK = MAX_MESSAGE - 3    -- тип + номер сообщения
 local TOKENS_MAX, TOKEN_RATE = 4, 1.0 -- не чаще ~1 сообщения в секунду
-local SYNC_LIMIT = 100           -- сколько наборов отдаём на один запрос
-local MAX_SETS = 3000            -- сколько наборов храним
+local SYNC_LIMIT = 100           -- сколько образов отдаём на один запрос
+local MAX_SETS = 3000            -- сколько образов храним
 local PEER_TIMEOUT = 15 * 60     -- игрок «в сети», если писал за 15 минут
 local JOIN_DELAY = 8             -- общие каналы игры должны занять номера первыми
 
@@ -48,6 +48,8 @@ local function Enc(n)
 	return neg and ("-" .. out) or out
 end
 
+Net.Enc = Enc -- для тестов
+
 local function Dec(s)
 	if not s or s == "" then return nil end
 	return tonumber(s, 36)
@@ -69,7 +71,7 @@ local function Split(s, sep)
 	return out
 end
 
--- Набор -> строка. Поля через табуляцию.
+-- Образ -> строка. Поля через табуляцию.
 function Net.EncodeSet(set)
 	local items = {}
 	for slotID, it in pairs(set.items or {}) do
@@ -87,7 +89,14 @@ function Net.EncodeSet(set)
 		Enc(set.created or 0),
 		table.concat(set.tags or {}, ","),
 		table.concat(items, ";"),
+		Enc(set.icon or 0), -- иконка (fileID); старые версии это поле не читают
 	}, "\t")
+end
+
+-- Иконка образа — номер файла игры (fileID)
+local function ValidIcon(n)
+	n = tonumber(n)
+	if n and n > 0 and n < 2 ^ 31 and n == math.floor(n) then return n end
 end
 
 function Net.DecodeSet(s)
@@ -103,7 +112,8 @@ function Net.DecodeSet(s)
 	end
 	local tags = {}
 	for tag in f[9]:gmatch("[^,]+") do
-		if TH.TAG_LABEL[tag] then tags[#tags + 1] = tag end
+		-- неизвестные теги храним: они могут быть из более новой версии
+		if #tags < 5 and #tag <= 24 and tag:match("^[%w_]+$") then tags[#tags + 1] = tag end
 	end
 	return {
 		id = f[1],
@@ -116,6 +126,7 @@ function Net.DecodeSet(s)
 		created = Dec(f[8]) or 0,
 		tags = tags,
 		items = items,
+		icon = ValidIcon(Dec(f[11])),
 	}
 end
 
@@ -146,6 +157,7 @@ Net.Now = Now
 ---------------------------------------------------------------------------
 Net.channelId = 0
 Net.peers = {}
+Net.voteStamp = {} -- [setId] = счётчик изменений голосов (для пересчёта только изменённых)
 
 local function HideChannelFromChat()
 	for i = 1, (NUM_CHAT_WINDOWS or 10) do
@@ -190,40 +202,196 @@ function Net:IsLocked()
 end
 
 ---------------------------------------------------------------------------
+-- Адресаты
+--   CHANNEL — скрытый канал своего сервера
+--   GROUP   — группа/рейд, если в ней есть игроки с других серверов
+--   BNET    — друг Battle.net в WoW (любой сервер и фракция), target = gameAccountID
+-- Пересылка между ними связывает серверы: игрок с друзьями на других
+-- серверах работает «мостом». Повторы отсекаются по id образа.
+---------------------------------------------------------------------------
+local CHANNEL = { kind = "CHANNEL" }
+local GROUP = { kind = "GROUP" }
+local function BNET(id) return { kind = "BNET", target = id } end
+
+local MAX_RELAY_QUEUE = 200 -- если очередь длиннее, пересылку пропускаем: догонит синхронизация
+
+local function GroupChatType()
+	if IsInGroup(LE_PARTY_CATEGORY_INSTANCE) then return "INSTANCE_CHAT" end
+	if IsInRaid() then return "RAID" end
+	if IsInGroup() then return "PARTY" end
+end
+
+-- Есть ли в группе игроки с других серверов (свой сервер и так слышит канал)
+function Net:GroupHasOtherRealm()
+	if not IsInGroup() then return false end
+	local raid = IsInRaid()
+	for i = 1, GetNumGroupMembers() do
+		local unit = raid and ("raid" .. i) or ("party" .. i)
+		local ok, _, realm = pcall(UnitName, unit)
+		if ok and type(realm) == "string" and realm ~= "" then return true end
+	end
+	return false
+end
+
+---------------------------------------------------------------------------
+-- Друзья Battle.net с аддоном
+---------------------------------------------------------------------------
+Net.bnPeers = {}   -- [gameAccountID] = { name = "Имя-Сервер", t = время }
+local bnGreeted = {} -- кому уже сказали «я в сети» в этой сессии
+local bnSynced = {}  -- с кем уже синхронизировались в этой сессии
+
+local function NormalizeRealm(realm)
+	return (realm or ""):gsub("[%s%-']", "")
+end
+
+local function BNetName(gameAccountID)
+	local info = C_BattleNet.GetGameAccountInfoByID(gameAccountID)
+	if not info or not info.characterName or info.characterName == "" then return nil end
+	return info.characterName .. "-" .. NormalizeRealm(info.realmName)
+end
+
+-- Друзья, которые сейчас в WoW Retail того же региона
+local function OnlineWoWFriends()
+	local list = {}
+	if not (BNGetNumFriends and C_BattleNet.GetFriendNumGameAccounts) then return list end
+	local wow = BNET_CLIENT_WOW or "WoW"
+	for i = 1, BNGetNumFriends() do
+		for j = 1, C_BattleNet.GetFriendNumGameAccounts(i) do
+			local info = C_BattleNet.GetFriendGameAccountInfo(i, j)
+			if info and info.isOnline and info.clientProgram == wow
+				and info.wowProjectID == (WOW_PROJECT_MAINLINE or 1) and info.isInCurrentRegion then
+				list[#list + 1] = info.gameAccountID
+			end
+		end
+	end
+	return list
+end
+
+-- Запоминаем персонажей друзей Battle.net (для вкладки «Друзья»): друг может
+-- сейчас играть другим персонажем, а образы публиковать с прошлого.
+function Net:RememberFriendChars()
+	if not (BNGetNumFriends and C_BattleNet.GetFriendNumGameAccounts) then return end
+	local chars, wow = TH.db.friendChars, BNET_CLIENT_WOW or "WoW"
+	for i = 1, BNGetNumFriends() do
+		for j = 1, C_BattleNet.GetFriendNumGameAccounts(i) do
+			local info = C_BattleNet.GetFriendGameAccountInfo(i, j)
+			if info and info.clientProgram == wow and info.characterName and info.characterName ~= ""
+				and info.realmName and info.realmName ~= "" then
+				chars[info.characterName .. "-" .. NormalizeRealm(info.realmName)] = Now()
+			end
+		end
+	end
+end
+
+function Net:GreetFriends()
+	self:RememberFriendChars()
+	for _, id in ipairs(OnlineWoWFriends()) do
+		if not bnGreeted[id] then
+			bnGreeted[id] = true
+			self:Send("H" .. PROTOCOL, BNET(id))
+			self:SendMyChars(BNET(id))
+		end
+	end
+end
+
+-- h<Имя-Сервер>,<Имя-Сервер>,… — все свои персонажи, только другу Battle.net: во вкладке
+-- «Друзья» у него будут образы и тех твинков, которыми мы при нём не заходили
+function Net:SendMyChars(dest)
+	local list = {}
+	for name in pairs(TH.db.myChars) do list[#list + 1] = name end
+	table.sort(list)
+	if #list > 0 then self:Send("h" .. table.concat(list, ","), dest) end
+end
+
+function Net:BNetPeerCount()
+	local now, n = Now(), 0
+	for _, peer in pairs(self.bnPeers) do
+		if now - peer.t < PEER_TIMEOUT then n = n + 1 end
+	end
+	return n
+end
+
+---------------------------------------------------------------------------
 -- Очередь отправки с ограничением скорости
 ---------------------------------------------------------------------------
-local queue = {}
+local queue = {}   -- { text, kind, target }
 local tokens = TOKENS_MAX
 local lastTick = 0
 local msgCounter = 0
 
+local RESULT = Enum.SendAddonMessageResult or {}
 local THROTTLED = {}
-if Enum.SendAddonMessageResult then
-	THROTTLED[Enum.SendAddonMessageResult.AddonMessageThrottle] = true
-	THROTTLED[Enum.SendAddonMessageResult.ChannelThrottle] = true
-	THROTTLED[Enum.SendAddonMessageResult.AddOnMessageLockdown] = true
+for _, key in ipairs({ "AddonMessageThrottle", "ChannelThrottle", "AddOnMessageLockdown" }) do
+	if RESULT[key] then THROTTLED[RESULT[key]] = true end
+end
+
+local RESULT_NAME = {}
+for name, v in pairs(RESULT) do RESULT_NAME[v] = name end
+local GIVE_UP = 40          -- столько раз подряд «занято» — сообщение бросаем, догонит синхронизация
+local blockedUntil = {}     -- [вид адресата] = время: этот путь занят, шлём другим
+Net.sendStats = { dropped = 0 } -- для строки состояния: почему очередь стоит
+
+-- Отправить одно сообщение. true — убрать из очереди, false — подождать
+local function Deliver(entry)
+	local result
+	if entry.kind == "CHANNEL" then
+		if not Net:IsConnected() then return false end
+		result = C_ChatInfo.SendAddonMessage(PREFIX, entry.text, "CHANNEL", tostring(Net.channelId))
+	elseif entry.kind == "GROUP" then
+		local chatType = GroupChatType()
+		if not chatType then return true end -- группы уже нет
+		result = C_ChatInfo.SendAddonMessage(PREFIX, entry.text, chatType)
+	else
+		result = C_BattleNet.SendGameData(entry.target, PREFIX, entry.text)
+	end
+	if THROTTLED[result] then
+		entry.tries = (entry.tries or 0) + 1
+		Net.sendStats.reason = RESULT_NAME[result] or tostring(result)
+		Net.sendStats.since = Net.sendStats.since or GetTime()
+		-- этот путь занят: пробуем позже (дольше с каждой попыткой), другие пути не ждут
+		blockedUntil[entry.kind] = GetTime() + math.min(30, entry.tries)
+		if entry.tries >= GIVE_UP then
+			Net.sendStats.dropped = Net.sendStats.dropped + 1
+			return true
+		end
+		return false
+	end
+	Net.sendStats.reason, Net.sendStats.since = nil, nil
+	return true -- отправлено или адресат недоступен: в обоих случаях дальше
 end
 
 local function Pump()
 	local now = GetTime()
 	tokens = math.min(TOKENS_MAX, tokens + (now - lastTick) * TOKEN_RATE)
 	lastTick = now
-	if #queue == 0 or tokens < 1 or not Net:IsConnected() or Net:IsLocked() then return end
-
-	local msg = queue[1]
-	local result = C_ChatInfo.SendAddonMessage(PREFIX, msg, "CHANNEL", tostring(Net.channelId))
-	if THROTTLED[result] then
-		tokens = 0
-		return
+	if #queue == 0 or tokens < 1 or Net:IsLocked() then return end
+	-- первое сообщение, которое можно отправить сейчас: канал может ещё не подключиться,
+	-- а занятый путь (канал, группа, Battle.net) не держит остальные
+	for i, entry in ipairs(queue) do
+		if (entry.kind ~= "CHANNEL" or Net:IsConnected()) and (blockedUntil[entry.kind] or 0) <= now then
+			if Deliver(entry) then
+				tremove(queue, i)
+				tokens = tokens - 1
+			end
+			return
+		end
 	end
-	tremove(queue, 1)
-	tokens = tokens - 1
 end
 
--- Ставит в очередь сообщение любой длины, разрезая его на части
-function Net:Send(body)
+-- Очередь стоит дольше 20 секунд: причина от игры (например, ChannelThrottle)
+function Net:SendStallReason()
+	local st = self.sendStats
+	if st.reason and st.since and GetTime() - st.since > 20 then return st.reason end
+end
+
+local function Enqueue(text, dest)
+	queue[#queue + 1] = { text = text, kind = dest.kind, target = dest.target }
+end
+
+-- Сообщение одному адресату, с нарезкой на части
+local function SendTo(body, dest)
 	if #body <= MAX_MESSAGE - 1 then
-		queue[#queue + 1] = "S" .. body
+		Enqueue("S" .. body, dest)
 		return
 	end
 	msgCounter = (msgCounter + 1) % 1296
@@ -234,9 +402,25 @@ function Net:Send(body)
 		local piece = body:sub(pos, pos + CHUNK - 1)
 		pos = pos + CHUNK
 		local kind = first and "B" or (pos > #body and "E" or "C")
-		queue[#queue + 1] = kind .. id .. piece
+		Enqueue(kind .. id .. piece, dest)
 		first = false
 	end
+end
+
+-- Отправить адресату dest или всем (dest = nil). except — откуда пришло:
+-- туда не пересылаем.
+function Net:Send(body, dest, except)
+	if dest then return SendTo(body, dest) end
+	if not (except and except.kind == "CHANNEL") then SendTo(body, CHANNEL) end
+	if not (except and except.kind == "GROUP") and self:GroupHasOtherRealm() then SendTo(body, GROUP) end
+	for id in pairs(self.bnPeers) do
+		if not (except and except.kind == "BNET" and except.target == id) then SendTo(body, BNET(id)) end
+	end
+end
+
+-- Переслать полученное дальше, если очередь не перегружена
+function Net:Relay(body, origin)
+	if #queue < MAX_RELAY_QUEUE then self:Send(body, nil, origin) end
 end
 
 function Net:QueueLength()
@@ -246,7 +430,7 @@ end
 ---------------------------------------------------------------------------
 -- Приём и сборка частей
 ---------------------------------------------------------------------------
-local partial = {} -- [sender..id] = { parts, t }
+local partial = {} -- [отправитель..id] = { части, t }
 
 local function Assemble(sender, text)
 	local kind = text:sub(1, 1)
@@ -281,20 +465,29 @@ end
 
 function Net:StoreSet(set, sender)
 	local db = DB()
+	set.name = TH.FormatSetName(set.name)
 	if db.tombstones[set.id] then return false end
 	if db.sets[set.id] then return false end
+	-- неприличное название и заблокированных авторов не храним и не пересылаем
+	if not TH:IsSetTextAllowed(set) or TH:IsBlocked(set) or TH:IsBanned(set.author) then return false end
 	set.via = sender
 	set.verified = (sender == set.author) or nil
 	set.received = Now()
 	db.sets[set.id] = set
 	self.dirty = true
+	if TH.OnSetStored then TH:OnSetStored(set) end
 	return true
 end
 
+-- Голос; звёзд 0 — голос снят (наказание за занижение): у всех удаляется, а отметка
+-- о снятии не даёт старой копии голоса вернуться при синхронизации
 function Net:StoreVote(setId, voter, stars, t)
+	if TH:IsBanned(voter) then return false end -- изгнанные не голосуют
 	stars = tonumber(stars)
-	if not stars or stars < 1 or stars > 5 then return false end
+	if not stars or stars < 0 or stars > 5 then return false end
 	local db = DB()
+	local retracted = db.voteRetracts[setId] and db.voteRetracts[setId][voter]
+	if retracted and retracted >= t then return false end
 	local votes = db.votes[setId]
 	if not votes then
 		votes = {}
@@ -302,22 +495,405 @@ function Net:StoreVote(setId, voter, stars, t)
 	end
 	local old = votes[voter]
 	if old and old[2] >= t then return false end
+	if stars == 0 then
+		db.voteRetracts[setId] = db.voteRetracts[setId] or {}
+		db.voteRetracts[setId][voter] = t
+		votes[voter] = nil
+		self.voteStamp[setId] = (self.voteStamp[setId] or 0) + 1
+		self.voteCount = (self.voteCount or 0) + 1
+		self.dirty = true
+		return true
+	end
 	votes[voter] = { stars, t }
+	self.voteStamp[setId] = (self.voteStamp[setId] or 0) + 1 -- рейтинг этого образа пересчитать
+	self.voteCount = (self.voteCount or 0) + 1 -- любые голоса изменились
+	self.dirty = true
+	if not old and TH.OnVoteStored then TH:OnVoteStored(setId, voter, stars, t) end
+	return true
+end
+
+-- Жалоба: один персонаж — одна жалоба на образ, новее заменяет старую
+function Net:StoreReport(setId, reporter, reason, t)
+	if TH:IsBanned(reporter) then return false end
+	-- «u» — жалоба отозвана (её автором): запись остаётся, чтобы старая копия не вернулась
+	if not TH.REPORT_LABEL[reason] and reason ~= "u" then return false end
+	local db = DB()
+	local list = db.reports[setId]
+	if not list then
+		list = {}
+		db.reports[setId] = list
+	end
+	local old = list[reporter]
+	if old and old[2] >= t then return false end
+	list[reporter] = { reason, t }
+	TH:LogReport(setId, reporter, reason, t)
 	self.dirty = true
 	return true
+end
+
+-- Избранное: { 1 или 0, время } от каждого игрока; новее заменяет старое
+function Net:StoreFav(setId, name, on, t)
+	if TH:IsBanned(name) then return false end
+	on = tonumber(on)
+	if not (setId and name and t) or (on ~= 0 and on ~= 1) then return false end
+	local favs = DB().favs
+	local list = favs[setId]
+	if not list then
+		list = {}
+		favs[setId] = list
+	end
+	local old = list[name]
+	if old and (old[2] > t or (old[2] == t and old[1] >= on)) then return false end
+	list[name] = { on, t }
+	self.dirty = true
+	if on == 1 and not (old and old[1] == 1) and TH.OnFavStored then TH:OnFavStored(setId, name, t) end
+	return true
+end
+
+-- Подписки: [на кого][кто] = { 1 или 0, время }; новее заменяет старое
+function Net:StoreFollow(target, name, on, t)
+	if TH:IsBanned(name) then return false end
+	on = tonumber(on)
+	if not (target and name and t) or (on ~= 0 and on ~= 1) or target == name then return false end
+	if #target > 64 or target:find("[,;\t]") then return false end
+	local follows = DB().follows
+	local list = follows[target]
+	if not list then
+		list = {}
+		follows[target] = list
+	end
+	local old = list[name]
+	if old and (old[2] > t or (old[2] == t and old[1] >= on)) then return false end
+	list[name] = { on, t }
+	self.followStamp = (self.followStamp or 0) + 1
+	if TH.OnFollowStored then TH:OnFollowStored(target, name, on, t) end
+	return true
+end
+
+function Net:SendFollow(target, on)
+	local old = DB().follows[target] and DB().follows[target][Net.Me()]
+	local t = math.max(Now(), old and old[2] + 1 or 0)
+	self:StoreFollow(target, Net.Me(), on, t)
+	self:Send("f" .. target .. "\t" .. on .. "\t" .. Enc(t))
+end
+
+-- Оспоренные теги образа: [образ][тег][игрок] = { 1 или 0, время }; новее заменяет старое
+function Net:StoreTagFlag(setId, name, tag, on, t)
+	if TH:IsBanned(name) then return false end
+	on = tonumber(on)
+	if not (setId and name and tag and t) or (on ~= 0 and on ~= 1) or not tag:match("^[%w_]+$") or #tag > 40 then
+		return false
+	end
+	local all = DB().tagFlags
+	all[setId] = all[setId] or {}
+	local list = all[setId][tag]
+	if not list then
+		list = {}
+		all[setId][tag] = list
+	end
+	local old = list[name]
+	if old and (old[2] > t or (old[2] == t and old[1] >= on)) then return false end
+	list[name] = { on, t }
+	self.dirty = true
+	return true
+end
+
+function Net:SendTagFlag(setId, tag, on)
+	local mine = DB().tagFlags[setId] and DB().tagFlags[setId][tag] and DB().tagFlags[setId][tag][Net.Me()]
+	local t = math.max(Now(), mine and mine[2] + 1 or 0)
+	self:StoreTagFlag(setId, Net.Me(), tag, on, t)
+	self:Send("T" .. setId .. "\t" .. tag .. "\t" .. on .. "\t" .. Enc(t))
+end
+
+function Net:SendFav(setId, on)
+	-- время растёт, даже если отметку сняли в ту же секунду
+	local old = DB().favs[setId] and DB().favs[setId][Net.Me()]
+	local t = math.max(Now(), old and old[2] + 1 or 0)
+	self:StoreFav(setId, Net.Me(), on, t)
+	self:Send("F" .. setId .. "\t" .. on .. "\t" .. Enc(t))
+end
+
+-- Оспаривание решения: от игрока хранится последнее обращение. Принимаем и от
+-- забаненных — иначе бан было бы не оспорить.
+local APPEAL_MAX = 300 -- байт текста
+function Net:StoreAppeal(name, t, text)
+	if not (name and t and text) or text == "" then return false end
+	text = Clean(text, APPEAL_MAX)
+	local appeals = DB().appeals
+	local old = appeals[name]
+	if old and old[1] >= t then return false end
+	appeals[name] = { t, text }
+	TH:LogAppeal(name, t, text)
+	return true
+end
+
+function Net:SendAppeal(text)
+	local t = Now()
+	text = Clean(text, APPEAL_MAX)
+	self:StoreAppeal(Net.Me(), t, text)
+	self:Send("J" .. Enc(t) .. "\t" .. text)
+end
+
+-- Предложения разработчику: идея, ошибка или другое; e — автоматический отчёт об ошибке Lua в аддоне
+-- r — пояснение к жалобе «Другое»: «[id образа] текст»
+-- u — статистика нажатий на кнопки (раз в неделю, хранится отдельно от писем)
+local IDEA_KINDS = { i = true, b = true, o = true, e = true, r = true, u = true }
+local USAGE_TTL, MAX_USAGE = 14 * 86400, 2000
+local MAX_IDEAS = 500
+function Net:StoreIdea(name, t, kind, text)
+	if not (name and t and IDEA_KINDS[kind] and text) or text == "" or TH:IsBanned(name) then return false end
+	local ideas = kind == "u" and DB().usage or DB().ideas
+	local key = name .. "#" .. t
+	if ideas[key] then return false end
+	text = Clean(text, APPEAL_MAX)
+	if kind == "u" then
+		if Now() - t > USAGE_TTL then return false end
+		ideas[key] = { name, t, kind, text }
+		if TH.LogUsage then TH:LogUsage(t, text) end
+		return true
+	end
+	ideas[key] = { name, t, kind, text }
+	TH:LogIdea(name, t, kind, text)
+	return true
+end
+
+function Net:SendIdea(kind, text)
+	local t = Now()
+	text = Clean(text, APPEAL_MAX)
+	self:StoreIdea(Net.Me(), t, kind, text)
+	self:Send("N" .. Enc(t) .. "\t" .. kind .. "\t" .. text)
+end
+
+-- Предложенный тег: один персонаж — одно предложение на текст
+function Net:StoreTagSuggestion(text, name, t)
+	if TH:IsBanned(name) then return false end
+	if TH.NormalizeTag(text) ~= text or not TH:IsTextAllowed(text) then return false end
+	local db = DB()
+	local list = db.tagSuggest[text]
+	if not list then
+		list = {}
+		db.tagSuggest[text] = list
+	end
+	if list[name] then return false end
+	list[name] = t
+	TH:LogTagSuggestion(text, name, t)
+	return true
+end
+
+-- Очки стиля игрока для рейтинга. Запись в сообщении (через запятую):
+--   <очки>,<получено>,<лучшее>,<время>,<маска достижений>  или  x,<время> — вышел из рейтинга
+-- Маска: по 5 достижений на символ (0-9a-v), по их постоянным номерам.
+local MAX_POINTS, MAX_EARNED = 100000, 1000
+
+local function ScoreKey(s)
+	return s.removed and "" or string.format("%09d:%05d:%s:%s:%d:%d", s.points + 100000, s.earned, s.best or "", s.mask or "",
+		s.avatar or 0, s.title or 0) .. ":" .. (s.tiers or "") .. ":" .. (s.found or "")
+end
+
+local function ParseScore(body)
+	local t = body:match("^x,(%w+)$")
+	if t then return { removed = true, t = Dec(t) } end
+	-- в конце необязательные поля: аватар (номер файла иконки) и титул (номер достижения * 2 + пол)
+	-- found — когда найдены скрытые достижения: по 5 знаков (номер, час) — для «первооткрывателя»
+	local points, earned, best, ts, mask, avatar, title, tiers, found =
+		body:match("^(%-?%d+),(%d+),([%w_]*),(%w+),([0-9a-v]*),(%w*),(%w*),([0-5]*),([0-9a-z]*)$")
+	if not points then
+		points, earned, best, ts, mask, avatar, title, tiers =
+			body:match("^(%-?%d+),(%d+),([%w_]*),(%w+),([0-9a-v]*),(%w*),(%w*),([0-5]*)$")
+	end
+	if not points then
+		points, earned, best, ts, mask, avatar, title =
+			body:match("^(%-?%d+),(%d+),([%w_]*),(%w+),([0-9a-v]*),(%w*),(%w*)$")
+	end
+	if not points then
+		points, earned, best, ts, mask, avatar = body:match("^(%-?%d+),(%d+),([%w_]*),(%w+),([0-9a-v]*),(%w*)$")
+	end
+	if not points then
+		points, earned, best, ts, mask = body:match("^(%-?%d+),(%d+),([%w_]*),(%w+),([0-9a-v]*)$")
+	end
+	points, earned = tonumber(points), tonumber(earned)
+	if not points or math.abs(points) > MAX_POINTS or earned > MAX_EARNED or #mask > 200 then return nil end
+	if found and (#found % 5 ~= 0 or #found > 150) then found = nil end
+	avatar = avatar and avatar ~= "" and Dec(avatar) or nil
+	if avatar and (avatar <= 0 or avatar >= 2 ^ 31) then avatar = nil end
+	title = title and title ~= "" and Dec(title) or nil
+	if title and (title < 0 or title > 100000) then title = nil end
+	return { points = points, earned = earned, best = best ~= "" and best or nil, t = Dec(ts), mask = mask,
+		avatar = avatar, title = title, tiers = tiers ~= "" and tiers or nil, found = found ~= "" and found or nil }
+end
+
+local function ScoreBody(s)
+	if s.removed then return "x," .. Enc(s.t) end
+	return table.concat({ s.points, s.earned, s.best or "", Enc(s.t), s.mask or "", s.avatar and Enc(s.avatar) or "",
+		s.title and Enc(s.title) or "", s.tiers or "", s.found or "" }, ",")
+end
+
+function Net:StoreScore(name, entry)
+	if TH:IsBanned(name) and not (entry and entry.removed) then return false end
+	if not (name and entry and entry.t) then return false end
+	local scores = DB().scores
+	local old = scores[name]
+	if old then
+		if old.t > entry.t then return false end
+		-- одинаковое время: побеждает «большая» запись, чтобы все пришли к одному
+		if old.t == entry.t and ScoreKey(entry) <= ScoreKey(old) then return false end
+	end
+	scores[name] = entry
+	self.dirty = true
+	return true
+end
+
+local function ScoreEntry(name, s)
+	return name .. "," .. ScoreBody(s)
+end
+
+-- Решение модератора (уже проверено, что оно от модератора)
+function Net:ApplyModDecision(action, target)
+	local mod = DB().modBlocks
+	if action == "s" then
+		mod.sets[target] = Now()
+	elseif action == "a" then
+		mod.authors[target] = Now()
+	elseif action == "u" then
+		mod.sets[target] = nil
+		if mod.names then mod.names[target] = nil end
+	elseif action == "e" or action == "o" then
+		-- запрещённое название: шуточное (просим переименовать) или оскорбление;
+		-- образ скрыт, а автор узнаёт об этом в своём аддоне
+		mod.sets[target] = Now()
+		mod.names = mod.names or {}
+		mod.names[target] = action
+		-- автора, которого попросили переименовать, помечаем (первый такой образ):
+		-- повторная шутка — уже наказание, даже если его аддон переустановлен
+		local set = DB().sets[target]
+		if action == "e" and set and set.author then
+			mod.warned = mod.warned or {}
+			mod.warned[set.author] = mod.warned[set.author] or target
+		end
+		if TH.CheckNameViolations then TH:CheckNameViolations() end
+	elseif action == "b" then
+		-- реклама: бан автора сразу
+		mod.banned = mod.banned or {}
+		mod.banned[target] = Now()
+		if TH.db.myChars[target] and TH.OnAdBan then TH:OnAdBan() end
+	elseif action == "r" then
+		-- амнистия: с игрока снимается всё (бан, блокировки, пометка за шутку, наказания)
+		for _, key in ipairs({ "banned", "authors", "players", "warned" }) do
+			if mod[key] then mod[key][target] = nil end
+		end
+		for id, set in pairs(DB().sets) do
+			if set.author == target then
+				mod.sets[id] = nil
+				if mod.names then mod.names[id] = nil end
+			end
+		end
+		if TH.db.myChars[target] and TH.Amnesty then TH:Amnesty() end
+	elseif action == "y" then
+		-- бан снят (ошибка)
+		if mod.banned then mod.banned[target] = nil end
+	elseif action == "v" then
+		mod.authors[target] = nil
+	elseif action == "p" then
+		mod.players[target] = Now()
+	elseif action == "q" then
+		mod.players[target] = nil
+	elseif action == "d" then
+		-- жалобы на образ ложные: если и вы жаловались — это ваша ложная жалоба
+		if TH.db.myReports[target] then TH.db.falseReports[target] = Now() end
+	elseif action == "m" or action == "x" then
+		-- админ назначил или снял модератора
+		DB().modRoles[target] = { action == "m" and 1 or 0, Now() }
+		if TH.db.myChars[target] then
+			TH.db.moderator = TH:IsModerator(target) or nil
+			TH:Notify(action == "m" and "Вас назначили модератором Transmog Hub: вкладка «Модерация» откроется после /reload."
+				or "Вас сняли с модераторов Transmog Hub.")
+		end
+	elseif action == "w" then
+		-- модератор снял наказание за занижение оценок
+		if TH.db.myChars[target] and TH.LiftVotePenalty then TH:LiftVotePenalty() end
+	elseif action == "k" then
+		-- оценки образа проверены, накрутки нет: запоминаем, сколько их было
+		local votes, n = DB().votes[target], 0
+		for _ in pairs(votes or {}) do n = n + 1 end
+		mod.verified = mod.verified or {}
+		mod.verified[target] = n
+		if TH.ResetSuspicion then TH:ResetSuspicion() end -- решение действует сразу
+	end
+	self.dirty = true
 end
 
 function Net:RemoveSet(setId)
 	local db = DB()
 	db.sets[setId] = nil
 	db.votes[setId] = nil
+	db.voteRetracts[setId] = nil
+	db.favs[setId] = nil
+	db.tagFlags[setId] = nil
 	db.tombstones[setId] = Now()
 	self.dirty = true
 end
 
--- Ограничиваем базу: выкидываем самые старые наборы
+local REPORT_TTL = 60 * 86400 -- жалобы и предложения тегов старше 60 дней забываем
+local MAX_TAG_SUGGESTIONS = 1000
+local SCORE_TTL = 60 * 86400 -- кто 60 дней не заходил, пропадает из рейтинга
+
+-- Ограничиваем базу: выкидываем самые старые образы и жалобы
 function Net:Prune()
 	local db = DB()
+	local now = Now()
+	for setId, list in pairs(db.reports) do
+		for name, r in pairs(list) do
+			if now - r[2] > REPORT_TTL then list[name] = nil end
+		end
+		if not next(list) then db.reports[setId] = nil end
+	end
+	local texts = {}
+	for text, list in pairs(db.tagSuggest) do
+		local newest = 0
+		for name, t in pairs(list) do
+			if now - t > REPORT_TTL then list[name] = nil elseif t > newest then newest = t end
+		end
+		if next(list) then texts[#texts + 1] = { text, newest } else db.tagSuggest[text] = nil end
+	end
+	if #texts > MAX_TAG_SUGGESTIONS then
+		table.sort(texts, function(a, b) return a[2] > b[2] end)
+		for i = MAX_TAG_SUGGESTIONS + 1, #texts do db.tagSuggest[texts[i][1]] = nil end
+	end
+	for name, s in pairs(db.scores) do
+		if now - s.t > SCORE_TTL then db.scores[name] = nil end
+	end
+	for name, a in pairs(db.appeals) do
+		if now - a[1] > REPORT_TTL then db.appeals[name] = nil end
+	end
+	local ideaList = {}
+	for key, idea in pairs(db.ideas) do
+		if now - idea[2] > REPORT_TTL then db.ideas[key] = nil else ideaList[#ideaList + 1] = key end
+	end
+	if #ideaList > MAX_IDEAS then
+		table.sort(ideaList, function(a, b) return db.ideas[a][2] > db.ideas[b][2] end)
+		for i = MAX_IDEAS + 1, #ideaList do db.ideas[ideaList[i]] = nil end
+	end
+	local usage = {}
+	for key, u in pairs(db.usage) do
+		if now - u[2] > USAGE_TTL then db.usage[key] = nil else usage[#usage + 1] = key end
+	end
+	if #usage > MAX_USAGE then
+		table.sort(usage, function(a, b) return db.usage[a][2] > db.usage[b][2] end)
+		for i = MAX_USAGE + 1, #usage do db.usage[usage[i]] = nil end
+	end
+	-- отписки старше 30 дней забываем: они нужны, только пока расходятся по сети
+	for target, list in pairs(db.follows) do
+		for name, f in pairs(list) do
+			if f[1] == 0 and now - f[2] > 30 * 86400 then list[name] = nil end
+		end
+		if not next(list) then db.follows[target] = nil end
+	end
+	for setId in pairs(db.favs) do
+		if not db.sets[setId] then db.favs[setId] = nil end -- образ удалён или вытеснен
+	end
+	for setId in pairs(db.tagFlags) do
+		if not db.sets[setId] then db.tagFlags[setId] = nil end
+	end
 	local list = {}
 	for _, set in pairs(db.sets) do list[#list + 1] = set end
 	if #list <= MAX_SETS then return end
@@ -325,17 +901,29 @@ function Net:Prune()
 	for i = MAX_SETS + 1, #list do
 		db.sets[list[i].id] = nil
 		db.votes[list[i].id] = nil
+		db.voteRetracts[list[i].id] = nil
 	end
 end
 
 ---------------------------------------------------------------------------
 -- Протокол
---   P<набор>                       — публикация или пересылка набора
+--   P<образ>                       — публикация или пересылка образа
 --   V<id>\t<звёзды>\t<время>       — голос отправителя
---   W<id>\t<голосующий>,<зв>,<вр>;… — пересланные голоса (при синхронизации)
+--   W<id>\t<голосующий>,<зв>,<вр>;… — пересланные голоса
 --   D<id>                          — снять с публикации (только автор)
+--   R<id>\t<причина>\t<время>      — жалоба отправителя (a — реклама, o — оскорбление, x — другое)
+--   X<id>\t<кто>,<причина>,<вр>;…  — пересланные жалобы
+--   F<id>\t<1|0>\t<время>          — отправитель добавил образ в избранное / убрал
+--   U<id>\t<кто>,<1|0>,<вр>;…       — пересланные отметки избранного
+--   f<на кого>\t<1|0>\t<время>       — отправитель подписался на автора / отписался
+--   g<на кого>\t<кто>,<1|0>,<вр>;…    — пересланные подписки
+--   G<тег>\t<время>                — предложение тега от отправителя
+--   Y<тег>\t<кто>,<вр>;…            — пересланные предложения тегов
+--   L<очки>,<получено>,<лучшее>,<вр>,<маска> — очки стиля отправителя (Lx,<вр> — вышел из рейтинга)
+--   Zs\t<кто>,<запись как в L>;…    — пересланные очки
+--   M<действие>\t<цель>            — решение модератора (только напрямую от модератора)
 --   H<версия>                      — «я в сети»
---   I<версия>                      — ответ на H в маленькой сети: «я тоже тут»
+--   I<версия>                      — ответ на H: «я тоже тут»
 --   Q<запрос>\t<с какого времени>  — пришлите новое
 --   A<запрос>                      — «я отвечаю на запрос», остальные молчат
 ---------------------------------------------------------------------------
@@ -345,9 +933,35 @@ function Net:PublishSet(set)
 end
 
 function Net:SendVote(setId, stars)
-	local t = Now()
+	local old = DB().votes[setId] and DB().votes[setId][Net.Me()]
+	local t = math.max(Now(), old and old[2] + 1 or 0)
 	self:StoreVote(setId, Net.Me(), stars, t)
 	self:Send("V" .. setId .. "\t" .. stars .. "\t" .. Enc(t))
+end
+
+function Net:SendReport(setId, reason)
+	local old = DB().reports[setId] and DB().reports[setId][Net.Me()]
+	local t = math.max(Now(), old and old[2] + 1 or 0) -- отзыв сразу после жалобы — всё равно новее
+	self:StoreReport(setId, Net.Me(), reason, t)
+	self:Send("R" .. setId .. "\t" .. reason .. "\t" .. Enc(t))
+end
+
+function Net:SendTagSuggestion(text)
+	local t = Now()
+	self:StoreTagSuggestion(text, Net.Me(), t)
+	self:Send("G" .. text .. "\t" .. Enc(t))
+end
+
+-- entry: { points, earned, best, mask } или nil — выйти из рейтинга
+function Net:SendScore(entry)
+	-- время всегда растёт, даже при двух отправках в одну секунду
+	local old = DB().scores[Net.Me()]
+	local t = math.max(Now(), old and old.t + 1 or 0)
+	entry = entry and { points = entry.points, earned = entry.earned, best = entry.best, mask = entry.mask,
+		avatar = entry.avatar, title = entry.title, tiers = entry.tiers, found = entry.found, t = t }
+		or { removed = true, t = t }
+	self:StoreScore(Net.Me(), entry)
+	self:Send("L" .. ScoreBody(entry))
 end
 
 function Net:Unpublish(setId)
@@ -356,14 +970,18 @@ function Net:Unpublish(setId)
 end
 
 local pendingAnswers = {} -- [reqId] = true, пока ждём своей очереди ответить
+local myRequests = {}     -- [reqId] = { dest, time, peer }
 
--- Время синхронизации запоминаем, только когда кто-то ответил: иначе,
--- войдя в пустой канал, мы бы потом не скачали старые наборы.
-function Net:RequestSync()
-	local since = math.max(0, (DB().lastSync or 0) - 3600) -- час запаса
-	self.myReqId = Enc(math.random(0, 60000000))
-	self.myReqTime = Now()
-	self:Send("Q" .. self.myReqId .. "\t" .. Enc(since))
+-- Запрос «что нового». Время синхронизации запоминаем, только когда
+-- кто-то ответил: иначе, войдя в пустой канал, мы бы потом не скачали
+-- старые образы.
+function Net:RequestSync(dest, peerName)
+	dest = dest or CHANNEL
+	local last = peerName and DB().peerSync[peerName] or DB().lastSync or 0
+	local since = math.max(0, last - 3600) -- час запаса
+	local reqId = Enc(math.random(0, 60000000))
+	myRequests[reqId] = { dest = dest, time = Now(), peer = peerName }
+	self:Send("Q" .. reqId .. "\t" .. Enc(since), dest)
 end
 
 local syncScheduled = false
@@ -388,7 +1006,7 @@ local function CollectSince(since)
 	table.sort(sets, function(a, b) return (a.created or 0) > (b.created or 0) end)
 	while #sets > SYNC_LIMIT do tremove(sets) end
 
-	local votes = {}
+	local votes, reports = {}, {}
 	for setId, list in pairs(db.votes) do
 		local fresh = {}
 		for voter, v in pairs(list) do
@@ -396,106 +1014,401 @@ local function CollectSince(since)
 		end
 		if #fresh > 0 then votes[setId] = fresh end
 	end
-	return sets, votes
-end
-
-function Net:Answer(reqId, since)
-	pendingAnswers[reqId] = nil
-	local sets, votes = CollectSince(since)
-	if #sets == 0 and not next(votes) then return end
-	self:Send("A" .. reqId)
-	for _, set in ipairs(sets) do
-		self:Send("P" .. Net.EncodeSet(set))
-	end
-	for setId, list in pairs(votes) do
-		-- голоса пачками, чтобы не упереться в размер сообщения
-		local batch = {}
-		for _, v in ipairs(list) do
-			batch[#batch + 1] = v
-			if #batch == 8 then
-				self:Send("W" .. setId .. "\t" .. table.concat(batch, ";"))
-				batch = {}
+	-- снятые голоса расходятся так же, со звёздами 0
+	for setId, list in pairs(db.voteRetracts) do
+		for voter, t in pairs(list) do
+			if t > since then
+				votes[setId] = votes[setId] or {}
+				table.insert(votes[setId], voter .. ",0," .. Enc(t))
 			end
 		end
-		if #batch > 0 then self:Send("W" .. setId .. "\t" .. table.concat(batch, ";")) end
+	end
+	for setId, list in pairs(db.reports) do
+		local fresh = {}
+		for name, r in pairs(list) do
+			if r[2] > since then fresh[#fresh + 1] = name .. "," .. r[1] .. "," .. Enc(r[2]) end
+		end
+		if #fresh > 0 then reports[setId] = fresh end
+	end
+	-- прочее пачками: { вид сообщения, ключ, записи }
+	local batches = {}
+	for text, list in pairs(db.tagSuggest) do
+		local fresh = {}
+		for name, t in pairs(list) do
+			if t > since then fresh[#fresh + 1] = name .. "," .. Enc(t) end
+		end
+		if #fresh > 0 then batches[#batches + 1] = { "Y", text, fresh } end
+	end
+	local scores = {}
+	for name, s in pairs(db.scores) do
+		if s.t > since then scores[#scores + 1] = ScoreEntry(name, s) end
+	end
+	if #scores > 0 then batches[#batches + 1] = { "Z", "s", scores } end
+	for target, list in pairs(db.follows) do
+		local fresh = {}
+		for name, f in pairs(list) do
+			if f[2] > since then fresh[#fresh + 1] = name .. "," .. f[1] .. "," .. Enc(f[2]) end
+		end
+		if #fresh > 0 then batches[#batches + 1] = { "g", target, fresh } end
+	end
+	for setId, list in pairs(db.favs) do
+		local fresh = {}
+		for name, f in pairs(list) do
+			if f[2] > since then fresh[#fresh + 1] = name .. "," .. f[1] .. "," .. Enc(f[2]) end
+		end
+		if #fresh > 0 then batches[#batches + 1] = { "U", setId, fresh } end
+	end
+	for setId, tags in pairs(db.tagFlags) do
+		local fresh = {}
+		for tag, list in pairs(tags) do
+			for name, f in pairs(list) do
+				if f[2] > since then fresh[#fresh + 1] = name .. "," .. tag .. "," .. f[1] .. "," .. Enc(f[2]) end
+			end
+		end
+		if #fresh > 0 then batches[#batches + 1] = { "C", setId, fresh } end
+	end
+	for name, a in pairs(db.appeals) do
+		if a[1] > since then batches[#batches + 1] = { "K", name, { Enc(a[1]) .. "\t" .. a[2] } } end
+	end
+	for _, idea in pairs(db.usage) do
+		if idea[2] > since then
+			batches[#batches + 1] = { "O", idea[1], { Enc(idea[2]) .. "\t" .. idea[3] .. "\t" .. idea[4] } }
+		end
+	end
+	for _, idea in pairs(db.ideas) do
+		if idea[2] > since then
+			batches[#batches + 1] = { "O", idea[1], { Enc(idea[2]) .. "\t" .. idea[3] .. "\t" .. idea[4] } }
+		end
+	end
+	return sets, votes, reports, batches
+end
+
+-- Голоса (W) и жалобы (X) пачками, чтобы не упереться в размер сообщения
+local function SendBatches(self, kind, setId, entries, dest, except)
+	for i = 1, #entries, 8 do
+		local batch = {}
+		for k = i, math.min(i + 7, #entries) do batch[#batch + 1] = entries[k] end
+		self:Send(kind .. setId .. "\t" .. table.concat(batch, ";"), dest, except)
+	end
+end
+local function SendVotes(self, setId, entries, dest, except)
+	SendBatches(self, "W", setId, entries, dest, except)
+end
+
+function Net:Answer(reqId, since, dest)
+	pendingAnswers[reqId] = nil
+	local sets, votes, reports, batches = CollectSince(since)
+	self:Send("A" .. reqId, dest)
+	for _, set in ipairs(sets) do
+		self:Send("P" .. Net.EncodeSet(set), dest)
+	end
+	for setId, list in pairs(votes) do
+		SendVotes(self, setId, list, dest)
+	end
+	for setId, list in pairs(reports) do
+		SendBatches(self, "X", setId, list, dest)
+	end
+	for _, b in ipairs(batches) do
+		SendBatches(self, b[1], b[2], b[3], dest)
 	end
 end
 
 local handlers = {}
 
-handlers.P = function(self, body, sender)
+handlers.P = function(self, body, sender, origin)
 	local set = Net.DecodeSet(body)
-	if set then self:StoreSet(set, sender) end
+	if set and self:StoreSet(set, sender) then self:Relay("P" .. body, origin) end
 end
 
-handlers.V = function(self, body, sender)
+handlers.V = function(self, body, sender, origin)
 	local setId, stars, t = body:match("^([^\t]+)\t(%d)\t(%w+)$")
-	if setId then self:StoreVote(setId, sender, tonumber(stars), Dec(t) or 0) end
+	if setId and self:StoreVote(setId, sender, tonumber(stars), Dec(t) or 0) then
+		-- дальше голос идёт с именем проголосовавшего
+		self:Relay("W" .. setId .. "\t" .. sender .. "," .. stars .. "," .. t, origin)
+	end
 end
 
-handlers.W = function(self, body)
+handlers.W = function(self, body, _, origin)
 	local setId, list = body:match("^([^\t]+)\t(.+)$")
 	if not setId then return end
+	local fresh = {}
 	for entry in list:gmatch("[^;]+") do
 		local voter, stars, t = entry:match("^([^,]+),(%d),(%w+)$")
-		if voter then self:StoreVote(setId, voter, tonumber(stars), Dec(t) or 0) end
+		if voter and self:StoreVote(setId, voter, tonumber(stars), Dec(t) or 0) then
+			fresh[#fresh + 1] = entry
+		end
 	end
+	if #fresh > 0 and #queue < MAX_RELAY_QUEUE then SendVotes(self, setId, fresh, nil, origin) end
+end
+
+handlers.R = function(self, body, sender, origin)
+	local setId, reason, t = body:match("^([^\t]+)\t(%a)\t(%w+)$")
+	if setId and self:StoreReport(setId, sender, reason, Dec(t) or 0) then
+		self:Relay("X" .. setId .. "\t" .. sender .. "," .. reason .. "," .. t, origin)
+	end
+end
+
+handlers.X = function(self, body, _, origin)
+	local setId, list = body:match("^([^\t]+)\t(.+)$")
+	if not setId then return end
+	local fresh = {}
+	for entry in list:gmatch("[^;]+") do
+		local name, reason, t = entry:match("^([^,]+),(%a),(%w+)$")
+		if name and self:StoreReport(setId, name, reason, Dec(t) or 0) then fresh[#fresh + 1] = entry end
+	end
+	if #fresh > 0 and #queue < MAX_RELAY_QUEUE then SendBatches(self, "X", setId, fresh, nil, origin) end
+end
+
+handlers.F = function(self, body, sender, origin)
+	local setId, on, t = body:match("^([^\t]+)\t([01])\t(%w+)$")
+	if setId and self:StoreFav(setId, sender, on, Dec(t) or 0) then
+		self:Relay("U" .. setId .. "\t" .. sender .. "," .. on .. "," .. t, origin)
+	end
+end
+
+-- f<на кого>\t<1|0>\t<время> — отправитель подписался / отписался; g<на кого>\t<кто>,<1|0>,<время>;… — пересланное
+handlers.f = function(self, body, sender, origin)
+	local target, on, t = body:match("^([^\t]+)\t([01])\t(%w+)$")
+	if target and self:StoreFollow(target, sender, on, Dec(t) or 0) then
+		self:Relay("g" .. target .. "\t" .. sender .. "," .. on .. "," .. t, origin)
+	end
+end
+
+handlers.g = function(self, body, _, origin)
+	local target, list = body:match("^([^\t]+)\t(.+)$")
+	if not target then return end
+	local fresh = {}
+	for entry in list:gmatch("[^;]+") do
+		local name, on, t = entry:match("^([^,]+),([01]),(%w+)$")
+		if name and self:StoreFollow(target, name, on, Dec(t) or 0) then fresh[#fresh + 1] = entry end
+	end
+	if #fresh > 0 and #queue < MAX_RELAY_QUEUE then SendBatches(self, "g", target, fresh, nil, origin) end
+end
+
+-- T<образ>\t<тег>\t<1|0>\t<время> — отправитель оспорил тег; C<образ>\t<кто>,<тег>,<1|0>,<время>;… — пересланное
+handlers.T = function(self, body, sender, origin)
+	local setId, tag, on, t = body:match("^([^\t]+)\t([%w_]+)\t([01])\t(%w+)$")
+	if setId and self:StoreTagFlag(setId, sender, tag, on, Dec(t) or 0) then
+		self:Relay("C" .. setId .. "\t" .. sender .. "," .. tag .. "," .. on .. "," .. t, origin)
+	end
+end
+
+handlers.C = function(self, body, _, origin)
+	local setId, list = body:match("^([^\t]+)\t(.+)$")
+	if not setId then return end
+	local fresh = {}
+	for entry in list:gmatch("[^;]+") do
+		local name, tag, on, t = entry:match("^([^,]+),([%w_]+),([01]),(%w+)$")
+		if name and self:StoreTagFlag(setId, name, tag, on, Dec(t) or 0) then fresh[#fresh + 1] = entry end
+	end
+	if #fresh > 0 and #queue < MAX_RELAY_QUEUE then SendBatches(self, "C", setId, fresh, nil, origin) end
+end
+
+handlers.U = function(self, body, _, origin)
+	local setId, list = body:match("^([^\t]+)\t(.+)$")
+	if not setId then return end
+	local fresh = {}
+	for entry in list:gmatch("[^;]+") do
+		local name, on, t = entry:match("^([^,]+),([01]),(%w+)$")
+		if name and self:StoreFav(setId, name, on, Dec(t) or 0) then fresh[#fresh + 1] = entry end
+	end
+	if #fresh > 0 and #queue < MAX_RELAY_QUEUE then SendBatches(self, "U", setId, fresh, nil, origin) end
+end
+
+-- J<время>\t<текст> — обращение отправителя; K<кто>\t<время>\t<текст> — пересланное
+-- N<время>\t<вид>\t<текст> — предложение отправителя; O<кто>\t<время>\t<вид>\t<текст> — пересланное
+handlers.N = function(self, body, sender, origin)
+	local t, kind, text = body:match("^(%w+)\t(%a)\t(.+)$")
+	if t and self:StoreIdea(sender, Dec(t) or 0, kind, text) then
+		self:Relay("O" .. sender .. "\t" .. t .. "\t" .. kind .. "\t" .. Clean(text, APPEAL_MAX), origin)
+	end
+end
+
+handlers.O = function(self, body, _, origin)
+	local name, t, kind, text = body:match("^([^\t]+)\t(%w+)\t(%a)\t(.+)$")
+	if name and self:StoreIdea(name, Dec(t) or 0, kind, text) then self:Relay("O" .. body, origin) end
+end
+
+handlers.J = function(self, body, sender, origin)
+	local t, text = body:match("^(%w+)\t(.+)$")
+	if t and self:StoreAppeal(sender, Dec(t) or 0, text) then
+		self:Relay("K" .. sender .. "\t" .. t .. "\t" .. Clean(text, APPEAL_MAX), origin)
+	end
+end
+
+handlers.K = function(self, body, _, origin)
+	local name, t, text = body:match("^([^\t]+)\t(%w+)\t(.+)$")
+	if name and self:StoreAppeal(name, Dec(t) or 0, text) then self:Relay("K" .. body, origin) end
+end
+
+handlers.G = function(self, body, sender, origin)
+	local text, t = body:match("^([^\t]+)\t(%w+)$")
+	if text and self:StoreTagSuggestion(text, sender, Dec(t) or 0) then
+		self:Relay("Y" .. text .. "\t" .. sender .. "," .. t, origin)
+	end
+end
+
+handlers.Y = function(self, body, _, origin)
+	local text, list = body:match("^([^\t]+)\t(.+)$")
+	if not text then return end
+	local fresh = {}
+	for entry in list:gmatch("[^;]+") do
+		local name, t = entry:match("^([^,]+),(%w+)$")
+		if name and self:StoreTagSuggestion(text, name, Dec(t) or 0) then fresh[#fresh + 1] = entry end
+	end
+	if #fresh > 0 and #queue < MAX_RELAY_QUEUE then SendBatches(self, "Y", text, fresh, nil, origin) end
+end
+
+handlers.L = function(self, body, sender, origin)
+	local entry = ParseScore(body)
+	if entry and self:StoreScore(sender, entry) then
+		self:Relay("Zs\t" .. sender .. "," .. body, origin)
+	end
+end
+
+handlers.Z = function(self, body, _, origin)
+	local list = body:match("^s\t(.+)$")
+	if not list then return end
+	local fresh = {}
+	for item in list:gmatch("[^;]+") do
+		local name, rest = item:match("^([^,]+),(.+)$")
+		local entry = rest and ParseScore(rest)
+		if entry and self:StoreScore(name, entry) then fresh[#fresh + 1] = item end
+	end
+	if #fresh > 0 and #queue < MAX_RELAY_QUEUE then SendBatches(self, "Z", "s", fresh, nil, origin) end
+end
+
+-- Решение модератора принимаем только напрямую от него и не пересылаем:
+-- пересланное подделать проще простого
+handlers.M = function(self, body, sender)
+	if not TH:IsModerator(sender) then return end
+	local action, target = body:match("^(%a)\t(.+)$")
+	-- назначать и снимать модераторов может только админ
+	if (action == "m" or action == "x") and not TH:IsAdmin(sender) then return end
+	if action then self:ApplyModDecision(action, target) end
 end
 
 handlers.D = function(self, body, sender)
 	local set = DB().sets[body]
-	-- снять набор может только автор
+	-- снять образ может только автор (пересланное удаление не принимаем)
 	if set and set.author == sender then self:RemoveSet(body) end
 end
 
 local SMALL_NETWORK = 20 -- в маленькой сети отвечаем новичку «я тоже тут»
 
--- Появился новый игрок: если мы ещё ни с кем не синхронизировались, спросим.
--- В маленькой сети ещё и отзываемся, чтобы он сразу нас увидел.
-handlers.H = function(self)
-	self:ScheduleSync(5 + math.random() * 10)
-	local members = self:ChannelMemberCount()
-	if (members or self:PeerCount() + 1) <= SMALL_NETWORK then
-		C_Timer.After(1 + math.random() * 4, function() self:Send("I" .. PROTOCOL) end)
+-- Появился игрок. Друг Battle.net или группа: отвечаем и синхронизируемся
+-- с ним напрямую. Канал: если мы ещё ни с кем не синхронизировались —
+-- спросим, а в маленькой сети ещё и отзовёмся.
+-- персонажи друга Battle.net (принимаем только напрямую от него)
+handlers.h = function(self, body, _, origin)
+	if origin.kind ~= "BNET" then return end
+	local chars, n = TH.db.friendChars, 0
+	for name in body:gmatch("[^,]+") do
+		n = n + 1
+		if n > 60 then break end
+		if name:find("^[^%-]+%-[^%-]+$") and #name <= 64 and not TH.db.myChars[name] then chars[name] = Now() end
 	end
 end
 
-handlers.I = function() end -- «я тоже тут»: отправитель уже учтён в peers
+handlers.H = function(self, _, sender, origin)
+	if origin.kind == "BNET" then
+		self:Send("I" .. PROTOCOL, origin)
+		self:SendMyChars(origin)
+		self:SyncWithPeer(origin, sender)
+		return
+	end
+	if origin.kind == "GROUP" then
+		self:Send("I" .. PROTOCOL, GROUP)
+		return
+	end
+	self:ScheduleSync(5 + math.random() * 10)
+	local members = self:ChannelMemberCount()
+	if (members or self:PeerCount() + 1) <= SMALL_NETWORK then
+		C_Timer.After(1 + math.random() * 4, function() self:Send("I" .. PROTOCOL, CHANNEL) end)
+	end
+end
 
-handlers.Q = function(self, body, sender)
+handlers.I = function(self, _, sender, origin)
+	if origin.kind == "BNET" then self:SyncWithPeer(origin, sender) end
+end
+
+function Net:SyncWithPeer(dest, name)
+	if bnSynced[dest.target] then return end
+	bnSynced[dest.target] = true
+	self:RequestSync(dest, name)
+end
+
+handlers.Q = function(self, body, _, origin)
 	local reqId, since = body:match("^(%w+)\t(%w+)$")
 	if not reqId or pendingAnswers[reqId] then return end
 	since = Dec(since) or 0
-	local sets, votes = CollectSince(since)
-	if #sets == 0 and not next(votes) then return end
-	-- Отвечает тот, чья случайная задержка кончится первой
+	local sets, votes, reports, batches = CollectSince(since)
+	if #sets == 0 and not next(votes) and not next(reports) and #batches == 0 then
+		-- другу отвечаем всегда: пустой ответ тоже значит «синхронизировано»
+		if origin.kind == "BNET" then self:Send("A" .. reqId, origin) end
+		return
+	end
+	if origin.kind == "BNET" then
+		self:Answer(reqId, since, origin)
+		return
+	end
+	-- В канале и группе отвечает тот, чья случайная задержка кончится первой
 	pendingAnswers[reqId] = true
+	local dest = origin.kind == "GROUP" and GROUP or CHANNEL
 	C_Timer.After(1 + math.random() * 5, function()
-		if pendingAnswers[reqId] then self:Answer(reqId, since) end
+		if pendingAnswers[reqId] then self:Answer(reqId, since, dest) end
 	end)
 end
 
 handlers.A = function(self, body)
 	pendingAnswers[body] = nil -- кто-то уже отвечает
-	if body == self.myReqId then
+	local req = myRequests[body]
+	if not req then return end
+	myRequests[body] = nil
+	if req.peer then
+		DB().peerSync[req.peer] = req.time
+	elseif req.dest.kind == "CHANNEL" then
 		self.synced = true
-		DB().lastSync = self.myReqTime
+		DB().lastSync = req.time
 	end
 end
 
-function Net:OnMessage(prefix, text, channel, sender)
-	if prefix ~= PREFIX then return end
-	sender = Net.FullName(sender)
-	if sender == Net.Me() then return end
-	self.peers[sender] = Now()
-	local body = Assemble(sender, text)
+local function Dispatch(self, body, sender, origin)
 	if not body or body == "" then return end
 	local handler = handlers[body:sub(1, 1)]
 	if handler then
-		local ok, err = pcall(handler, self, body:sub(2), sender)
+		local ok, err = pcall(handler, self, body:sub(2), sender, origin)
 		if not ok and TH.debug then TH:Print("Ошибка сети:", err) end
 	end
 	if self.dirty then TH:RequestRefresh() end
+end
+
+-- Сообщение из канала или группы
+function Net:OnMessage(prefix, text, channel, sender)
+	if prefix ~= PREFIX then return end
+	local origin
+	if channel == "CHANNEL" then
+		origin = CHANNEL
+	elseif channel == "PARTY" or channel == "RAID" or channel == "INSTANCE_CHAT" then
+		origin = GROUP
+	else
+		return
+	end
+	sender = Net.FullName(sender)
+	if sender == Net.Me() then return end
+	self.peers[sender] = Now()
+	Dispatch(self, Assemble(sender, text), sender, origin)
+end
+
+-- Сообщение от друга Battle.net
+function Net:OnBNetMessage(prefix, text, _, senderID)
+	if prefix ~= PREFIX then return end
+	local name = BNetName(senderID)
+	if not name or name == Net.Me() then return end
+	local isNew = not self.bnPeers[senderID]
+	self.bnPeers[senderID] = { name = name, t = Now() }
+	if isNew then TH:CheckAchievements() end
+	Dispatch(self, Assemble("bn" .. senderID, text), name, BNET(senderID))
 end
 
 -- Сколько человек в скрытом канале (по данным игры), включая нас; nil — если неизвестно
@@ -509,7 +1422,7 @@ function Net:ChannelMemberCount()
 	end
 end
 
--- Игроков с аддоном в сети, кроме нас: по списку канала, иначе — по сообщениям
+-- Игроков с аддоном на своём сервере, кроме нас: по списку канала, иначе — по сообщениям
 function Net:PeerCount()
 	local members = self:ChannelMemberCount()
 	if members then return members - 1 end
@@ -532,26 +1445,51 @@ end
 function Net:OnConnected()
 	if self.connectedOnce then return end
 	self.connectedOnce = true
-	self:Send("H" .. PROTOCOL)
+	self:Send("H" .. PROTOCOL, CHANNEL)
 	C_Timer.After(3, function() self:RequestSync() end)
 	TH:RequestRefresh()
+end
+
+local groupGreeted = false
+function Net:OnGroupChanged()
+	if not self:GroupHasOtherRealm() then
+		groupGreeted = false
+		return
+	end
+	if groupGreeted then return end
+	groupGreeted = true
+	self:Send("H" .. PROTOCOL, GROUP)
+	C_Timer.After(5, function() self:RequestSync(GROUP, "group") end)
 end
 
 function Net:Start()
 	C_ChatInfo.RegisterAddonMessagePrefix(PREFIX)
 	local frame = CreateFrame("Frame")
 	frame:RegisterEvent("CHAT_MSG_ADDON")
-	frame:SetScript("OnEvent", function(_, _, ...) Net:OnMessage(...) end)
+	frame:RegisterEvent("BN_CHAT_MSG_ADDON")
+	frame:RegisterEvent("GROUP_ROSTER_UPDATE")
+	frame:SetScript("OnEvent", function(_, event, ...)
+		if event == "CHAT_MSG_ADDON" then
+			Net:OnMessage(...)
+		elseif event == "BN_CHAT_MSG_ADDON" then
+			Net:OnBNetMessage(...)
+		else
+			Net:OnGroupChanged()
+		end
+	end)
 
 	lastTick = GetTime()
 	C_Timer.NewTicker(0.25, Pump)
 
 	C_Timer.After(JOIN_DELAY, function()
 		if self:Join() then self:OnConnected() end
+		self:GreetFriends()
+		self:OnGroupChanged()
 	end)
-	-- Следим, что канал на месте (его могли покинуть командой /leave)
+	-- Раз в минуту: канал на месте? новые друзья в игре?
 	C_Timer.NewTicker(60, function()
 		CleanupPartial()
 		if self.connectedOnce and not self:UpdateChannel() then self:Join() end
+		self:GreetFriends()
 	end)
 end

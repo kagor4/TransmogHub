@@ -20,3 +20,13 @@ jobs:
 
       - name: Smoke test
         run: lua5.1 tests/smoke.lua .
+
+      - name: Name filter test
+        run: lua5.1 tests/filter.lua .
+
+      - name: Official chart test
+        run: lua5.1 tests/charts.lua .
+
+      # База на пределе хранения: пересчёты после сообщений сети не должны тормозить игру
+      - name: Performance check
+        run: lua5.1 tools/bench/bench.lua . 3000 100000 5000 --check
