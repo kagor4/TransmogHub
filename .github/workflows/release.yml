@@ -1,4 +1,7 @@
-# Собирает аддон и выкладывает релиз при пуше тега вида v1.2.3.
+# Собирает аддон и выкладывает релиз.
+# Запуск: пуш тега вида v1.2.3; коммит в main с новым официальным чартом
+# (Data/Charts.lua) — тогда тег vВЕРСИЯ.ГГГГММДД ставится здесь же, потому что
+# облачные сессии Claude ставить теги не могут; или вручную (Run workflow).
 # CurseForge и Wago подключаются секретами CF_API_KEY и WAGO_API_TOKEN
 # и строками X-Curse-Project-ID / X-Wago-ID в TransmogHub.toc.
 name: Release
@@ -7,6 +10,15 @@ on:
   push:
     tags:
       - "v*"
+    branches:
+      - main
+    paths:
+      - Data/Charts.lua
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
   release:
@@ -22,4 +34,19 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Тег, пушнутый с GITHUB_TOKEN, не запускает этот workflow второй раз
+      - name: Tag
+        if: github.ref_type != 'tag'
+        run: |
+          TAG="v$(tr -d ' \n' < VERSION).$(date -u +%Y%m%d)"
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" > /dev/null; then
+            echo "Тег $TAG уже есть, сегодня уже выпускали"
+            echo "SKIP=1" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          git tag "$TAG"
+          git push origin "$TAG"
+          echo "Тег $TAG"
+
       - uses: BigWigsMods/packager@v2
+        if: env.SKIP != '1'
