@@ -185,6 +185,45 @@ TH.AVATAR_REWARDS = {
 	{ ach = "hidden_8", icon = "inv_112_achievement_raid_salhadaar", name = L["Нексус-король Сал'хадаар"] },
 }
 
+-- WoW Forever: титулы под новые названия достижений (mH/fH — для Орды)
+if TH.FOREVER then
+	local FOREVER = {
+		pct_top_01 = { m = L["Драконий избранник"], f = L["Драконья избранница"] },
+		pct_board_01 = { m = L["Главнокомандующий"], f = L["Главнокомандующая"], mH = L["Верховный вождь"], fH = L["Верховный вождь"] },
+		raid_aotc = { m = L["Убийца драконов"], f = L["Убийца драконов"] },
+		raid_ce = { m = L["Первый в мире"], f = L["Первая в мире"] },
+	}
+	for _, t in ipairs(TH.TITLES) do
+		for k, v in pairs(FOREVER[t.ach] or {}) do t[k] = v end
+	end
+end
+
+-- WoW Forever: портреты героев своего времени вместо героев дополнений
+if TH.FOREVER then
+	local FOREVER = {
+		races_all = { icon = "inv_misc_head_dragon_bronze", name = L["Ноздорму"] },
+		vote_100 = { icon = "achievement_boss_emperordagranthaurissan", name = L["Император Дагран Тауриссан"] },
+		liked_100 = { icon = "inv_misc_head_dragon_green", name = L["Изера"] },
+		complete_10 = { icon = "achievement_boss_mekgineer_thermaplugg", name = L["Механик Термоштепсель"] },
+		complete_50 = { icon = "achievement_boss_edwinvancleef", name = L["Эдвин ван Клиф"] },
+		holiday_all = { icon = "inv_holiday_christmas_present_01", name = L["Дедушка Зима"] },
+		five_100 = { icon = "spell_holy_elunesgrace", name = L["Элуна"] },
+		trend_10 = { icon = "inv_misc_head_dragon_blue", name = L["Азурегос"] },
+		first_find_3 = { icon = "achievement_boss_cthun", name = L["К'Тун"] },
+		pct_board_1 = { icon = "achievement_boss_generaldrakkisath", name = L["Генерал Драккисат"] },
+		pct_board_01 = { icon = "achievement_leader_cairne bloodhoof", name = L["Кэрн Кровавое Копыто"] },
+		pct_top_01 = { icon = "achievement_boss_nefarion", name = L["Лорд Виктор Нефарий"] },
+		raid_aotc = { icon = "achievement_boss_onyxia", name = L["Ониксия"] },
+		raid_ce = { icon = "achievement_boss_hellfire_archimonde", name = L["Архимонд"] },
+		publish_100 = { icon = "inv_misc_head_dragon_black", name = L["Леди Престор"] },
+		tag_top1 = { icon = "achievement_leader_thrall", name = L["Тралл"] },
+		hidden_8 = { icon = "achievement_boss_hakkar", name = L["Хаккар"] },
+	}
+	for _, r in ipairs(TH.AVATAR_REWARDS) do
+		for k, v in pairs(FOREVER[r.ach] or {}) do r[k] = v end
+	end
+end
+
 local iconIDs = {} -- кэш: имя или путь иконки -> номер файла
 local function IconID(name)
 	if type(name) == "number" then return name end

@@ -55,6 +55,26 @@ for _, theme in ipairs(TH.TAG_THEMES) do
 	for _, key in ipairs(theme.tags) do assert(TH.TAG_LABEL[key], "тема " .. theme.name .. ": нет тега " .. key) end
 end
 
+-- тексты достижений: без лора дополнений и ключей эпохального+; PvP-звания по фракции
+local BANNED = { "Пандари", "Вальдраккен", "Сурамар", "Ульдуар", "наару", "Безлик", "Гаррош", "Ключ +", "эпохальн",
+	"Рио", "Корен", "Серебряного союза", "Бесконечные", "Зул'Амана", "Вариан когда-то" }
+for _, a in ipairs(TH.ACHIEVEMENTS) do
+	for _, field in ipairs(a.hidden and {} or { "name", "desc", "flavor" }) do
+		local text = a[field]
+		if type(text) == "string" then
+			for _, word in ipairs(BANNED) do assert(not text:find(word, 1, true), a.id .. "." .. field .. ": " .. word) end
+		end
+	end
+end
+assert(TH.ACHIEVEMENT_BY_ID.pct_top_25.name == "Скелетный ключ")
+assert(TH.ACHIEVEMENT_BY_ID.raid_aotc.name == "Голова на воротах")
+UnitFactionGroup = function() return "Horde" end
+TH:ApplyFactionNames()
+assert(TH.ACHIEVEMENT_BY_ID.pct_board_01.name == "Верховный вождь")
+UnitFactionGroup = function() return "Alliance" end
+TH:ApplyFactionNames()
+assert(TH.ACHIEVEMENT_BY_ID.pct_board_01.name == "Главнокомандующий")
+
 -- знаки, которых нет в шрифтах Forever, заменены
 local lns = {}
 assert(loadfile(dir .. "/Locales/Locale.lua"))("TransmogHub", lns)

@@ -1713,6 +1713,7 @@ function TH:PLAYER_LOGIN()
 	end
 	self.Net:Prune()
 	self:LoadFeed()
+	self:ApplyFactionNames()
 	self:ApplySecrets()
 	self.Net:Start()
 	self:UpdateMinimapButton()
