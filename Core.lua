@@ -1714,7 +1714,7 @@ SlashCmdList.TRANSMOGHUB = function(msg)
 			Net:IsLocked() and L[", отправка на паузе (бой или подземелье)"] or "", Net.Me()))
 		local friends = {}
 		for _, peer in pairs(Net.bnPeers) do friends[#friends + 1] = peer.name end
-		TH:Print(L["Друзья Battle.net с аддоном: "] .. (#friends > 0 and table.concat(friends, ", ") or L["нет"]))
+		TH:Print(L["Друзья Battle.net с аддоном: "] .. (#friends > 0 and table.concat(friends, ", ") or L["никого"]))
 	elseif msg:match("^scale") then
 		local pct = tonumber(msg:match("^scale%s+(%d+)"))
 		if pct then TH:SetScale(pct / 100) end
