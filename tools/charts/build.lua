@@ -268,13 +268,19 @@ if secretsDir then
 	end
 	for id, e in pairs(hidden) do
 		local a = TH.ACHIEVEMENT_BY_ID[id]
+		local keyId = id
+		-- чарт Forever: условия варианта Forever и его ключ (как в tools/secrets/encode.lua)
+		if TH.FOREVER and e.forever then
+			e = { probe = e.forever.probe or e.probe, conds = e.forever.conds or e.conds }
+			keyId = id .. "@forever"
+		end
 		if a and (e.probe == "tags" or e.probe == "word") then
 			for _, set in ipairs(approved) do
 				if Matches(e, set) then
 					Award(set.author, a, 1)
 					awardSets[set.author] = awardSets[set.author] or {}
 					awardSets[set.author][id] = awardSets[set.author][id] or set.id
-					secretKeys[id] = TH.Secret.DeriveKey(master, id)
+					secretKeys[id] = TH.Secret.DeriveKey(master, keyId)
 					serverFirsts[id] = serverFirsts[id] or { set.author, set.created or now }
 				end
 			end

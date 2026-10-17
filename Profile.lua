@@ -192,6 +192,8 @@ if TH.FOREVER then
 		pct_board_01 = { m = L["Главнокомандующий"], f = L["Главнокомандующая"], mH = L["Верховный вождь"], fH = L["Верховный вождь"] },
 		raid_aotc = { m = L["Убийца драконов"], f = L["Убийца драконов"] },
 		raid_ce = { m = L["Первый в мире"], f = L["Первая в мире"] },
+		hid_lichking = { m = L["Вестник Плети"], f = L["Вестница Плети"] },
+		hid_illidan = { m = L["Предатель"], f = L["Предательница"] },
 	}
 	for _, t in ipairs(TH.TITLES) do
 		for k, v in pairs(FOREVER[t.ach] or {}) do t[k] = v end

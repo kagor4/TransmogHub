@@ -1803,4 +1803,16 @@ ns.LOCALES.enUS = {
 	["Леди Престор"] = "Lady Prestor",
 	["Тралл"] = "Thrall",
 	["Хаккар"] = "Hakkar",
+	-- Achievements.lua, Profile.lua: тайны WoW Forever
+	["Великие гильдии в боевом настрое штурмуют Вершину Хиджала. Кто-то должен одеть их для победной фотографии."] = "Great guilds in a fighting mood storm Hyjal Summit. Someone has to dress them for the victory photo.",
+	["Танк, мех и цвет медвежьей шкуры: кто-то должен стоять впереди, когда босс злится."] = "Tank, fur and the color of a bear's hide: someone has to stand in front when the boss gets angry.",
+	["Учёный в Логове Ониксии: прежде чем идти на дракона, кто-то должен разобрать его по фазам."] = "A scholar in Onyxia's Lair: before facing the dragon, someone has to break her down into phases.",
+	["Ночной эльф, свет и фиолетовый цвет ночи: кто-то смотрит на луну и знает все тайны Азерота."] = "Night elf, light and the purple of night: someone watches the moon and knows all of Azeroth's secrets.",
+	["Король-лич ждёт на Ледяном троне. Кто наденет его цвета?"] = "The Lich King waits on the Frozen Throne. Who will wear his colors?",
+	["Где-то в Азероте один странствующий мастер ищет идеальный напиток и идеальный наряд к нему."] = "Somewhere in Azeroth a wandering master seeks the perfect brew and the perfect outfit to match.",
+	["Один народ потерял королевство, другой — жизнь, но столица у них одна. Примерьте на обоих."] = "One people lost a kingdom, the other lost their lives, yet they share one capital. Try it on both.",
+	["Вестник Плети"] = "Herald of the Scourge",
+	["Вестница Плети"] = "Herald of the Scourge",
+	["Предатель"] = "the Betrayer",
+	["Предательница"] = "the Betrayer",
 }

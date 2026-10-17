@@ -13,6 +13,12 @@ do
 		or (type(toc) == "number" and toc >= 16000 and toc < 20000)
 end
 
+-- Тайны Forever (свои условия и тексты, свой ключ) заменяют тайны основной игры
+if TH.FOREVER and type(TransmogHub_SecretsForever) == "table" then
+	TransmogHub_Secrets = TransmogHub_Secrets or {}
+	for id, e in pairs(TransmogHub_SecretsForever) do TransmogHub_Secrets[id] = e end
+end
+
 -- Похоже ли на полное имя персонажа: «Имя-Сервер», а в Forever «Имя Фамилия»
 function TH:IsCharName(name)
 	if type(name) ~= "string" or #name > 64 or name:find(",", 1, true) then return false end
