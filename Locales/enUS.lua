@@ -1097,6 +1097,7 @@ ns.LOCALES.enUS = {
 	["Вас сняли с модераторов Transmog Hub."] = "You are no longer a Transmog Hub moderator.",
 	["Ошибка сети:"] = "Network error:",
 	-- Preview.lua
+	["Небеснорождённый"] = "Skyborne",
 	["Окно трансмогрификации перекрывает модель — отодвиньте окна друг от друга."] = "The transmogrification window covers the model — move the windows apart.",
 	-- Profile.lua
 	["Дебютант"] = "Debutant",

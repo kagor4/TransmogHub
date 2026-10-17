@@ -34,14 +34,15 @@ name, found = TH:ResolvePlayerName("Новый Игрок")
 assert(name == "Новый Игрок" and not found)
 
 -- примерка: только расы Forever
-assert(loadfile(dir .. "/Preview.lua"))("TransmogHub", { TH = TH, L = TH.L or setmetatable({}, { __index = function(_, k) return k end }) })
+assert(loadfile(dir .. "/Preview.lua"))("TransmogHub", { TH = TH, L = setmetatable({}, { __index = function(_, k) return k end }) })
 races = {}
 TH.races = nil
 local list = TH:GetPlayableRaces()
-assert(#list == 10, #list)
+assert(#list == 9, #list)
 local ids = {}
 for _, r in ipairs(list) do ids[r.id] = true end
-assert(ids[95] and ids[96] and not ids[11] and not ids[52], "небеснорождённые есть, дренеев и драктиров нет")
+assert(ids[95] and not ids[96] and not ids[11] and not ids[52], "небеснорождённые один раз, дренеев и драктиров нет")
+assert(TH:GetRaceName(95) == "Небеснорождённый")
 -- знаки, которых нет в шрифтах Forever, заменены
 local lns = {}
 assert(loadfile(dir .. "/Locales/Locale.lua"))("TransmogHub", lns)

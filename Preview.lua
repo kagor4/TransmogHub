@@ -6,19 +6,24 @@ local TH = ns.TH
 local SCENE_ID = 596
 
 -- Играбельные расы для примерки. Повторы (союз/орда) отсеиваются по имени.
--- 86/91 — харанир, 95/96 — небеснорождённые Forever (у союза и орды разные названия).
-local RACE_IDS = TH.FOREVER and { 1, 3, 4, 7, 95, 2, 5, 6, 8, 96 }
+-- 86/91 — харанир, 95 — небеснорождённые Forever (96 — тот же облик у другой фракции,
+-- у неё длинное название «из Ваятелей ветра»; оставляем одну с коротким именем).
+local RACE_IDS = TH.FOREVER and { 1, 3, 4, 7, 95, 2, 5, 6, 8 }
 	or { 1, 3, 4, 7, 11, 22, 25, 29, 30, 32, 34, 37, 52, 85, 91,
 		2, 5, 6, 8, 9, 10, 26, 27, 28, 31, 35, 36, 70, 84, 86 }
+
+-- Свои названия вместо игровых: у небеснорождённых в названии ещё и орден
+local RACE_NAMES = { [95] = L["Небеснорождённый"], [96] = L["Небеснорождённый"] }
 
 function TH:GetPlayableRaces()
 	if self.races then return self.races end
 	local list, seen = {}, {}
 	for _, id in ipairs(RACE_IDS) do
 		local info = C_CreatureInfo.GetRaceInfo(id)
-		if info and info.raceName and not seen[info.raceName] then
-			seen[info.raceName] = true
-			list[#list + 1] = { id = id, name = info.raceName }
+		local name = RACE_NAMES[id] or (info and info.raceName)
+		if name and not seen[name] then
+			seen[name] = true
+			list[#list + 1] = { id = id, name = name }
 		end
 	end
 	table.sort(list, function(a, b) return a.name < b.name end)
@@ -27,6 +32,7 @@ function TH:GetPlayableRaces()
 end
 
 function TH:GetRaceName(raceID)
+	if RACE_NAMES[raceID] then return RACE_NAMES[raceID] end
 	local info = raceID and C_CreatureInfo.GetRaceInfo(raceID)
 	return info and info.raceName or "?"
 end
