@@ -124,8 +124,8 @@ function TH:OpenTitleMenu(owner)
 	if not (MenuUtil and MenuUtil.CreateContextMenu) then return end
 	local sex = MySex()
 	MenuUtil.CreateContextMenu(owner, function(_, root)
-		root:CreateTitle(L["Титул"])
-		root:CreateRadio(L["Без титула"], function() return not self.db.leader.title end, function() self:SetMyTitle(nil) end)
+		root:CreateTitle(L["Звание"])
+		root:CreateRadio(L["Без звания"], function() return not self.db.leader.title end, function() self:SetMyTitle(nil) end)
 		local locked = 0
 		for _, t in ipairs(self.TITLES) do
 			if self.db.achievements[t.ach] then
@@ -561,7 +561,7 @@ function TH:BuildProfilePanel(p)
 	end)
 	p.followInfoBtn:SetScript("OnLeave", GameTooltip_Hide)
 
-	-- справа: «Назад» в чужом профиле; в своём — аватар и титул
+	-- справа: «Назад» в чужом профиле; в своём — аватар и звание
 	p.back = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
 	TH.PadButton(p.back)
 	p.back:SetSize(130, 22)
@@ -580,7 +580,7 @@ function TH:BuildProfilePanel(p)
 	TH.PadButton(p.changeTitle)
 	p.changeTitle:SetSize(130, 22)
 	p.changeTitle:SetPoint("TOPRIGHT", -10, -36)
-	p.changeTitle:SetText(L["Титул"])
+	p.changeTitle:SetText(L["Звание"])
 	p.changeTitle:SetScript("OnClick", function(b) TH:OpenTitleMenu(b) end)
 
 	-- чужой профиль: подписаться (под «Назад»)

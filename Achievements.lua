@@ -225,8 +225,8 @@ TH.ACHIEVEMENTS = {
 		name = L["Ключ +20"], desc = L["Войдите в топ-1% «Лучших»."],
 		flavor = L["Сундук на три улучшения. Рейтинг Рио смотрит на вас с уважением."] },
 	{ id = "pct_top_01", num = 77, rarity = 4, stat = "topPct", goal = 0.1, minPool = 3000, icon = "achievement_challengemode_platinum",
-		name = L["Титул сезона"], desc = L["Войдите в топ-0,1% «Лучших»."],
-		flavor = L["Как в эпохальном+: титул достаётся лишь 0,1% лучших. Портал в подземелье — по жизни."] },
+		name = L["Звание сезона"], desc = L["Войдите в топ-0,1% «Лучших»."],
+		flavor = L["Как в эпохальном+: звание достаётся лишь 0,1% лучших. Портал в подземелье — по жизни."] },
 	{ id = "pct_board_25", num = 78, rarity = 1, stat = "boardPct", goal = 25, minPool = 20, icon = "inv_misc_key_14",
 		name = L["Покоритель ключей"], desc = L["Войдите в топ-25% рейтинга очков стиля."],
 		flavor = L["Первый сундук сезона. Отсюда начинаются все легенды."] },
@@ -1572,7 +1572,7 @@ local function ShowCardTooltip(card)
 	for _, t in ipairs(TH.TITLES or {}) do
 		if t.ach == a.id then
 			local female = (UnitSex("player") or 2) == 3
-			GameTooltip:AddLine(L["Награда: титул «"] .. (secret and "???" or (female and t.f or t.m)) .. "»", 1, 0.82, 0)
+			GameTooltip:AddLine(L["Награда: звание «"] .. (secret and "???" or (female and t.f or t.m)) .. "»", 1, 0.82, 0)
 		end
 	end
 	if a.seasonal then
