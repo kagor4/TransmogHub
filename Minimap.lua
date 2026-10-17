@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local TH = ns.TH
 
 local ICON = "Interface\\Icons\\INV_Chest_Cloth_17"
@@ -22,11 +23,11 @@ end
 local function ShowTooltip(self)
 	GameTooltip:SetOwner(self, "ANCHOR_LEFT")
 	GameTooltip:SetText("Transmog Hub")
-	GameTooltip:AddLine("ЛКМ — открыть окно", 1, 1, 1)
-	GameTooltip:AddLine("ПКМ — новый образ", 1, 1, 1)
+	GameTooltip:AddLine(L["ЛКМ — открыть окно"], 1, 1, 1)
+	GameTooltip:AddLine(L["ПКМ — новый образ"], 1, 1, 1)
 	local earned, total, points = TH:GetAchievementTotals()
-	GameTooltip:AddLine(string.format("Достижения: %d из %d, очки стиля: %d", earned, total, points), 1, 0.82, 0)
-	GameTooltip:AddLine("Перетащите, чтобы сдвинуть", 0.6, 0.6, 0.6)
+	GameTooltip:AddLine(string.format(L["Достижения: %d из %d, очки стиля: %d"], earned, total, points), 1, 0.82, 0)
+	GameTooltip:AddLine(L["Перетащите, чтобы сдвинуть"], 0.6, 0.6, 0.6)
 	GameTooltip:AddLine(" ")
 	GameTooltip:AddLine(TH:NetworkStatusText(), 1, 1, 1, true)
 	GameTooltip:Show()
@@ -87,5 +88,5 @@ end
 function TH:ToggleMinimapButton()
 	self.db.minimap.hide = not self.db.minimap.hide
 	self:UpdateMinimapButton()
-	self:Print(self.db.minimap.hide and "Кнопка у миникарты скрыта. Вернуть: /thub minimap" or "Кнопка у миникарты показана.")
+	self:Print(self.db.minimap.hide and L["Кнопка у миникарты скрыта. Вернуть: /thub minimap"] or L["Кнопка у миникарты показана."])
 end

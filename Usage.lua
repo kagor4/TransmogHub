@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local TH = ns.TH
 
 ---------------------------------------------------------------------------
@@ -83,7 +84,7 @@ local function OnClick(b)
 	if not label then return end
 	local window = b.thLogWindow
 	if window == "TransmogHubFrame" then
-		window = VIEW_LABEL[TH.UI and TH.UI.view] or "Главное окно"
+		window = VIEW_LABEL[TH.UI and TH.UI.view] or L["Главное окно"]
 	else
 		window = WINDOW_LABEL[window] or window
 	end
@@ -168,7 +169,7 @@ function TH:GetUsageSummary()
 	for code, n in pairs(self.db.clicks) do total[code] = (total[code] or 0) + n end
 	local out = {}
 	for code, n in pairs(total) do
-		out[#out + 1] = { self.usageNames[code] or self:KnownUsageName(code) or ("код " .. code), n }
+		out[#out + 1] = { self.usageNames[code] or self:KnownUsageName(code) or (L["код "] .. code), n }
 	end
 	table.sort(out, function(a, b) if a[2] ~= b[2] then return a[2] > b[2] end return a[1] < b[1] end)
 	return out
@@ -176,8 +177,8 @@ end
 
 function TH:PrintUsage()
 	local list = self:GetUsageSummary()
-	self:Print((self:IsModeratorClient() and "Нажатия всех игроков (из отчётов):" or "Ваши нажатия с прошлой отправки:")
-		.. (#list == 0 and " пока пусто." or ""))
+	self:Print((self:IsModeratorClient() and L["Нажатия всех игроков (из отчётов):"] or L["Ваши нажатия с прошлой отправки:"])
+		.. (#list == 0 and L[" пока пусто."] or ""))
 	for i = 1, math.min(#list, 30) do print(string.format("  %d. %s — %d", i, list[i][1], list[i][2])) end
 end
 
@@ -187,7 +188,7 @@ function TH:StartUsage()
 	if (self.db.usageSent or 0) == 0 then self.db.usageSent = self.Net.Now() end
 	if not self.db.usageNoticed then
 		self.db.usageNoticed = true
-		self:Print("Аддон считает, на какие его кнопки сколько раз нажимают, и раз в неделю отправляет сводку разработчику — так проще улучшать интерфейс. Только названия кнопок и числа. Отключить: /thub usage off")
+		self:Print(L["Аддон считает, на какие его кнопки сколько раз нажимают, и раз в неделю отправляет сводку разработчику — так проще улучшать интерфейс. Только названия кнопок и числа. Отключить: /thub usage off"])
 	end
 	C_Timer.After(90, function() self:SendUsage() end)
 end

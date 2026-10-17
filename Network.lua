@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local TH = ns.TH
 
 -- Сеть между игроками без сервера.
@@ -805,8 +806,8 @@ function Net:ApplyModDecision(action, target)
 		DB().modRoles[target] = { action == "m" and 1 or 0, Now() }
 		if TH.db.myChars[target] then
 			TH.db.moderator = TH:IsModerator(target) or nil
-			TH:Notify(action == "m" and "Вас назначили модератором Transmog Hub: вкладка «Модерация» откроется после /reload."
-				or "Вас сняли с модераторов Transmog Hub.")
+			TH:Notify(action == "m" and L["Вас назначили модератором Transmog Hub: вкладка «Модерация» откроется после /reload."]
+				or L["Вас сняли с модераторов Transmog Hub."])
 		end
 	elseif action == "w" then
 		-- модератор снял наказание за занижение оценок
@@ -1378,7 +1379,7 @@ local function Dispatch(self, body, sender, origin)
 	local handler = handlers[body:sub(1, 1)]
 	if handler then
 		local ok, err = pcall(handler, self, body:sub(2), sender, origin)
-		if not ok and TH.debug then TH:Print("Ошибка сети:", err) end
+		if not ok and TH.debug then TH:Print(L["Ошибка сети:"], err) end
 	end
 	if self.dirty then TH:RequestRefresh() end
 end

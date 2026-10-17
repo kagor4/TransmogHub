@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local TH = ns.TH
 
 ---------------------------------------------------------------------------
@@ -9,24 +10,24 @@ local TH = ns.TH
 local LETTERS = 140
 local PER_DAY = 3
 local KINDS = {
-	{ key = "i", text = "Идея" },
-	{ key = "b", text = "Ошибка" },
-	{ key = "o", text = "Другое" },
+	{ key = "i", text = L["Идея"] },
+	{ key = "b", text = L["Ошибка"] },
+	{ key = "o", text = L["Другое"] },
 }
 local dlg
 
 function TH:SendIdea(kind, text)
 	text = strtrim(text or "")
-	if #text:gsub("[\128-\191]", "") < 10 then return "Напишите чуть подробнее — хотя бы одно предложение." end
+	if #text:gsub("[\128-\191]", "") < 10 then return L["Напишите чуть подробнее — хотя бы одно предложение."] end
 	local now, today = self.Net.Now(), 0
 	for i = #self.db.myIdeas, 1, -1 do
 		if now - self.db.myIdeas[i] < 86400 then today = today + 1 else tremove(self.db.myIdeas, i) end
 	end
-	if today >= PER_DAY then return "Не больше " .. PER_DAY .. " писем в день — грифоны устали." end
+	if today >= PER_DAY then return L["Не больше "] .. PER_DAY .. L[" писем в день — грифоны устали."] end
 	tinsert(self.db.myIdeas, now)
 	self.Net:SendIdea(kind, text)
 	self:TrackCount("letters")
-	self:Thanks("Письмо отправлено. Лучшие идеи появятся в обновлениях аддона.")
+	self:Thanks(L["Письмо отправлено. Лучшие идеи появятся в обновлениях аддона."])
 end
 
 local function Send()
@@ -45,13 +46,13 @@ local function Build()
 
 	local title = dlg:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 	title:SetPoint("TOP", 0, -6)
-	title:SetText("Письмо разработчику")
+	title:SetText(L["Письмо разработчику"])
 
 	local info = dlg:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 	info:SetPoint("TOPLEFT", 16, -32)
 	info:SetWidth(408)
 	info:SetJustifyH("LEFT")
-	info:SetText("Есть идея, нашли ошибку или чего-то не хватает? Напишите — письмо доставит самый быстрый грифон Даларана. Каждое письмо прочитают.")
+	info:SetText(L["Есть идея, нашли ошибку или чего-то не хватает? Напишите — письмо доставит самый быстрый грифон Даларана. Каждое письмо прочитают."])
 
 	-- вид письма
 	dlg.kindButtons = {}
@@ -101,7 +102,7 @@ local function Build()
 	TH.PadButton(send)
 	send:SetSize(140, 24)
 	send:SetPoint("BOTTOMLEFT", 14, 12)
-	send:SetText("Отправить")
+	send:SetText(L["Отправить"])
 	send:SetScript("OnClick", Send)
 	if TH.StylePrimaryButton then TH.StylePrimaryButton(send) end
 	dlg.sendBtn = send
@@ -220,7 +221,7 @@ local function Install()
 			return "BugGrabber"
 		elseif grabber.RegisterCallback then -- старые версии BugGrabber
 			grabber.RegisterCallback(TH, "BugGrabber_BugGrabbed", function(...) pcall(FromGrabber, ...) end)
-			return "BugGrabber (старый)"
+			return L["BugGrabber (старый)"]
 		end
 	end
 	if geterrorhandler and seterrorhandler then
@@ -256,7 +257,7 @@ local other
 
 function TH:SendReportOther(setId, text)
 	text = strtrim(text or "")
-	if #text:gsub("[\128-\191]", "") < 5 then return "Напишите хотя бы пару слов: что не так с образом." end
+	if #text:gsub("[\128-\191]", "") < 5 then return L["Напишите хотя бы пару слов: что не так с образом."] end
 	self:Report(setId, "x")
 	self.Net:SendIdea("r", "[" .. setId .. "] " .. text)
 end
@@ -272,7 +273,7 @@ function TH:OpenReportOther(set)
 		tinsert(UISpecialFrames, other:GetName())
 		local title = other:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 		title:SetPoint("TOP", 0, -6)
-		title:SetText("Жалоба: что не так?")
+		title:SetText(L["Жалоба: что не так?"])
 		other.info = other:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 		other.info:SetPoint("TOPLEFT", 16, -34)
 		other.info:SetWidth(388)
@@ -296,20 +297,20 @@ function TH:OpenReportOther(set)
 		TH.PadButton(send)
 		send:SetSize(140, 24)
 		send:SetPoint("BOTTOMLEFT", 14, 12)
-		send:SetText("Отправить")
+		send:SetText(L["Отправить"])
 		send:SetScript("OnClick", Send)
 		if TH.StylePrimaryButton then TH.StylePrimaryButton(send) end
 		local cancel = CreateFrame("Button", nil, other, "UIPanelButtonTemplate")
 		TH.PadButton(cancel)
 		cancel:SetSize(100, 24)
 		cancel:SetPoint("BOTTOMRIGHT", -14, 12)
-		cancel:SetText(CANCEL or "Отмена")
+		cancel:SetText(CANCEL or L["Отмена"])
 		cancel:SetScript("OnClick", function() other:Hide() end)
 		other.sendBtn = send
 	end
 	other.setId = set.id
-	other.info:SetText("Образ «" .. (set.name or "?") .. "». Коротко опишите, что не так (до " .. REPORT_LETTERS
-		.. " букв) — модератор прочитает. Для рекламы и оскорблений есть отдельные пункты.")
+	other.info:SetText(L["Образ «"] .. (set.name or "?") .. L["». Коротко опишите, что не так (до "] .. REPORT_LETTERS
+		.. L[" букв) — модератор прочитает. Для рекламы и оскорблений есть отдельные пункты."])
 	other.edit:SetText("")
 	other.error:SetText("")
 	self:ApplyScale()

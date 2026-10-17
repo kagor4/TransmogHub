@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local TH = ns.TH
 
 ---------------------------------------------------------------------------
@@ -85,7 +86,7 @@ local function IconButton(parent, x, y)
 		GameTooltip:SetOwner(btn, "ANCHOR_RIGHT")
 		GameTooltip:SetText(tip[1])
 		if tip[2] then GameTooltip:AddLine(tip[2], 1, 1, 1, true) end
-		if btn.locked then GameTooltip:AddLine("Ещё не открыт", 1, 0.3, 0.3) end
+		if btn.locked then GameTooltip:AddLine(L["Ещё не открыт"], 1, 0.3, 0.3) end
 		GameTooltip:Show()
 	end)
 	b:SetScript("OnLeave", GameTooltip_Hide)
@@ -110,7 +111,7 @@ local function Build()
 
 	picker.recLabel = picker:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 	picker.recLabel:SetPoint("TOPLEFT", 16, -32)
-	picker.recLabel:SetText("Рекомендуемые: вещи образа и иконки к тегам")
+	picker.recLabel:SetText(L["Рекомендуемые: вещи образа и иконки к тегам"])
 	picker.rec = {}
 	for i = 1, COLS * MAX_REC_ROWS do
 		local col, row = (i - 1) % COLS, math.floor((i - 1) / COLS)
@@ -159,11 +160,11 @@ local function Build()
 	TH.PadButton(picker.defaultBtn)
 	picker.defaultBtn:SetSize(170, 24)
 	picker.defaultBtn:SetPoint("BOTTOMLEFT", 14, 12)
-	picker.defaultBtn:SetText("По умолчанию")
+	picker.defaultBtn:SetText(L["По умолчанию"])
 	picker.defaultBtn:SetScript("OnClick", function() picker:Pick(nil) end)
 	picker.defaultBtn:SetScript("OnEnter", function(b)
 		GameTooltip:SetOwner(b, "ANCHOR_TOP")
-		GameTooltip:SetText("По умолчанию")
+		GameTooltip:SetText(L["По умолчанию"])
 		GameTooltip:AddLine(picker.defaultHint, 1, 1, 1, true)
 		GameTooltip:Show()
 	end)
@@ -230,9 +231,9 @@ function TH:OpenIconPicker(opts)
 	if not picker then Build() end
 	CollectAllIcons()
 	picker.current, picker.onPick, picker.offset = opts.current, opts.onPick, 0
-	picker.title:SetText(opts.title or "Иконка образа")
-	picker.recLabel:SetText(opts.recLabel or "Рекомендуемые: вещи образа и иконки к тегам")
-	picker.defaultHint = opts.defaultHint or "Иконка вещи на груди из образа."
+	picker.title:SetText(opts.title or L["Иконка образа"])
+	picker.recLabel:SetText(opts.recLabel or L["Рекомендуемые: вещи образа и иконки к тегам"])
+	picker.defaultHint = opts.defaultHint or L["Иконка вещи на груди из образа."]
 	if opts.recommended then
 		picker.recommended = {}
 		for _, icon in ipairs(opts.recommended) do
@@ -245,7 +246,7 @@ function TH:OpenIconPicker(opts)
 	picker.list = opts.list or allIcons
 	picker.locked, picker.tooltips, picker.borders = opts.locked, opts.tooltips, opts.borders
 	picker:Layout(opts.recRows or REC_ROWS)
-	picker.allLabel:SetText(opts.allLabel or string.format("Все иконки игры (%d) — колесо мыши или ползунок", #allIcons))
+	picker.allLabel:SetText(opts.allLabel or string.format(L["Все иконки игры (%d) — колесо мыши или ползунок"], #allIcons))
 	picker.bar:Sync(0, picker:MaxOffset())
 	picker:RefreshRecommended()
 	picker:RefreshAll()

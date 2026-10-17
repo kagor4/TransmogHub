@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local TH = ns.TH
 
 ---------------------------------------------------------------------------
@@ -8,20 +9,20 @@ local TH = ns.TH
 -- Вид по умолчанию разный, чтобы уведомление не путалось с достижением.
 ---------------------------------------------------------------------------
 TH.TOAST_STYLES = {
-	{ key = "classic", name = "Классика", hint = "Рамка подсказки игры, цвет рамки — редкость или тип события" },
-	{ key = "dark", name = "Тёмный", hint = "Плоский тёмный фон и цветная полоса слева" },
-	{ key = "compact", name = "Компактный", hint = "Одна строка, маленькая иконка" },
+	{ key = "classic", name = L["Классика"], hint = L["Рамка подсказки игры, цвет рамки — редкость или тип события"] },
+	{ key = "dark", name = L["Тёмный"], hint = L["Плоский тёмный фон и цветная полоса слева"] },
+	{ key = "compact", name = L["Компактный"], hint = L["Одна строка, маленькая иконка"] },
 }
 TH.TOAST_PLACES = {
-	{ key = "alerts", name = "В стопке оповещений игры", hint = "Там же, где достижения и добыча игры (и куда их сдвинули другие аддоны)" },
-	{ key = "custom", name = "Своё место", hint = "Куда перетащите кнопкой «Переместить»" },
+	{ key = "alerts", name = L["В стопке оповещений игры"], hint = L["Там же, где достижения и добыча игры (и куда их сдвинули другие аддоны)"] },
+	{ key = "custom", name = L["Своё место"], hint = L["Куда перетащите кнопкой «Переместить»"] },
 }
 TH.TOAST_KINDS = {
-	ach = { name = "Достижения", sample = { icon = "Interface\\Icons\\Achievement_Quests_Completed_06",
-		header = "Достижение Transmog Hub", title = "|cff0070ddПример достижения|r", text = "Редкое, |cff40ff40+25|r очков стиля",
+	ach = { name = L["Достижения"], sample = { icon = "Interface\\Icons\\Achievement_Quests_Completed_06",
+		header = L["Достижение Transmog Hub"], title = L["|cff0070ddПример достижения|r"], text = L["Редкое, |cff40ff40+25|r очков стиля"],
 		color = { 0, 0.44, 0.87 } } },
-	note = { name = "Уведомления", sample = { icon = "Interface\\Icons\\INV_Letter_15",
-		header = "Transmog Hub · подписки", title = "Новый образ от Автора", text = "«Пример образа»",
+	note = { name = L["Уведомления"], sample = { icon = "Interface\\Icons\\INV_Letter_15",
+		header = L["Transmog Hub · подписки"], title = L["Новый образ от Автора"], text = L["«Пример образа»"],
 		color = { 0.2, 0.75, 0.95 } } },
 }
 
@@ -223,8 +224,8 @@ function TH:SetToastUnlocked(kind, unlocked)
 		showing[kind] = true
 		f.moving = true
 		local sample = CopyTable(TH.TOAST_KINDS[kind].sample)
-		sample.title = "Перетащите в удобное место"
-		sample.text = "Потом — «Заблокировать» в настройках"
+		sample.title = L["Перетащите в удобное место"]
+		sample.text = L["Потом — «Заблокировать» в настройках"]
 		Fill(f, sample)
 		s.place = "custom"
 		Place(f)

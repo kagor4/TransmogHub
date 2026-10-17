@@ -49,7 +49,7 @@ function M.install(now)
 end
 
 -- Файлы логики аддона в порядке загрузки (без интерфейса)
-M.FILES = { "Data/Bundled.lua", "Data/Blocklist.lua", "Data/Charts.lua", "Data/Secrets.lua", "Data/TagIcons.lua", "Core.lua",
+M.FILES = { "Locales/Locale.lua", "Locales/enUS.lua", "Data/Bundled.lua", "Data/Blocklist.lua", "Data/Charts.lua", "Data/Secrets.lua", "Data/TagIcons.lua", "Core.lua",
 	"Moderation.lua", "Network.lua", "Secret.lua", "Achievements.lua", "Charts.lua", "Standing.lua" }
 
 function M.load(dir)

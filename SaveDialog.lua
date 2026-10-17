@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local TH = ns.TH
 
 local MAX_TAGS = 5
@@ -87,7 +88,7 @@ end
 function TH:CheckRaidTag(tag, items)
 	local tier = RAID_TAG_TIER[tag]
 	if not tier then return true end
-	if not items then return false, "Проверяю вещи образа, подождите секунду." end
+	if not items then return false, L["Проверяю вещи образа, подождите секунду."] end
 	local have, total = 0, 0
 	for slot, it in pairs(items) do
 		local det = not SKIP_SLOTS[slot] and it[1] and self:GetSourceDetails(it[1])
@@ -97,7 +98,7 @@ function TH:CheckRaidTag(tag, items)
 		end
 	end
 	if total > 0 and have * 2 >= total then return true, nil, have, total end
-	return false, string.format("Нельзя выбрать: хотя бы половина видимых вещей должна быть из рейдов этого дополнения. Сейчас — %d из %d.",
+	return false, string.format(L["Нельзя выбрать: хотя бы половина видимых вещей должна быть из рейдов этого дополнения. Сейчас — %d из %d."],
 		have, total), have, total
 end
 
@@ -141,11 +142,11 @@ local function DoSave(publish, withoutTags, armorChecked, iconChecked)
 		dlg.saveBtn:Enable()
 		dlg.publishBtn:Enable()
 		if not items then
-			TH:Print("Не удалось запомнить образ. Наденьте хотя бы одну вещь.")
+			TH:Print(L["Не удалось запомнить образ. Наденьте хотя бы одну вещь."])
 			return
 		end
 		if method == "equipment" then
-			TH:Print("Трансмог не считался — сохранён вид надетых вещей без трансмога. Сообщите автору аддона.")
+			TH:Print(L["Трансмог не считался — сохранён вид надетых вещей без трансмога. Сообщите автору аддона."])
 		end
 		-- рейдовые теги — по вещам, которые сохраняются прямо сейчас
 		for _, tag in ipairs(tags) do
@@ -188,18 +189,18 @@ ShowNoTagsWarning = function(publish)
 		w:EnableMouse(true)
 		local title = w:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 		title:SetPoint("TOP", 0, -6)
-		title:SetText("Образ без тегов")
+		title:SetText(L["Образ без тегов"])
 		local text = w:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 		text:SetPoint("TOPLEFT", 16, -36)
 		text:SetWidth(368)
 		text:SetJustifyH("LEFT")
-		text:SetText("У образа нет ни одного тега. Его будет труднее найти: игроки часто ищут образы по тегам. Добавить теги потом нельзя.")
+		text:SetText(L["У образа нет ни одного тега. Его будет труднее найти: игроки часто ищут образы по тегам. Добавить теги потом нельзя."])
 
 		w.choose = CreateFrame("Button", nil, w, "UIPanelButtonTemplate")
 		TH.PadButton(w.choose)
 		w.choose:SetSize(150, 24)
 		w.choose:SetPoint("BOTTOMLEFT", 14, 12)
-		w.choose:SetText("Выбрать теги")
+		w.choose:SetText(L["Выбрать теги"])
 		w.choose:SetScript("OnClick", function()
 			w:Hide()
 			dlg.tags.search:SetFocus()
@@ -214,7 +215,7 @@ ShowNoTagsWarning = function(publish)
 		end)
 	end
 	w.publish = publish
-	w.anyway:SetText(publish and "Опубликовать без тегов" or "Сохранить без тегов")
+	w.anyway:SetText(publish and L["Опубликовать без тегов"] or L["Сохранить без тегов"])
 	w:Show()
 end
 
@@ -231,7 +232,7 @@ ShowArmorWarning = function(publish, wrong)
 		w:EnableMouse(true)
 		local title = w:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 		title:SetPoint("TOP", 0, -6)
-		title:SetText("Тег брони не совпадает с вещами")
+		title:SetText(L["Тег брони не совпадает с вещами"])
 		w.text = w:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 		w.text:SetPoint("TOPLEFT", 16, -36)
 		w.text:SetWidth(388)
@@ -240,7 +241,7 @@ ShowArmorWarning = function(publish, wrong)
 		TH.PadButton(w.remove)
 		w.remove:SetSize(190, 24)
 		w.remove:SetPoint("BOTTOMLEFT", 14, 12)
-		w.remove:SetText("Убрать тег и продолжить")
+		w.remove:SetText(L["Убрать тег и продолжить"])
 		w.remove:SetScript("OnClick", function()
 			w:Hide()
 			for _, tag in ipairs(w.wrong) do dlg.tags:Toggle(tag) end
@@ -251,7 +252,7 @@ ShowArmorWarning = function(publish, wrong)
 		TH.PadButton(w.keep)
 		w.keep:SetSize(170, 24)
 		w.keep:SetPoint("BOTTOMRIGHT", -14, 12)
-		w.keep:SetText("Оставить как есть")
+		w.keep:SetText(L["Оставить как есть"])
 		w.keep:SetScript("OnClick", function()
 			w:Hide()
 			DoSave(w.publish, true, true, true)
@@ -260,8 +261,8 @@ ShowArmorWarning = function(publish, wrong)
 	local labels = {}
 	for _, tag in ipairs(wrong) do labels[#labels + 1] = "«" .. (TH.TAG_LABEL[tag] or tag) .. "»" end
 	w.publish, w.wrong = publish, wrong
-	w.text:SetText("В образе нет вещей с типом брони " .. table.concat(labels, ", ")
-		.. ". Если тег не подходит, игроки могут его оспорить, и он погаснет. Убрать его сейчас?")
+	w.text:SetText(L["В образе нет вещей с типом брони "] .. table.concat(labels, ", ")
+		.. L[". Если тег не подходит, игроки могут его оспорить, и он погаснет. Убрать его сейчас?"])
 	w:Show()
 end
 
@@ -278,7 +279,7 @@ ShowNoIconWarning = function(withoutTags)
 		w:EnableMouse(true)
 		local title = w:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 		title:SetPoint("TOP", 0, -6)
-		title:SetText("Иконка не выбрана")
+		title:SetText(L["Иконка не выбрана"])
 		w.icon = w:CreateTexture(nil, "ARTWORK")
 		w.icon:SetSize(44, 44)
 		w.icon:SetPoint("TOPLEFT", 16, -36)
@@ -286,13 +287,13 @@ ShowNoIconWarning = function(withoutTags)
 		text:SetPoint("TOPLEFT", w.icon, "TOPRIGHT", 12, 0)
 		text:SetWidth(332)
 		text:SetJustifyH("LEFT")
-		text:SetText("У образа будет иконка по умолчанию — облик вещи на груди (слева). После публикации иконку сменить нельзя.")
+		text:SetText(L["У образа будет иконка по умолчанию — облик вещи на груди (слева). После публикации иконку сменить нельзя."])
 
 		w.choose = CreateFrame("Button", nil, w, "UIPanelButtonTemplate")
 		TH.PadButton(w.choose)
 		w.choose:SetSize(160, 24)
 		w.choose:SetPoint("BOTTOMLEFT", 14, 12)
-		w.choose:SetText("Выбрать иконку")
+		w.choose:SetText(L["Выбрать иконку"])
 		w.choose:SetScript("OnClick", function()
 			w:Hide()
 			dlg.iconBtn:Click()
@@ -302,7 +303,7 @@ ShowNoIconWarning = function(withoutTags)
 		TH.PadButton(w.anyway)
 		w.anyway:SetSize(190, 24)
 		w.anyway:SetPoint("BOTTOMRIGHT", -14, 12)
-		w.anyway:SetText("Опубликовать с этой")
+		w.anyway:SetText(L["Опубликовать с этой"])
 		w.anyway:SetScript("OnClick", function()
 			w:Hide()
 			DoSave(true, w.withoutTags, false, true)
@@ -328,12 +329,12 @@ local function Build()
 
 	local title = dlg:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 	title:SetPoint("TOP", 0, -6)
-	title:SetText("Новый образ")
+	title:SetText(L["Новый образ"])
 
-	Label(dlg, "1. Название", 18, -36)
+	Label(dlg, L["1. Название"], 18, -36)
 	dlg.name = EditBox(dlg, -54, 48)
 
-	Label(dlg, "Описание (необязательно)", 18, -82)
+	Label(dlg, L["Описание (необязательно)"], 18, -82)
 	dlg.desc = EditBox(dlg, -100, 200)
 
 	-- Ошибка фильтра — справа от заголовка «Название»
@@ -352,7 +353,7 @@ local function Build()
 	iconBtn:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
 	local iconLabel = dlg:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 	iconLabel:SetPoint("BOTTOM", iconBtn, "TOP", 0, 3)
-	iconLabel:SetText("3. Иконка")
+	iconLabel:SetText(L["3. Иконка"])
 	iconBtn:SetScript("OnClick", function()
 		local tags = SelectedTags()
 		TH:OpenIconPicker({
@@ -361,7 +362,7 @@ local function Build()
 			-- вещи образа уже сняты при открытии окна — рекомендации сразу, без ожидания
 			items = dlg.items,
 			getItems = not dlg.items and function(cb) TH:CaptureCurrent(function(items) cb(items) end) end or nil,
-			recLabel = #tags == 0 and "Рекомендуемые: вещи образа. Выберите теги — добавятся иконки к ним" or nil,
+			recLabel = #tags == 0 and L["Рекомендуемые: вещи образа. Выберите теги — добавятся иконки к ним"] or nil,
 			onPick = function(fileID)
 				dlg.iconValue = fileID
 				dlg:UpdateIcon()
@@ -370,9 +371,9 @@ local function Build()
 	end)
 	iconBtn:SetScript("OnEnter", function(b)
 		GameTooltip:SetOwner(b, "ANCHOR_LEFT")
-		GameTooltip:SetText("Иконка образа")
-		GameTooltip:AddLine(dlg.iconValue and "Выбрана вами. Нажмите, чтобы сменить." or
-			"По умолчанию — вещь на груди. Выбирайте после тегов: к ним появятся подходящие иконки.", 1, 1, 1, true)
+		GameTooltip:SetText(L["Иконка образа"])
+		GameTooltip:AddLine(dlg.iconValue and L["Выбрана вами. Нажмите, чтобы сменить."] or
+			L["По умолчанию — вещь на груди. Выбирайте после тегов: к ним появятся подходящие иконки."], 1, 1, 1, true)
 		GameTooltip:Show()
 	end)
 	iconBtn:SetScript("OnLeave", GameTooltip_Hide)
@@ -386,7 +387,7 @@ local function Build()
 	dlg.name:SetScript("OnEnterPressed", function() dlg.desc:SetFocus() end)
 	dlg.desc:SetScript("OnEnterPressed", function() DoSave(true) end)
 
-	Label(dlg, "2. Теги (до " .. MAX_TAGS .. ") — по ним образ ищут, к ним же подберём иконки", 18, -130)
+	Label(dlg, L["2. Теги (до "] .. MAX_TAGS .. L[") — по ним образ ищут, к ним же подберём иконки"], 18, -130)
 	dlg.tags = TH:CreateTagPicker(dlg, { cols = 3, rows = 10, colW = 165, max = MAX_TAGS,
 		canSelect = function(key) return TH:CheckRaidTag(key, dlg.items) end })
 	dlg.tags:SetPoint("TOPLEFT", 14, -150)
@@ -396,7 +397,7 @@ local function Build()
 	TH.PadButton(publish)
 	publish:SetSize(150, 24)
 	publish:SetPoint("BOTTOMLEFT", 16, 14)
-	publish:SetText("Опубликовать")
+	publish:SetText(L["Опубликовать"])
 	if TH.StylePrimaryButton then TH.StylePrimaryButton(publish) end
 	publish:SetScript("OnClick", function() DoSave(true) end)
 	dlg.publishBtn = publish
@@ -405,12 +406,12 @@ local function Build()
 	TH.PadButton(save)
 	save:SetSize(170, 24)
 	save:SetPoint("LEFT", publish, "RIGHT", 8, 0)
-	save:SetText("Сохранить черновик")
+	save:SetText(L["Сохранить черновик"])
 	save:SetScript("OnClick", function() DoSave(false) end)
 	save:SetScript("OnEnter", function(b)
 		GameTooltip:SetOwner(b, "ANCHOR_TOP")
-		GameTooltip:SetText("Сохранить только у себя")
-		GameTooltip:AddLine("Опубликовать можно позже во вкладке «Мои».", 1, 1, 1, true)
+		GameTooltip:SetText(L["Сохранить только у себя"])
+		GameTooltip:AddLine(L["Опубликовать можно позже во вкладке «Мои»."], 1, 1, 1, true)
 		GameTooltip:Show()
 	end)
 	save:SetScript("OnLeave", GameTooltip_Hide)
@@ -426,21 +427,21 @@ local function Build()
 	TH.PadButton(dlg.sourceBtn)
 	dlg.sourceBtn:SetSize(230, 24)
 	dlg.sourceBtn:SetPoint("RIGHT", cancel, "LEFT", -8, 0)
-	dlg.sourceBtn:SetText("Образ: надето сейчас")
+	dlg.sourceBtn:SetText(L["Образ: надето сейчас"])
 	dlg.sourceBtn:SetScript("OnClick", function(btn)
 		if not (MenuUtil and MenuUtil.CreateContextMenu) then return end
 		local choices = TH:GetCustomSetChoices()
 		MenuUtil.CreateContextMenu(btn, function(_, root)
-			root:CreateTitle("Откуда взять образ")
-			root:CreateRadio("Надето сейчас", function() return dlg.fixedItems == nil end, function() UseSource(nil) end)
+			root:CreateTitle(L["Откуда взять образ"])
+			root:CreateRadio(L["Надето сейчас"], function() return dlg.fixedItems == nil end, function() UseSource(nil) end)
 			if #choices == 0 then
-				root:CreateTitle("|cff999999Своих комплектов нет|r")
+				root:CreateTitle(L["|cff999999Своих комплектов нет|r"])
 			else
-				root:CreateTitle("Свои комплекты")
+				root:CreateTitle(L["Свои комплекты"])
 				for _, c in ipairs(choices) do
 					local r = root:CreateRadio(c.name, function() return dlg.fixedItems == c.items end, function() UseSource(c) end)
 					if r and r.SetTooltip then
-						r:SetTooltip(function(tip) GameTooltip_SetTitle(tip, c.name); GameTooltip_AddNormalLine(tip, "Выберите — комплект откроется в примерочной") end)
+						r:SetTooltip(function(tip) GameTooltip_SetTitle(tip, c.name); GameTooltip_AddNormalLine(tip, L["Выберите — комплект откроется в примерочной"]) end)
 					end
 				end
 			end
@@ -448,8 +449,8 @@ local function Build()
 	end)
 	dlg.sourceBtn:SetScript("OnEnter", function(b)
 		GameTooltip:SetOwner(b, "ANCHOR_TOP")
-		GameTooltip:SetText("Откуда взять образ")
-		GameTooltip:AddLine("То, что надето сейчас, или любой из «Своих комплектов» окна трансмогрификации — переодеваться не нужно.", 1, 1, 1, true)
+		GameTooltip:SetText(L["Откуда взять образ"])
+		GameTooltip:AddLine(L["То, что надето сейчас, или любой из «Своих комплектов» окна трансмогрификации — переодеваться не нужно."], 1, 1, 1, true)
 		GameTooltip:Show()
 	end)
 	dlg.sourceBtn:SetScript("OnLeave", GameTooltip_Hide)
@@ -465,7 +466,7 @@ function TH:GetCustomSetChoices()
 	for _, id in ipairs(api.GetCustomSets() or {}) do
 		local name, icon = api.GetCustomSetInfo(id)
 		local items = self:ItemsFromTransmogInfoList(api.GetCustomSetItemTransmogInfoList(id))
-		if items then out[#out + 1] = { id = id, name = name or ("Комплект " .. id), icon = icon, items = items } end
+		if items then out[#out + 1] = { id = id, name = name or (L["Комплект "] .. id), icon = icon, items = items } end
 	end
 	table.sort(out, function(a, b) return a.name < b.name end)
 	return out
@@ -494,7 +495,7 @@ UseSource = function(choice)
 		end
 		short = short:sub(1, cut) .. "..."
 	end
-	dlg.sourceBtn:SetText(choice and ((choice.prefix or "Из комплекта: ") .. short) or "Образ: надето сейчас")
+	dlg.sourceBtn:SetText(choice and ((choice.prefix or L["Из комплекта: "]) .. short) or L["Образ: надето сейчас"])
 	if choice then
 		dlg.items = choice.items
 		if choice.id then TH:PreviewCustomSet(choice) end -- свой комплект: сразу видно, что публикуем
@@ -515,7 +516,7 @@ end
 function TH:OpenSaveDialog(preset)
 	if not dlg then Build() end
 	dlg.fixedItems = nil
-	if dlg.sourceBtn then dlg.sourceBtn:SetText("Образ: надето сейчас") end
+	if dlg.sourceBtn then dlg.sourceBtn:SetText(L["Образ: надето сейчас"]) end
 	dlg.name:SetText("")
 	dlg.desc:SetText("")
 	dlg.error:SetText("")
@@ -566,7 +567,7 @@ function TH:GetViewedOutfit()
 		local okInfo, info = pcall(api.GetOutfitInfo, okId and id or 0)
 		name = okInfo and info and info.name
 	end
-	return { name = (name and name ~= "") and name or "Наряд", items = items, prefix = "Из наряда: " }
+	return { name = (name and name ~= "") and name or L["Наряд"], items = items, prefix = L["Из наряда: "] }
 end
 
 local outfitButton
@@ -583,20 +584,20 @@ function TH:AttachOutfitButton()
 	outfitButton:SetFrameLevel((preview:GetFrameLevel() or 1) + 100)
 	outfitButton:SetNormalFontObject("GameFontHighlight")
 	outfitButton:SetHighlightFontObject("GameFontHighlight")
-	outfitButton:SetText("В Transmog Hub")
+	outfitButton:SetText(L["В Transmog Hub"])
 	if TH.StylePrimaryButton then TH.StylePrimaryButton(outfitButton) end
 	outfitButton:SetScript("OnClick", function()
 		local outfit = TH:GetViewedOutfit()
 		if not outfit then
-			TH:Notify("Не удалось прочитать вещи наряда. Выберите наряд в списке слева и попробуйте ещё раз.")
+			TH:Notify(L["Не удалось прочитать вещи наряда. Выберите наряд в списке слева и попробуйте ещё раз."])
 			return
 		end
 		TH:OpenSaveDialog(outfit)
 	end)
 	outfitButton:SetScript("OnEnter", function(b)
 		GameTooltip:SetOwner(b, "ANCHOR_BOTTOM")
-		GameTooltip:SetText("Опубликовать в Transmog Hub")
-		GameTooltip:AddLine("Откроет окно нового образа с вещами наряда, который сейчас на модели, — переодеваться не нужно.", 1, 1, 1, true)
+		GameTooltip:SetText(L["Опубликовать в Transmog Hub"])
+		GameTooltip:AddLine(L["Откроет окно нового образа с вещами наряда, который сейчас на модели, — переодеваться не нужно."], 1, 1, 1, true)
 		GameTooltip:Show()
 	end)
 	outfitButton:SetScript("OnLeave", GameTooltip_Hide)

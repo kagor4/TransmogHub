@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local TH = ns.TH
 
 -- Та же сцена, что у штатной примерочной (DressUpFrame)
@@ -106,7 +107,7 @@ function TH:UpdateModelOverlap()
 				preview.overlapHint = preview.parent:CreateFontString(nil, "OVERLAY", "GameFontDisable")
 				preview.overlapHint:SetPoint("CENTER")
 				preview.overlapHint:SetWidth(220)
-				preview.overlapHint:SetText("Окно трансмогрификации перекрывает модель — отодвиньте окна друг от друга.")
+				preview.overlapHint:SetText(L["Окно трансмогрификации перекрывает модель — отодвиньте окна друг от друга."])
 			end
 			preview.overlapHint:SetShown(hide)
 			if not hide then preview:Refresh() end

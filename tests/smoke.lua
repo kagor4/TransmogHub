@@ -165,7 +165,7 @@ local function flush()
 end
 local ns = {}
 local dir = arg[1]
-for _, f in ipairs({ "Data/Bundled.lua", "Data/Blocklist.lua", "Data/Charts.lua", "Data/Secrets.lua", "Data/TagIcons.lua", "Core.lua", "Moderation.lua", "Network.lua", "Appearance.lua", "Preview.lua", "TagPicker.lua", "UI.lua", "SaveDialog.lua", "IconPicker.lua", "Secret.lua", "Achievements.lua", "Charts.lua", "Profile.lua", "Help.lua", "Tour.lua", "Standing.lua", "Ideas.lua", "Wowhead.lua", "Minimap.lua", "Skin.lua", "Usage.lua", "Toasts.lua", "Follow.lua", "Fonts.lua", "Settings.lua" }) do
+for _, f in ipairs({ "Locales/Locale.lua", "Locales/enUS.lua", "Data/Bundled.lua", "Data/Blocklist.lua", "Data/Charts.lua", "Data/Secrets.lua", "Data/TagIcons.lua", "Core.lua", "Moderation.lua", "Network.lua", "Appearance.lua", "Preview.lua", "TagPicker.lua", "UI.lua", "SaveDialog.lua", "IconPicker.lua", "Secret.lua", "Achievements.lua", "Charts.lua", "Profile.lua", "Help.lua", "Tour.lua", "Standing.lua", "Ideas.lua", "Wowhead.lua", "Minimap.lua", "Skin.lua", "Usage.lua", "Toasts.lua", "Follow.lua", "Fonts.lua", "Settings.lua" }) do
   assert(loadfile(dir .. "/" .. f))("TransmogHub", ns)
 end
 TransmogHub_Charts = nil -- тесты проверяют и расчёт мест без официального чарта
