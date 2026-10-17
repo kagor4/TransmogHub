@@ -5,6 +5,21 @@ local TH = CreateFrame("Frame")
 ns.TH = TH
 TransmogHub = TH
 
+-- WoW Forever (проект CAMELOT, интерфейс 16xxx): своя сеть, имена «Имя Фамилия» без сервера,
+-- свои расы, теги и чарт. Определяем по проекту, а на случай переименования константы — по TOC.
+do
+	local toc = GetBuildInfo and select(4, GetBuildInfo())
+	TH.FOREVER = (WOW_PROJECT_CAMELOT ~= nil and WOW_PROJECT_ID == WOW_PROJECT_CAMELOT)
+		or (type(toc) == "number" and toc >= 16000 and toc < 20000)
+end
+
+-- Похоже ли на полное имя персонажа: «Имя-Сервер», а в Forever «Имя Фамилия»
+function TH:IsCharName(name)
+	if type(name) ~= "string" or #name > 64 or name:find(",", 1, true) then return false end
+	if self.FOREVER then return name:find("^[^%s%-]+ [^%s%-]+$") ~= nil end
+	return name:find("^[^%-]+%-[^%-]+$") ~= nil
+end
+
 -- Кнопки с текстом: не меньше заданной ширины, но всегда с отступом 12 по бокам от текста
 -- (длинная надпись или другой язык не вылезет за края)
 -- Ползунок полосы прокрутки ровно по её ширине (стандартная текстура шире и наезжает)

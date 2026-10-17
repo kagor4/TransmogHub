@@ -17,6 +17,7 @@ luac5.1 -p *.lua Data/*.lua Locales/*.lua
 lua5.1 tests/smoke.lua . > /dev/null
 lua5.1 tests/filter.lua . > /dev/null
 lua5.1 tests/locales.lua . > /dev/null
+lua5.1 tests/forever.lua . > /dev/null
 lua5.1 tests/charts.lua . > /dev/null
 if git diff --quiet -- Data/Charts.lua; then
 	echo "Чарт не изменился, выпуск не нужен"

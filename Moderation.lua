@@ -459,6 +459,10 @@ TH.ADMIN_HASHES = {
 	["1b9cb42a2e7e90be"] = true,
 	["6f37a0d4483bce50"] = true,
 	["6a3a2f263267d1fd"] = true,
+	-- WoW Forever: «Имя Фамилия» без сервера
+	["1cdf589d7e035947"] = true,
+	["029f843e68c47dd2"] = true,
+	["782712237a0b3dff"] = true,
 }
 TH.MODERATORS = {} -- для тестов и временных прав в этом сеансе
 
@@ -505,12 +509,22 @@ end
 -- пробелами) → точное «Ник-Мир» из тех, кого знает аддон (авторы, рейтинг, подписки,
 -- оценки). Возвращает имя и true, если игрок найден.
 function TH:ResolvePlayerName(input)
-	input = strtrim(input or ""):gsub("%s+", "")
+	if self.FOREVER then
+		-- Forever: «Имя Фамилия», пробелы значимы; ввод только имени — ищем по имени
+		input = strtrim(input or ""):gsub("%s+", " ")
+	else
+		input = strtrim(input or ""):gsub("%s+", "")
+	end
 	if input == "" then return nil, false end
-	local short, realm = input:match("^([^%-]+)%-?(.*)$")
+	local short, realm
+	if self.FOREVER then
+		short, realm = input:match("^(%S+)%s?(.*)$")
+	else
+		short, realm = input:match("^([^%-]+)%-?(.*)$")
+	end
 	local lshort, lrealm = self.Lower(short), self.Lower(realm or "")
 	local known, net = {}, self.db.net
-	local function Add(n) if type(n) == "string" and n:find("-", 1, true) then known[n] = true end end
+	local function Add(n) if self:IsCharName(n) then known[n] = true end end
 	for _, set in pairs(net.sets) do Add(set.author) end
 	for n in pairs(net.scores) do Add(n) end
 	for target, list in pairs(net.follows) do
@@ -524,7 +538,8 @@ function TH:ResolvePlayerName(input)
 	if known[input] then return input, true end
 	local matches = {}
 	for n in pairs(known) do
-		local s2, r2 = n:match("^([^%-]+)%-(.*)$")
+		local s2, r2
+		if self.FOREVER then s2, r2 = n:match("^(%S+) (.*)$") else s2, r2 = n:match("^([^%-]+)%-(.*)$") end
 		if s2 and self.Lower(s2) == lshort then
 			if lrealm ~= "" and self.Lower(r2) == lrealm then return n, true end
 			matches[#matches + 1] = n
@@ -532,7 +547,7 @@ function TH:ResolvePlayerName(input)
 	end
 	if #matches == 1 then return matches[1], true end
 	-- неизвестен или ников несколько: как ввели (без мира — свой мир)
-	if realm == "" then input = short .. "-" .. (GetNormalizedRealmName and GetNormalizedRealmName() or "") end
+	if realm == "" and not self.FOREVER then input = short .. "-" .. (GetNormalizedRealmName and GetNormalizedRealmName() or "") end
 	return input, false, matches
 end
 

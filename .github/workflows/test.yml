@@ -27,6 +27,9 @@ jobs:
       - name: Translations
         run: lua5.1 tests/locales.lua .
 
+      - name: WoW Forever
+        run: lua5.1 tests/forever.lua .
+
       - name: Official chart test
         run: lua5.1 tests/charts.lua .
 

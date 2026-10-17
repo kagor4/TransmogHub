@@ -136,16 +136,29 @@ end
 ---------------------------------------------------------------------------
 local myRealm
 
--- Отправитель приходит как «Имя» (свой сервер) или «Имя-Сервер»
+-- Отправитель приходит как «Имя» (свой сервер) или «Имя-Сервер».
+-- В Forever серверов нет: имя — «Имя Фамилия», оно и есть полное.
 function Net.FullName(name)
 	if not name or name == "" then return name end
+	if TH.FOREVER then return (strtrim(name):gsub("%s+", " ")) end
 	if name:find("-", 1, true) then return name end
 	myRealm = myRealm or GetNormalizedRealmName() or ""
 	return name .. "-" .. myRealm
 end
 
+local myName
 function Net.Me()
-	return Net.FullName(UnitName("player"))
+	if myName then return myName end
+	local name = UnitName("player")
+	-- Forever: нужна фамилия. Берём первый из вариантов, где она есть (с пробелом)
+	if TH.FOREVER and name and not name:find(" ", 1, true) then
+		for _, alt in ipairs({ GetUnitName and GetUnitName("player", true), UnitFullName and UnitFullName("player") }) do
+			if type(alt) == "string" and alt:find(" ", 1, true) then name = alt break end
+		end
+	end
+	if not name or name == UNKNOWNOBJECT then return Net.FullName(name) end
+	myName = Net.FullName(name)
+	return myName
 end
 
 local function Now()
@@ -248,10 +261,11 @@ end
 local function BNetName(gameAccountID)
 	local info = C_BattleNet.GetGameAccountInfoByID(gameAccountID)
 	if not info or not info.characterName or info.characterName == "" then return nil end
+	if TH.FOREVER then return Net.FullName(info.characterName) end
 	return info.characterName .. "-" .. NormalizeRealm(info.realmName)
 end
 
--- Друзья, которые сейчас в WoW Retail того же региона
+-- Друзья, которые сейчас в той же игре (Retail или Forever) того же региона
 local function OnlineWoWFriends()
 	local list = {}
 	if not (BNGetNumFriends and C_BattleNet.GetFriendNumGameAccounts) then return list end
@@ -260,7 +274,7 @@ local function OnlineWoWFriends()
 		for j = 1, C_BattleNet.GetFriendNumGameAccounts(i) do
 			local info = C_BattleNet.GetFriendGameAccountInfo(i, j)
 			if info and info.isOnline and info.clientProgram == wow
-				and info.wowProjectID == (WOW_PROJECT_MAINLINE or 1) and info.isInCurrentRegion then
+				and info.wowProjectID == (WOW_PROJECT_ID or WOW_PROJECT_MAINLINE or 1) and info.isInCurrentRegion then
 				list[#list + 1] = info.gameAccountID
 			end
 		end
@@ -1307,7 +1321,7 @@ handlers.h = function(self, body, _, origin)
 	for name in body:gmatch("[^,]+") do
 		n = n + 1
 		if n > 60 then break end
-		if name:find("^[^%-]+%-[^%-]+$") and #name <= 64 and not TH.db.myChars[name] then chars[name] = Now() end
+		if TH:IsCharName(name) and not TH.db.myChars[name] then chars[name] = Now() end
 	end
 end
 
