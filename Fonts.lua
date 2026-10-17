@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local TH = ns.TH
 
 ---------------------------------------------------------------------------
@@ -11,7 +12,7 @@ local TH = ns.TH
 
 -- Шрифты игры (есть в каждом клиенте)
 TH.GAME_FONTS = {
-	{ key = "friz", name = "Friz Quadrata (как в игре)", path = "Fonts\\FRIZQT___CYR.TTF" },
+	{ key = "friz", name = L["Friz Quadrata (как в игре)"], path = "Fonts\\FRIZQT___CYR.TTF" },
 	{ key = "arialn", name = "Arial Narrow", path = "Fonts\\ARIALN.TTF" },
 	{ key = "morpheus", name = "Morpheus", path = "Fonts\\MORPHEUS_CYR.TTF" },
 	{ key = "skurri", name = "Skurri", path = "Fonts\\SKURRI_CYR.TTF" },
@@ -23,10 +24,10 @@ TH.GAME_FONTS = {
 
 -- Свой шрифт: файл кладут сюда (папку создать самому), игру перезапустить целиком
 TH.CUSTOM_FONT_DIR = "Interface\\Fonts\\"
-TH.CUSTOM_FONT_HINT = "Свой шрифт: положите файл .ttf или .otf в папку World of Warcraft\\_retail_\\Interface\\Fonts "
-	.. "(папки Fonts нет — создайте), полностью перезапустите игру (/reload не хватит: новые файлы игра видит только "
-	.. "после запуска) и выберите «Свой шрифт...», вписав имя файла, например MyFont.ttf. "
-	.. "Аддон проверит, есть ли в шрифте русские и латинские буквы."
+TH.CUSTOM_FONT_HINT = L["Свой шрифт: положите файл .ttf или .otf в папку World of Warcraft\\_retail_\\Interface\\Fonts "]
+	.. L["(папки Fonts нет — создайте), полностью перезапустите игру (/reload не хватит: новые файлы игра видит только "]
+	.. L["после запуска) и выберите «Свой шрифт...», вписав имя файла, например MyFont.ttf. "]
+	.. L["Аддон проверит, есть ли в шрифте русские и латинские буквы."]
 
 -- Знаки, которые аддон пишет: все русские и латинские буквы, цифры и знаки
 local REQUIRED = {}
@@ -47,12 +48,12 @@ local probe, checked = nil, {}
 
 -- Есть ли в шрифте все нужные знаки: ok, список отсутствующих
 function TH:CheckFont(path)
-	if not path or path == "" then return false, { "файл не найден" } end
+	if not path or path == "" then return false, { L["файл не найден"] } end
 	if checked[path] then return checked[path][1], checked[path][2] end
 	probe = TH.fontProbe or probe or UIParent:CreateFontString(nil, "OVERLAY") -- fontProbe — для тестов
 	probe:Hide()
 	if not probe:SetFont(path, 16, "") then
-		checked[path] = { false, { "файл не найден или не шрифт" } }
+		checked[path] = { false, { L["файл не найден или не шрифт"] } }
 		return false, checked[path][2]
 	end
 	probe:SetText(NOTDEF)
@@ -60,7 +61,7 @@ function TH:CheckFont(path)
 	local missing = {}
 	if type(empty) ~= "number" or empty <= 0 then
 		-- не смогли измерить: не рискуем
-		checked[path] = { false, { "не удалось проверить" } }
+		checked[path] = { false, { L["не удалось проверить"] } }
 		return false, checked[path][2]
 	end
 	for _, ch in ipairs(REQUIRED) do
@@ -91,11 +92,11 @@ end
 
 -- Все шрифты, в которых есть нужные знаки: { key, name, path }
 function TH:GetFontChoices()
-	local list = { { key = "auto", name = "Авто (как в EllesmereUI)", hint = "Шрифт, выбранный в EllesmereUI; без него — как в игре." },
-		{ key = "default", name = "Как в игре" } }
+	local list = { { key = "auto", name = L["Авто (как в EllesmereUI)"], hint = L["Шрифт, выбранный в EllesmereUI; без него — как в игре."] },
+		{ key = "default", name = L["Как в игре"] } }
 	local euiPath, euiName = self:GetEllesmereFont()
 	if euiPath and self:CheckFont(euiPath) then
-		list[#list + 1] = { key = "eui", name = "Как в EllesmereUI" .. (euiName and (" (" .. euiName .. ")") or ""), path = euiPath }
+		list[#list + 1] = { key = "eui", name = L["Как в EllesmereUI"] .. (euiName and (" (" .. euiName .. ")") or ""), path = euiPath }
 	end
 	for _, f in ipairs(self.GAME_FONTS) do
 		if self:CheckFont(f.path) then list[#list + 1] = f end
@@ -110,13 +111,13 @@ function TH:GetFontChoices()
 			local dup = false
 			for _, f in ipairs(list) do if f.path and path and f.path:lower() == path:lower() then dup = true end end
 			if path and not dup and self:CheckFont(path) then
-				list[#list + 1] = { key = "lsm:" .. name, name = name .. " (аддоны)", path = path }
+				list[#list + 1] = { key = "lsm:" .. name, name = name .. L[" (аддоны)"], path = path }
 			end
 		end
 	end
 	if self.db.customFont and self.db.customFont ~= "" then
 		local path = self.CUSTOM_FONT_DIR .. self.db.customFont
-		if self:CheckFont(path) then list[#list + 1] = { key = "custom", name = "Свой: " .. self.db.customFont, path = path } end
+		if self:CheckFont(path) then list[#list + 1] = { key = "custom", name = L["Свой: "] .. self.db.customFont, path = path } end
 	end
 	return list
 end
@@ -201,18 +202,18 @@ end
 function TH:PrintFontCheck()
 	local function Line(name, path)
 		local ok, missing = self:CheckFont(path)
-		self:Print(name .. ": " .. (ok and "|cff40ff40все знаки есть|r"
-			or ("|cffff4040нет: " .. table.concat(missing, " ", 1, math.min(#missing, 20)) .. (#missing > 20 and " ..." or "") .. "|r")))
+		self:Print(name .. ": " .. (ok and L["|cff40ff40все знаки есть|r"]
+			or (L["|cffff4040нет: "] .. table.concat(missing, " ", 1, math.min(#missing, 20)) .. (#missing > 20 and " ..." or "") .. "|r")))
 	end
-	self:Print(string.format("Проверка шрифтов (%d знаков: русские и латинские буквы, цифры, знаки):", #REQUIRED))
+	self:Print(string.format(L["Проверка шрифтов (%d знаков: русские и латинские буквы, цифры, знаки):"], #REQUIRED))
 	local euiPath, euiName = self:GetEllesmereFont()
 	if euiPath then Line("EllesmereUI: " .. (euiName or euiPath), euiPath) end
 	for _, f in ipairs(self.GAME_FONTS) do Line(f.name, f.path) end
 	local LSM = LibStub and LibStub("LibSharedMedia-3.0", true)
 	if LSM and LSM.HashTable then
-		for name in pairs(LSM:HashTable("font") or {}) do Line(name .. " (аддоны)", LSM:Fetch("font", name, true)) end
+		for name in pairs(LSM:HashTable("font") or {}) do Line(name .. L[" (аддоны)"], LSM:Fetch("font", name, true)) end
 	end
-	if self.db.customFont then Line("Свой: " .. self.db.customFont, self.CUSTOM_FONT_DIR .. self.db.customFont) end
+	if self.db.customFont then Line(L["Свой: "] .. self.db.customFont, self.CUSTOM_FONT_DIR .. self.db.customFont) end
 end
 
 if hooksecurefunc then

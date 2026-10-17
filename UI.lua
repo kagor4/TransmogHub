@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local TH = ns.TH
 
 local UI = CreateFrame("Frame", "TransmogHubFrame", UIParent, "BasicFrameTemplateWithInset")
@@ -11,47 +12,47 @@ local LIST_TOP = 32 -- сверху над списком — переключа
 local SLOT_ROW_H = 19
 
 local VIEWS = {
-	{ key = "top", text = "Образы" },
-	{ key = "friends", text = "Друзья" },
-	{ key = "guild", text = "Гильдия" },
-	{ key = "favorites", text = "Избранное" },
-	{ key = "subs", text = "Подписки" },
-	{ key = "me", text = "Мой профиль" }, -- свой профиль; старый список «Мои» открывается из него
-	{ key = "achievements", text = "Достижения" },
+	{ key = "top", text = L["Образы"] },
+	{ key = "friends", text = L["Друзья"] },
+	{ key = "guild", text = L["Гильдия"] },
+	{ key = "favorites", text = L["Избранное"] },
+	{ key = "subs", text = L["Подписки"] },
+	{ key = "me", text = L["Мой профиль"] }, -- свой профиль; старый список «Мои» открывается из него
+	{ key = "achievements", text = L["Достижения"] },
 	-- «Модерация» — не вкладкой, а щитом в шапке окна (он есть только у модераторов)
 }
 
 local EMPTY_TEXT = {
-	mine = "Сохранённых образов пока нет.\n\nНаденьте трансмог и нажмите «Новый образ».",
-	favorites = "В избранном пусто.",
-	friends = "Друзья пока ничего не опубликовали.\n\nЗдесь образы друзей из списка друзей игры\nи Battle.net, у которых стоит аддон.",
-	hall = "В Зале славы пока никого.\n\nСюда попадают образы, которые трижды были первыми\nв «Лучших» за неделю или 8 недель держались в топ-10.",
-	subs = "Вы ни на кого не подписаны — или они ещё ничего не опубликовали.\n\nПодписаться: профиль автора > «Подписаться»\nили правый клик по образу.",
-	guild = "Согильдийцы пока ничего не опубликовали.\n\nЗдесь образы игроков вашей гильдии, у которых стоит аддон.",
-	moderation = "Жалоб и подозрительных оценок нет.",
-	default = "Пока здесь никого нет.\n\nОпубликуйте свой образ первым — его увидят\nвсе игроки с аддоном.",
+	mine = L["Сохранённых образов пока нет.\n\nНаденьте трансмог и нажмите «Новый образ»."],
+	favorites = L["В избранном пусто."],
+	friends = L["Друзья пока ничего не опубликовали.\n\nЗдесь образы друзей из списка друзей игры\nи Battle.net, у которых стоит аддон."],
+	hall = L["В Зале славы пока никого.\n\nСюда попадают образы, которые трижды были первыми\nв «Лучших» за неделю или 8 недель держались в топ-10."],
+	subs = L["Вы ни на кого не подписаны — или они ещё ничего не опубликовали.\n\nПодписаться: профиль автора > «Подписаться»\nили правый клик по образу."],
+	guild = L["Согильдийцы пока ничего не опубликовали.\n\nЗдесь образы игроков вашей гильдии, у которых стоит аддон."],
+	moderation = L["Жалоб и подозрительных оценок нет."],
+	default = L["Пока здесь никого нет.\n\nОпубликуйте свой образ первым — его увидят\nвсе игроки с аддоном."],
 }
 
 local STATUS_TEXT = {
-	draft = "|cff999999черновик|r",
-	published = "|cff40ff40опубликован|r",
-	rejected = "|cffff4040отклонён|r",
+	draft = L["|cff999999черновик|r"],
+	published = L["|cff40ff40опубликован|r"],
+	rejected = L["|cffff4040отклонён|r"],
 }
 
 UI.view = "top"
 
 -- Сортировка списков (кроме «Мои» и «Модерация»); выбирается кнопкой в шапке
 local SORTS = {
-	{ key = "top", text = "Лучшие", hint = "По рейтингу с учётом числа оценок" },
-	{ key = "trending", text = "В тренде", hint = "Больше всего звёзд за последние 7 дней" },
-	{ key = "new", text = "Новые", hint = "Образы за последние 14 дней, сначала самые свежие." },
-	{ key = "recommended", text = "Рекомендуемые",
-		hint = "Образы за последние 14 дней в случайном порядке. Чаще выпадают образы классов ваших персонажей (главного — ещё чаще) и с тегами, которые вам нравятся: вы их ставите своим образам, добавляете в избранное, оцениваете на 4—5. Кубик справа — перемешать." },
+	{ key = "top", text = L["Лучшие"], hint = L["По рейтингу с учётом числа оценок"] },
+	{ key = "trending", text = L["В тренде"], hint = L["Больше всего звёзд за последние 7 дней"] },
+	{ key = "new", text = L["Новые"], hint = L["Образы за последние 14 дней, сначала самые свежие."] },
+	{ key = "recommended", text = L["Рекомендуемые"],
+		hint = L["Образы за последние 14 дней в случайном порядке. Чаще выпадают образы классов ваших персонажей (главного — ещё чаще) и с тегами, которые вам нравятся: вы их ставите своим образам, добавляете в избранное, оцениваете на 4—5. Кубик справа — перемешать."] },
 }
 local SORT_TEXT = {}
 for _, s in ipairs(SORTS) do SORT_TEXT[s.key] = s.text end
 local SORTABLE = { top = true, friends = true, guild = true, favorites = true, author = true, subs = true }
-local LIST_TITLES = { mine = "Мои образы", moderation = "Жалобы и проверка оценок", subs = "Новые образы подписок", hall = "Зал славы" }
+local LIST_TITLES = { mine = L["Мои образы"], moderation = L["Жалобы и проверка оценок"], subs = L["Новые образы подписок"], hall = L["Зал славы"] }
 
 function UI:GetSort()
 	return TH.db and TH.db.listSort or "top"
@@ -134,7 +135,7 @@ local SOURCE_ICONS = {
 }
 
 -- Подписи звёзд оценки
-local STAR_LABELS = { "1 — даже мурлок бы не надел", "2 — так себе", "3 — неплохо", "4 — красиво", "5 — восторг!" }
+local STAR_LABELS = { L["1 — даже мурлок бы не надел"], L["2 — так себе"], L["3 — неплохо"], L["4 — красиво"], L["5 — восторг!"] }
 
 local function QualityName(det)
 	local c = det.quality and ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[det.quality]
@@ -223,11 +224,11 @@ function UI:Build()
 	self.status:ClearAllPoints()
 	self.status:SetPoint("LEFT", prev, "RIGHT", 16, 0)
 	self.status:SetWidth(260)
-	self.syncBtn = FlatButton(self, "Синхронизировать")
+	self.syncBtn = FlatButton(self, L["Синхронизировать"])
 	self.syncBtn:SetPoint("BOTTOMRIGHT", -40, 9) -- правее — рамка окна и уголок для растягивания
 	self.syncBtn:SetScript("OnClick", function()
 		TH.Net:RequestSync()
-		TH:Print("Запрос синхронизации отправлен.")
+		TH:Print(L["Запрос синхронизации отправлен."])
 	end)
 	self:BuildScaleSlider()
 	self:BuildResizeGrip()
@@ -315,14 +316,14 @@ end
 UI.Tip = Tip
 
 local TAB_TIPS = {
-	top = { "Образы", "Все образы игроков. Сверху над списком — сортировка: лучшие, в тренде, новые." },
-	friends = { "Друзья", "Образы ваших друзей из списка друзей игры и Battle.net." },
-	guild = { "Гильдия", "Образы ваших согильдийцев с аддоном." },
-	favorites = { "Избранное", "Образы, отмеченные золотой звёздочкой в списке." },
-	subs = { "Подписки", "Образы авторов, на которых вы подписаны: лучшие, в тренде, новые. Значок справа от сортировки — авторы: профиль, уведомления от каждого, отписка. Подписаться: профиль автора или правый клик по образу." },
-	me = { "Мой профиль", "Ваши образы и черновики, достижения, место в рейтинге, аватар и титул." },
-	achievements = { "Достижения", "Все достижения и рейтинг очков стиля среди игроков." },
-	moderation = { "Модерация", "Образы с жалобами и с подозрением на накрутку оценок. Видна только модераторам." },
+	top = { L["Образы"], L["Все образы игроков. Сверху над списком — сортировка: лучшие, в тренде, новые."] },
+	friends = { L["Друзья"], L["Образы ваших друзей из списка друзей игры и Battle.net."] },
+	guild = { L["Гильдия"], L["Образы ваших согильдийцев с аддоном."] },
+	favorites = { L["Избранное"], L["Образы, отмеченные золотой звёздочкой в списке."] },
+	subs = { L["Подписки"], L["Образы авторов, на которых вы подписаны: лучшие, в тренде, новые. Значок справа от сортировки — авторы: профиль, уведомления от каждого, отписка. Подписаться: профиль автора или правый клик по образу."] },
+	me = { L["Мой профиль"], L["Ваши образы и черновики, достижения, место в рейтинге, аватар и звание."] },
+	achievements = { L["Достижения"], L["Все достижения и рейтинг очков стиля среди игроков."] },
+	moderation = { L["Модерация"], L["Образы с жалобами и с подозрением на накрутку оценок. Видна только модераторам."] },
 }
 
 function UI:AddTooltips()
@@ -330,24 +331,24 @@ function UI:AddTooltips()
 		local t = TAB_TIPS[b.key]
 		if t then Tip(b, t[1], t[2]) end
 	end
-	Tip(self.helpBtn, "Справка", "Что где искать и как всё устроено.")
-	Tip(self.ideaBtn, "Письмо разработчику", "Идея, ошибка или пожелание — каждое письмо прочитают.")
-	Tip(self.settingsBtn, "Настройки", "Уведомления подписок, всплывашки (стиль, место, размер), вид и приватность.")
-	Tip(self.modBtn, "Модерация", "Образы с жалобами и с подозрением на накрутку оценок, управление модераторами.")
-	Tip(self.styleBtn, "Оформление", "Переключить вид окон: в стиле EllesmereUI или обычный, как в игре. Нужна перезагрузка интерфейса.")
-	Tip(self.search, "Поиск", "По названию образа, автору, тегам и названиям вещей. На вкладке «Достижения» — по достижениям.")
-	Tip(self.tagsBtn, "Теги", "Показать только образы с выбранными тегами. Там же можно предложить новый тег.")
-	Tip(self.saveBtn, "Новый образ", "Сохранить то, что сейчас надето на персонаже (с трансмогом), и поделиться с другими игроками. Можно сохранить и черновиком.")
-	Tip(self.syncBtn, "Синхронизировать", "Спросить у других игроков с аддоном, что нового: образы, оценки, рейтинг. При входе в игру это происходит само — кнопка нужна, если кажется, что чего-то не хватает.")
-	Tip(self.raceBtn, "Раса для примерки", "Свой персонаж, раса автора образа или любая другая. Пол модели игра менять не даёт — для другого пола используйте Wowhead.")
-	Tip(self.publishBtn, "Опубликовать", "Отправить черновик другим игрокам.")
-	Tip(self.deleteBtn, "Удалить", "Удалить образ. Опубликованный пропадёт и у других игроков.")
-	Tip(self.prevBtn, "Назад по списку")
-	Tip(self.nextBtn, "Дальше по списку")
-	Tip(self.modSetBtn, "Нарушение", "Выберите, что не так: шуточное название (автора попросят переименовать, без наказания), оскорбление (14 дней без публикаций, второй раз — навсегда), реклама (бан автора) или другое. Образ пропадёт у игроков, до которых дойдёт решение, и попадёт в чёрный список при разборе.")
-	Tip(self.modAuthorBtn, "Заблокировать автора", "Все образы автора пропадут; новые не будут приниматься.")
-	Tip(self.modSkipBtn, "Без решения", "Убрать образ из списка модерации без последствий: ничего не блокируется, жалобы не признаются ложными, у пожаловавшихся ничего не меняется. Новые жалобы вернут его в список.")
-	Tip(self.modDismissBtn, "Жалобы ложные / Оценки честные", "Жалобы: убрать образ из списка, жалобы необоснованны. Оценки: накрутки нет, образ возвращается в чарт (снова проверится, если оценок станет в полтора раза больше).")
+	Tip(self.helpBtn, L["Справка"], L["Что где искать и как всё устроено."])
+	Tip(self.ideaBtn, L["Письмо разработчику"], L["Идея, ошибка или пожелание — каждое письмо прочитают."])
+	Tip(self.settingsBtn, L["Настройки"], L["Уведомления подписок, всплывашки (стиль, место, размер), вид и приватность."])
+	Tip(self.modBtn, L["Модерация"], L["Образы с жалобами и с подозрением на накрутку оценок, управление модераторами."])
+	Tip(self.styleBtn, L["Оформление"], L["Переключить вид окон: в стиле EllesmereUI или обычный, как в игре. Нужна перезагрузка интерфейса."])
+	Tip(self.search, L["Поиск"], L["По названию образа, автору, тегам и названиям вещей. На вкладке «Достижения» — по достижениям."])
+	Tip(self.tagsBtn, L["Теги"], L["Показать только образы с выбранными тегами. Там же можно предложить новый тег."])
+	Tip(self.saveBtn, L["Новый образ"], L["Сохранить то, что сейчас надето на персонаже (с трансмогом), и поделиться с другими игроками. Можно сохранить и черновиком."])
+	Tip(self.syncBtn, L["Синхронизировать"], L["Спросить у других игроков с аддоном, что нового: образы, оценки, рейтинг. При входе в игру это происходит само — кнопка нужна, если кажется, что чего-то не хватает."])
+	Tip(self.raceBtn, L["Раса для примерки"], L["Свой персонаж, раса автора образа или любая другая. Пол модели игра менять не даёт — для другого пола используйте Wowhead."])
+	Tip(self.publishBtn, L["Опубликовать"], L["Отправить черновик другим игрокам."])
+	Tip(self.deleteBtn, L["Удалить"], L["Удалить образ. Опубликованный пропадёт и у других игроков."])
+	Tip(self.prevBtn, L["Назад по списку"])
+	Tip(self.nextBtn, L["Дальше по списку"])
+	Tip(self.modSetBtn, L["Нарушение"], L["Выберите, что не так: шуточное название (автора попросят переименовать, без наказания), оскорбление (14 дней без публикаций, второй раз — навсегда), реклама (бан автора) или другое. Образ пропадёт у игроков, до которых дойдёт решение, и попадёт в чёрный список при разборе."])
+	Tip(self.modAuthorBtn, L["Заблокировать автора"], L["Все образы автора пропадут; новые не будут приниматься."])
+	Tip(self.modSkipBtn, L["Без решения"], L["Убрать образ из списка модерации без последствий: ничего не блокируется, жалобы не признаются ложными, у пожаловавшихся ничего не меняется. Новые жалобы вернут его в список."])
+	Tip(self.modDismissBtn, L["Жалобы ложные / Оценки честные"], L["Жалобы: убрать образ из списка, жалобы необоснованны. Оценки: накрутки нет, образ возвращается в чарт (снова проверится, если оценок станет в полтора раза больше)."])
 
 	-- строка состояния сети: подсказка при наведении
 	local statusHover = CreateFrame("Frame", nil, self)
@@ -356,13 +357,13 @@ function UI:AddTooltips()
 	statusHover:EnableMouse(true)
 	statusHover:SetScript("OnEnter", function(f)
 		GameTooltip:SetOwner(f, "ANCHOR_TOP")
-		GameTooltip:SetText("Сеть Transmog Hub")
-		GameTooltip:AddLine("Сервера у аддона нет: игроки с аддоном обмениваются образами напрямую через скрытый канал игры, а с других серверов — через друзей Battle.net и группу.", 1, 1, 1, true)
+		GameTooltip:SetText(L["Сеть Transmog Hub"])
+		GameTooltip:AddLine(L["Сервера у аддона нет: игроки с аддоном обмениваются образами напрямую через скрытый канал игры, а с других серверов — через друзей Battle.net и группу."], 1, 1, 1, true)
 		GameTooltip:AddLine(" ")
-		GameTooltip:AddLine("Точка: зелёная — сеть подключена, серая — подключается.", 0.8, 0.8, 0.8, true)
-		GameTooltip:AddLine("Значки: игроков с аддоном на вашем сервере, друзей Battle.net с аддоном на других серверах, образов у вас в базе.", 0.8, 0.8, 0.8, true)
+		GameTooltip:AddLine(L["Точка: зелёная — сеть подключена, серая — подключается."], 0.8, 0.8, 0.8, true)
+		GameTooltip:AddLine(L["Значки: игроков с аддоном на вашем сервере, друзей Battle.net с аддоном на других серверах, образов у вас в базе."], 0.8, 0.8, 0.8, true)
 		GameTooltip:AddLine(" ")
-		GameTooltip:AddLine("Подробнее: /thub net", 0.6, 0.6, 0.6)
+		GameTooltip:AddLine(L["Подробнее: /thub net"], 0.6, 0.6, 0.6)
 		GameTooltip:Show()
 	end)
 	statusHover:SetScript("OnLeave", GameTooltip_Hide)
@@ -410,8 +411,8 @@ function UI:BuildResizeGrip()
 	end)
 	grip:SetScript("OnEnter", function(g)
 		GameTooltip:SetOwner(g, "ANCHOR_TOP")
-		GameTooltip:SetText("Размер окна")
-		GameTooltip:AddLine("Потяните, чтобы увеличить или уменьшить окно.", 1, 1, 1, true)
+		GameTooltip:SetText(L["Размер окна"])
+		GameTooltip:AddLine(L["Потяните, чтобы увеличить или уменьшить окно."], 1, 1, 1, true)
 		GameTooltip:Show()
 	end)
 	grip:SetScript("OnLeave", GameTooltip_Hide)
@@ -429,7 +430,7 @@ function UI:BuildScaleSlider()
 
 	local label = Label(self, "GameFontNormalSmall")
 	label:SetPoint("RIGHT", slider, "LEFT", -8, 0)
-	label:SetText("Масштаб окна")
+	label:SetText(L["Масштаб окна"])
 	-- число можно вписать руками: Enter — применить, Esc — отменить
 	local edit = CreateFrame("EditBox", nil, self, "InputBoxTemplate")
 	slider.value = edit
@@ -452,8 +453,8 @@ function UI:BuildScaleSlider()
 	edit:SetScript("OnEditFocusLost", function() self:UpdateScaleSlider() end)
 	edit:SetScript("OnEnter", function(e)
 		GameTooltip:SetOwner(e, "ANCHOR_TOP")
-		GameTooltip:SetText("Масштаб в процентах")
-		GameTooltip:AddLine(string.format("Впишите число от %d до %d и нажмите Enter.", TH.SCALE_MIN * 100, TH.SCALE_MAX * 100), 1, 1, 1, true)
+		GameTooltip:SetText(L["Масштаб в процентах"])
+		GameTooltip:AddLine(string.format(L["Впишите число от %d до %d и нажмите Enter."], TH.SCALE_MIN * 100, TH.SCALE_MAX * 100), 1, 1, 1, true)
 		GameTooltip:Show()
 	end)
 	edit:SetScript("OnLeave", GameTooltip_Hide)
@@ -477,8 +478,8 @@ function UI:BuildScaleSlider()
 	end)
 	slider:SetScript("OnEnter", function(s)
 		GameTooltip:SetOwner(s, "ANCHOR_TOP")
-		GameTooltip:SetText("Масштаб окна")
-		GameTooltip:AddLine("Перетащите ползунок или крутите колесо мыши. ПКМ — вернуть 100%.", 1, 1, 1, true)
+		GameTooltip:SetText(L["Масштаб окна"])
+		GameTooltip:AddLine(L["Перетащите ползунок или крутите колесо мыши. ПКМ — вернуть 100%."], 1, 1, 1, true)
 		GameTooltip:Show()
 	end)
 	slider:SetScript("OnLeave", GameTooltip_Hide)
@@ -611,7 +612,7 @@ function UI:BuildToolbar()
 		self:Refresh()
 	end)
 
-	self.tagsBtn = Button(self, "Теги", 90)
+	self.tagsBtn = Button(self, L["Теги"], 90)
 	self.tagsBtn:SetPoint("TOPRIGHT", -204, -56) -- левее кнопки «Новый образ» (184)
 	self.tagsBtn:SetScript("OnClick", function(b) self:OpenTagMenu(b) end)
 
@@ -626,14 +627,14 @@ function UI:BuildToolbar()
 	end)
 	self.tagsReset:SetScript("OnEnter", function(b)
 		GameTooltip:SetOwner(b, "ANCHOR_TOP")
-		GameTooltip:SetText("Сбросить теги")
+		GameTooltip:SetText(L["Сбросить теги"])
 		GameTooltip:Show()
 	end)
 	self.tagsReset:SetScript("OnLeave", GameTooltip_Hide)
 	self.tagsReset:Hide()
 
 	-- главное действие окна: крупнее, ярче и с белым текстом, чтобы не терялось среди вкладок
-	local saveBtn = Button(self, "Новый образ", 184, 26)
+	local saveBtn = Button(self, L["Новый образ"], 184, 26)
 	StylePrimary(saveBtn)
 	for _, key in ipairs({ "Left", "Middle", "Right" }) do
 		local t = saveBtn[key]
@@ -706,9 +707,9 @@ function UI:BuildList(list)
 		row.fav:SetScript("OnEnter", function(f)
 			local r = row
 			GameTooltip:SetOwner(f, "ANCHOR_RIGHT")
-			GameTooltip:SetText(TH.db.favorites[r.setId] and "Убрать из избранного" or "В избранное")
+			GameTooltip:SetText(TH.db.favorites[r.setId] and L["Убрать из избранного"] or L["В избранное"])
 			local n = r.setId and TH:GetFavoriteCount(r.setId) or 0
-			if n > 0 then GameTooltip:AddLine("В избранном у игроков: " .. n, 1, 1, 1) end
+			if n > 0 then GameTooltip:AddLine(L["В избранном у игроков: "] .. n, 1, 1, 1) end
 			GameTooltip:Show()
 		end)
 		row.fav:SetScript("OnLeave", GameTooltip_Hide)
@@ -739,8 +740,8 @@ function UI:BuildList(list)
 			local have, total = TH:GetCollectedStats(set)
 			GameTooltip:SetOwner(r, "ANCHOR_RIGHT")
 			GameTooltip:SetText(set.name or "")
-			if total > 0 then GameTooltip:AddLine(string.format("Собрано обликов: %d из %d", have, total), 1, 1, 1) end
-			GameTooltip:AddLine("ЛКМ — показать, ПКМ — меню", 0.6, 0.6, 0.6)
+			if total > 0 then GameTooltip:AddLine(string.format(L["Собрано обликов: %d из %d"], have, total), 1, 1, 1) end
+			GameTooltip:AddLine(L["ЛКМ — показать, ПКМ — меню"], 0.6, 0.6, 0.6)
 			GameTooltip:Show()
 		end)
 		row:SetScript("OnLeave", GameTooltip_Hide)
@@ -820,7 +821,7 @@ function UI:BuildList(list)
 		TH:Reshuffle()
 		self:SetSort("recommended")
 	end)
-	Tip(self.shuffleBtn, "Перемешать", "Показать рекомендуемые новые образы в другом случайном порядке.")
+	Tip(self.shuffleBtn, L["Перемешать"], L["Показать рекомендуемые новые образы в другом случайном порядке."])
 	-- последняя вкладка растянута между соседкой и кубиком: на кубик она не залезет,
 	-- даже если ширина текста посчитается неверно (шрифт ещё не загружен)
 	local last = self.sortTabs[#self.sortTabs]
@@ -832,13 +833,13 @@ function UI:BuildList(list)
 	self.listTitle:SetPoint("TOPLEFT", 12, -10)
 
 	-- «Мои»: свой профиль (там же смена аватара)
-	self.avatarBtn = Button(list, "Мой профиль", 110, 22)
+	self.avatarBtn = Button(list, L["Мой профиль"], 110, 22)
 	self.avatarBtn:SetPoint("TOPRIGHT", -10, -5)
 	self.avatarBtn:SetScript("OnClick", function() self:OpenProfile(TH.Net.Me()) end)
 	self.avatarBtn:SetScript("OnEnter", function(b)
 		GameTooltip:SetOwner(b, "ANCHOR_TOP")
-		GameTooltip:SetText("Мой профиль")
-		GameTooltip:AddLine("Как вас видят другие игроки: образы, достижения, место в рейтинге. Там же можно сменить аватар.", 1, 1, 1, true)
+		GameTooltip:SetText(L["Мой профиль"])
+		GameTooltip:AddLine(L["Как вас видят другие игроки: образы, достижения, место в рейтинге. Там же можно сменить аватар."], 1, 1, 1, true)
 		GameTooltip:Show()
 	end)
 	self.avatarBtn:SetScript("OnLeave", GameTooltip_Hide)
@@ -860,50 +861,50 @@ function UI:BuildList(list)
 		if not (MenuUtil and MenuUtil.CreateContextMenu) then return end
 		MenuUtil.CreateContextMenu(b, function(_, root)
 			local list = TH:GetFollowingList()
-			root:CreateTitle(#list > 0 and string.format("Подписки (%d)", #list) or "Вы ни на кого не подписаны")
+			root:CreateTitle(#list > 0 and string.format(L["Подписки (%d)"], #list) or L["Вы ни на кого не подписаны"])
 			for _, name in ipairs(list) do
 				local mutual = TH:FollowsMe(name)
 				local muted = TH:IsFollowMuted(name)
-				local sub = root:CreateButton(name:gsub("%-.*", "") .. (mutual and "  |cff40ff40взаимно|r" or "")
-					.. (muted and "  |cff888888без уведомлений|r" or ""))
-				sub:CreateButton("Открыть профиль", function() self:OpenProfile(name) end)
-				sub:CreateCheckbox("Уведомления от автора", function() return not TH:IsFollowMuted(name) end,
+				local sub = root:CreateButton(name:gsub("%-.*", "") .. (mutual and L["  |cff40ff40взаимно|r"] or "")
+					.. (muted and L["  |cff888888без уведомлений|r"] or ""))
+				sub:CreateButton(L["Открыть профиль"], function() self:OpenProfile(name) end)
+				sub:CreateCheckbox(L["Уведомления от автора"], function() return not TH:IsFollowMuted(name) end,
 					function() TH:SetFollowMuted(name, not TH:IsFollowMuted(name)) end)
-				sub:CreateButton("Отписаться", function() TH:SetFollowing(name, false) end)
+				sub:CreateButton(L["Отписаться"], function() TH:SetFollowing(name, false) end)
 			end
 		end)
 	end)
-	Tip(self.authorsBtn, "Авторы", "На кого вы подписаны: открыть профиль, включить или выключить уведомления от автора, отписаться. «взаимно» — он тоже подписан на вас.")
+	Tip(self.authorsBtn, L["Авторы"], L["На кого вы подписаны: открыть профиль, включить или выключить уведомления от автора, отписаться. «взаимно» — он тоже подписан на вас."])
 
 	-- «Модерация»: управление — модераторы (только админ) и снятие наказаний
-	self.modsBtn = Button(list, "Управление", 110, 22)
+	self.modsBtn = Button(list, L["Управление"], 110, 22)
 	self.modsBtn:SetPoint("TOPRIGHT", -10, -5)
 	self.modsBtn:SetScript("OnClick", function(b)
 		if not (MenuUtil and MenuUtil.CreateContextMenu) then return end
 		local admin = TH:IsAdmin(TH.Net.Me())
 		MenuUtil.CreateContextMenu(b, function(_, root)
 			if admin then
-				root:CreateTitle("Модераторы")
+				root:CreateTitle(L["Модераторы"])
 				local list = TH:GetModeratorList()
-				if #list == 0 then root:CreateTitle("|cff888888пока никого|r") end
+				if #list == 0 then root:CreateTitle(L["|cff888888пока никого|r"]) end
 				for _, e in ipairs(list) do
 					local sub = root:CreateButton(e[1]:gsub("%-.*", "") .. "  |cff888888" .. e[2] .. "|r")
-					sub:CreateButton("Снять с модераторов", function() TH:SetModerator(e[1], false) end)
+					sub:CreateButton(L["Снять с модераторов"], function() TH:SetModerator(e[1], false) end)
 				end
-				root:CreateButton("Назначить модератора...", function() StaticPopup_Show("TRANSMOGHUB_ADD_MOD") end)
+				root:CreateButton(L["Назначить модератора..."], function() StaticPopup_Show("TRANSMOGHUB_ADD_MOD") end)
 				root:CreateDivider()
 			end
-			root:CreateButton("Снять наказание за занижение...", function() StaticPopup_Show("TRANSMOGHUB_LIFT_PENALTY") end)
-			root:CreateButton("Снять бан за рекламу...", function() StaticPopup_Show("TRANSMOGHUB_UNBAN") end)
+			root:CreateButton(L["Снять наказание за занижение..."], function() StaticPopup_Show("TRANSMOGHUB_LIFT_PENALTY") end)
+			root:CreateButton(L["Снять бан за рекламу..."], function() StaticPopup_Show("TRANSMOGHUB_UNBAN") end)
 			root:CreateDivider()
-			root:CreateButton("Снять все ограничения (амнистия)...", function() StaticPopup_Show("TRANSMOGHUB_AMNESTY") end)
+			root:CreateButton(L["Снять все ограничения (амнистия)..."], function() StaticPopup_Show("TRANSMOGHUB_AMNESTY") end)
 			-- для проверки наказаний на своих персонажах
-			root:CreateButton("Снять все ограничения с себя (проверка)", function()
+			root:CreateButton(L["Снять все ограничения с себя (проверка)"], function()
 				for name in pairs(TH.db.myChars) do TH:ModDecision("r", name) end
 			end)
 		end)
 	end)
-	Tip(self.modsBtn, "Управление", "Админ назначает и снимает модераторов. Модераторы разбирают жалобы и могут снять наказание за занижение оценок, если оно ошибочное.")
+	Tip(self.modsBtn, L["Управление"], L["Админ назначает и снимает модераторов. Модераторы разбирают жалобы и могут снять наказание за занижение оценок, если оно ошибочное."])
 
 	self.prevBtn = Button(list, "<", 30)
 	self.prevBtn:SetPoint("BOTTOMLEFT", 8, 8)
@@ -927,7 +928,7 @@ function UI:BuildList(list)
 	self.emptyText:SetPoint("CENTER", 0, 30)
 	self.emptyText:SetJustifyH("CENTER")
 	-- в пустом списке — сразу действие
-	self.emptyBtn = Button(list, "Новый образ", 180, 24)
+	self.emptyBtn = Button(list, L["Новый образ"], 180, 24)
 	StylePrimary(self.emptyBtn)
 	self.emptyBtn:SetPoint("TOP", self.emptyText, "BOTTOM", 0, -14)
 	self.emptyBtn:SetScript("OnClick", function() TH:OpenSaveDialog() end)
@@ -941,7 +942,7 @@ function UI:BuildPreview(panel)
 	local hint = Label(panel, "GameFontDisableSmall", 280)
 	hint:SetPoint("TOP", 0, -8)
 	hint:SetJustifyH("CENTER")
-	hint:SetText("ЛКМ — вращать, колесо — приблизить, двойной клик — сброс")
+	hint:SetText(L["ЛКМ — вращать, колесо — приблизить, двойной клик — сброс"])
 
 	-- Предупреждение, если образ собран на модели другого пола
 	self.sexHint = Label(panel, "GameFontNormalSmall", 280)
@@ -951,19 +952,19 @@ function UI:BuildPreview(panel)
 
 	-- одно меню расы (свой персонаж, как у автора, любая) и Wowhead
 	-- две кнопки делят низ панели пополам с зазором (иначе, подгоняясь под текст, сходятся)
-	self.raceBtn = Button(panel, "Раса: свой персонаж", 140)
+	self.raceBtn = Button(panel, L["Раса: свой персонаж"], 140)
 	self.raceBtn:SetPoint("BOTTOMLEFT", 8, 8)
 	self.raceBtn:SetPoint("BOTTOMRIGHT", panel, "BOTTOM", -2, 8)
 	self.raceBtn:SetScript("OnClick", function(b) self:OpenRaceMenu(b) end)
 
-	self.wowheadBtn = Button(panel, "Открыть в Wowhead", 140)
+	self.wowheadBtn = Button(panel, L["Открыть в Wowhead"], 140)
 	self.wowheadBtn:SetPoint("BOTTOMRIGHT", -8, 8)
 	self.wowheadBtn:SetPoint("BOTTOMLEFT", panel, "BOTTOM", 2, 8)
 	self.wowheadBtn:SetScript("OnClick", function() TH:ShowWowheadLink(TH:GetSet(self.selectedId)) end)
 	self.wowheadBtn:SetScript("OnEnter", function(b)
 		GameTooltip:SetOwner(b, "ANCHOR_TOP")
-		GameTooltip:SetText("Примерочная Wowhead")
-		GameTooltip:AddLine("Строка для импорта образа в примерочную Wowhead: там можно выбрать любую расу и пол.", 1, 1, 1, true)
+		GameTooltip:SetText(L["Примерочная Wowhead"])
+		GameTooltip:AddLine(L["Строка для импорта образа в примерочную Wowhead: там можно выбрать любую расу и пол."], 1, 1, 1, true)
 		GameTooltip:Show()
 	end)
 	self.wowheadBtn:SetScript("OnLeave", GameTooltip_Hide)
@@ -973,7 +974,7 @@ function UI:BuildDetail(panel)
 	self.detailEmpty = Label(panel, "GameFontDisable", 300)
 	self.detailEmpty:SetPoint("CENTER")
 	self.detailEmpty:SetJustifyH("CENTER")
-	self.detailEmpty:SetText("Выберите образ слева")
+	self.detailEmpty:SetText(L["Выберите образ слева"])
 
 	local c = CreateFrame("Frame", nil, panel)
 	c:SetAllPoints()
@@ -996,8 +997,8 @@ function UI:BuildDetail(panel)
 	end)
 	self.dAuthorBtn:SetScript("OnEnter", function(b)
 		GameTooltip:SetOwner(b, "ANCHOR_TOP")
-		GameTooltip:SetText("Профиль автора")
-		GameTooltip:AddLine("Его образы, достижения и место в рейтинге.", 1, 1, 1, true)
+		GameTooltip:SetText(L["Профиль автора"])
+		GameTooltip:AddLine(L["Его образы, достижения и место в рейтинге."], 1, 1, 1, true)
 		GameTooltip:Show()
 	end)
 	self.dAuthorBtn:SetScript("OnLeave", GameTooltip_Hide)
@@ -1011,7 +1012,7 @@ function UI:BuildDetail(panel)
 	self.dFollow:SetHeight(16)
 	self.dFollow:SetNormalFontObject("GameFontNormalSmall")
 	self.dFollow:SetHighlightFontObject("GameFontHighlightSmall")
-	self.dFollow:SetText("+ подписаться")
+	self.dFollow:SetText(L["+ подписаться"])
 	self.dFollow:SetScript("OnClick", function()
 		local set = TH:GetSet(self.selectedId)
 		if set and set.author then TH:ToggleFollow(set.author) end
@@ -1020,11 +1021,11 @@ function UI:BuildDetail(panel)
 		local set = TH:GetSet(self.selectedId)
 		GameTooltip:SetOwner(b, "ANCHOR_TOP")
 		if set and TH:IsFollowing(set.author) then
-			GameTooltip:SetText("Вы подписаны")
-			GameTooltip:AddLine("Нажмите, чтобы отписаться.", 1, 1, 1, true)
+			GameTooltip:SetText(L["Вы подписаны"])
+			GameTooltip:AddLine(L["Нажмите, чтобы отписаться."], 1, 1, 1, true)
 		else
-			GameTooltip:SetText("Подписаться на автора")
-			GameTooltip:AddLine("Его новые образы — во вкладке «Подписки» и во всплывашках.", 1, 1, 1, true)
+			GameTooltip:SetText(L["Подписаться на автора"])
+			GameTooltip:AddLine(L["Его новые образы — во вкладке «Подписки» и во всплывашках."], 1, 1, 1, true)
 		end
 		GameTooltip:Show()
 	end)
@@ -1041,7 +1042,7 @@ function UI:BuildDetail(panel)
 	self.dRatingTip:SetScript("OnEnter", function(f)
 		if not self.dRatingHint then return end
 		GameTooltip:SetOwner(f, "ANCHOR_BOTTOM")
-		GameTooltip:SetText("Рейтинг")
+		GameTooltip:SetText(L["Рейтинг"])
 		for _, line in ipairs(self.dRatingHint) do GameTooltip:AddLine(line, 1, 1, 1, true) end
 		GameTooltip:Show()
 	end)
@@ -1051,7 +1052,7 @@ function UI:BuildDetail(panel)
 	local vp = self.previewPanel
 	local voteLabel = Label(vp, "GameFontNormal")
 	voteLabel:SetPoint("BOTTOMLEFT", vp, "BOTTOM", -118, 48)
-	voteLabel:SetText("Ваша оценка:")
+	voteLabel:SetText(L["Ваша оценка:"])
 
 	self.stars = {}
 	for i = 1, 5 do
@@ -1067,10 +1068,10 @@ function UI:BuildDetail(panel)
 			GameTooltip:SetOwner(b, "ANCHOR_TOP")
 			GameTooltip:SetText(STAR_LABELS[i])
 			if i == 1 then
-				GameTooltip:AddLine("Стражи подиума робко шепчут: а может, всё-таки двойку? Единица ранит сердце автора сильнее, чем Ледяная Скорбь.", 1, 0.6, 0.4, true)
+				GameTooltip:AddLine(L["Стражи подиума робко шепчут: а может, всё-таки двойку? Единица ранит сердце автора сильнее, чем Ледяная Скорбь."], 1, 0.6, 0.4, true)
 			end
-			GameTooltip:AddLine("Оценивайте образ, а не автора, и по-доброму: за каждым образом — чьи-то часы фарма и примерок.", 1, 1, 1, true)
-			GameTooltip:AddLine("Как говорят жрицы Элуны: свет найдётся в каждом наряде, надо лишь присмотреться.", 0.9, 0.8, 0.5, true)
+			GameTooltip:AddLine(L["Оценивайте образ, а не автора, и по-доброму: за каждым образом — чьи-то часы фарма и примерок."], 1, 1, 1, true)
+			GameTooltip:AddLine(L["Как говорят жрицы Элуны: свет найдётся в каждом наряде, надо лишь присмотреться."], 0.9, 0.8, 0.5, true)
 			GameTooltip:Show()
 		end)
 		s:SetScript("OnLeave", function()
@@ -1100,9 +1101,9 @@ function UI:BuildDetail(panel)
 		local set = TH:GetSet(self.selectedId)
 		if not set then return end
 		GameTooltip:SetOwner(btn, "ANCHOR_BOTTOM")
-		GameTooltip:SetText("Теги")
-		GameTooltip:AddLine(TH:IsMine(set) and "Клик — убрать тег, который не подходит вашему образу."
-			or "Клик — отметить тег, который не подходит образу. Если так считают несколько игроков, тег у образа погаснет: по нему образ перестанет находиться и не получит за него мест.", 1, 1, 1, true)
+		GameTooltip:SetText(L["Теги"])
+		GameTooltip:AddLine(TH:IsMine(set) and L["Клик — убрать тег, который не подходит вашему образу."]
+			or L["Клик — отметить тег, который не подходит образу. Если так считают несколько игроков, тег у образа погаснет: по нему образ перестанет находиться и не получит за него мест."], 1, 1, 1, true)
 		GameTooltip:Show()
 	end)
 	self.dTagsBtn:SetScript("OnLeave", GameTooltip_Hide)
@@ -1165,14 +1166,14 @@ function UI:BuildDetail(panel)
 	self.dFav:SetScript("OnClick", function() TH:ToggleFavorite(self.selectedId) end)
 	self.dFav:SetScript("OnEnter", function(b)
 		GameTooltip:SetOwner(b, "ANCHOR_LEFT")
-		GameTooltip:SetText(TH.db.favorites[self.selectedId] and "Убрать из избранного" or "В избранное")
+		GameTooltip:SetText(TH.db.favorites[self.selectedId] and L["Убрать из избранного"] or L["В избранное"])
 		local n = self.selectedId and TH:GetFavoriteCount(self.selectedId) or 0
-		if n > 0 then GameTooltip:AddLine("В избранном у игроков: " .. n, 1, 1, 1) end
+		if n > 0 then GameTooltip:AddLine(L["В избранном у игроков: "] .. n, 1, 1, 1) end
 		GameTooltip:Show()
 	end)
 	self.dFav:SetScript("OnLeave", GameTooltip_Hide)
 
-	self.publishBtn = Button(c, "Опубликовать", 110)
+	self.publishBtn = Button(c, L["Опубликовать"], 110)
 	self.publishBtn:SetPoint("BOTTOMLEFT", 10, 10)
 	self.publishBtn:SetScript("OnClick", function()
 		local mine = TH.db.mySets[self.selectedId]
@@ -1180,19 +1181,19 @@ function UI:BuildDetail(panel)
 		TH:Publish(self.selectedId)
 	end)
 
-	self.deleteBtn = Button(c, "Удалить", 70)
+	self.deleteBtn = Button(c, L["Удалить"], 70)
 	self.deleteBtn:SetPoint("LEFT", self.publishBtn, "RIGHT", 6, 0)
 	self.deleteBtn:SetScript("OnClick", function()
 		local set = TH:GetSet(self.selectedId)
 		if not set then return end
-		local extra = set.serverId and "\n\nОбраз будет снят с публикации." or ""
+		local extra = set.serverId and L["\n\nОбраз будет снят с публикации."] or ""
 		StaticPopup_Show("TRANSMOGHUB_DELETE", set.name, extra, set.id)
 	end)
 
 	-- Кнопки модератора (вместо обычных на вкладке «Модерация»)
 	-- два ряда по две кнопки, по ширине панели
 	local MOD_W = 160
-	self.modSetBtn = Button(c, "Нарушение...", MOD_W)
+	self.modSetBtn = Button(c, L["Нарушение..."], MOD_W)
 	self.modSetBtn:SetPoint("BOTTOMLEFT", 10, 38)
 	self.modSetBtn:SetScript("OnClick", function(b)
 		local set = TH:GetSet(self.selectedId)
@@ -1201,26 +1202,26 @@ function UI:BuildDetail(panel)
 		-- что за нарушение, решает модератор: от этого зависит наказание автора
 		if not (MenuUtil and MenuUtil.CreateContextMenu) then return TH:ModDecision("s", set.id) end
 		MenuUtil.CreateContextMenu(b, function(_, root)
-			root:CreateTitle("Что не так с образом?")
+			root:CreateTitle(L["Что не так с образом?"])
 			local warned = TH:GetRenameWarning(set.author)
-			root:CreateButton(warned and warned ~= set.id and "Название в шутку, повторно: 14 дней без публикаций"
-				or "Название в шутку: попросить переименовать", function() TH:ModDecision("e", set.id) end)
-			root:CreateButton("Оскорбление: 14 дней без публикаций", function() TH:ModDecision("o", set.id) end)
-			root:CreateButton("Реклама: бан автора", function()
+			root:CreateButton(warned and warned ~= set.id and L["Название в шутку, повторно: 14 дней без публикаций"]
+				or L["Название в шутку: попросить переименовать"], function() TH:ModDecision("e", set.id) end)
+			root:CreateButton(L["Оскорбление: 14 дней без публикаций"], function() TH:ModDecision("o", set.id) end)
+			root:CreateButton(L["Реклама: бан автора"], function()
 				TH:ModDecision("s", set.id)
 				if set.author then TH:ModDecision("b", set.author) end
 			end)
 			root:CreateDivider()
-			root:CreateButton("Другое: просто скрыть образ", function() TH:ModDecision("s", set.id) end)
+			root:CreateButton(L["Другое: просто скрыть образ"], function() TH:ModDecision("s", set.id) end)
 		end)
 	end)
-	self.modAuthorBtn = Button(c, "Блок. автора", MOD_W)
+	self.modAuthorBtn = Button(c, L["Блок. автора"], MOD_W)
 	self.modAuthorBtn:SetPoint("LEFT", self.modSetBtn, "RIGHT", 4, 0)
 	self.modAuthorBtn:SetScript("OnClick", function()
 		local set = TH:GetSet(self.selectedId)
 		if set and set.author then TH:ModDecision(TH.db.net.modBlocks.authors[set.author] and "v" or "a", set.author) end
 	end)
-	self.modDismissBtn = Button(c, "Жалобы ложные", MOD_W)
+	self.modDismissBtn = Button(c, L["Жалобы ложные"], MOD_W)
 	self.modDismissBtn:SetPoint("BOTTOMLEFT", 10, 10)
 	self.modDismissBtn:SetScript("OnClick", function()
 		local set = TH:GetSet(self.selectedId)
@@ -1237,7 +1238,7 @@ function UI:BuildDetail(panel)
 		self:Refresh()
 	end)
 	-- без решения: убрать из списка, ничего не блокируя и не засчитывая ложных жалоб
-	self.modSkipBtn = Button(c, "Без решения", MOD_W)
+	self.modSkipBtn = Button(c, L["Без решения"], MOD_W)
 	self.modSkipBtn:SetPoint("LEFT", self.modDismissBtn, "RIGHT", 4, 0)
 	self.modSkipBtn:SetScript("OnClick", function()
 		local set = TH:GetSet(self.selectedId)
@@ -1252,7 +1253,7 @@ end
 -- Имя персонажа «Имя-Сервер» (без сервера — ваш сервер)
 local function NamePopup(text, onAccept)
 	return {
-		text = text, button1 = ACCEPT or "Принять", button2 = CANCEL or "Отмена", hasEditBox = true, maxLetters = 64,
+		text = text, button1 = ACCEPT or L["Принять"], button2 = CANCEL or L["Отмена"], hasEditBox = true, maxLetters = 64,
 		OnAccept = function(dialog)
 			local eb = dialog.EditBox or dialog.editBox
 			onAccept(eb and eb:GetText() or "")
@@ -1264,58 +1265,58 @@ local function NamePopup(text, onAccept)
 		timeout = 0, whileDead = true, hideOnEscape = true,
 	}
 end
-StaticPopupDialogs["TRANSMOGHUB_ADD_MOD"] = NamePopup("Назначить модератором персонажа (ник; мир — если другой):",
+StaticPopupDialogs["TRANSMOGHUB_ADD_MOD"] = NamePopup(L["Назначить модератором персонажа (ник; мир — если другой):"],
 	function(name) TH:SetModerator(name, true) end)
-StaticPopupDialogs["TRANSMOGHUB_LIFT_PENALTY"] = NamePopup("Снять наказание за занижение оценок с персонажа (ник; мир — если другой):",
+StaticPopupDialogs["TRANSMOGHUB_LIFT_PENALTY"] = NamePopup(L["Снять наказание за занижение оценок с персонажа (ник; мир — если другой):"],
 	function(name)
 		local known, matches
 		name, known, matches = TH:ResolvePlayerName(name)
 		if not name then return end
 		if not known then
-			TH:Notify("|cffff9020Игрок «" .. name .. "» аддону не встречался|r" .. (matches and #matches > 1
-				and (" (похожие: " .. table.concat(matches, ", ") .. ")") or "") .. " — проверьте имя. Решение всё равно отправлено.")
+			TH:Notify(L["|cffff9020Игрок «"] .. name .. L["» аддону не встречался|r"] .. (matches and #matches > 1
+				and (L[" (похожие: "] .. table.concat(matches, ", ") .. ")") or "") .. L[" — проверьте имя. Решение всё равно отправлено."])
 		end
 		TH:ModDecision("w", name)
-		TH:Notify("Наказание снято: " .. name .. ". Дойдёт, когда игрок будет в сети.")
+		TH:Notify(L["Наказание снято: "] .. name .. L[". Дойдёт, когда игрок будет в сети."])
 	end)
 
-StaticPopupDialogs["TRANSMOGHUB_UNBAN"] = NamePopup("Снять бан за рекламу с персонажа (ник; мир — если другой):",
+StaticPopupDialogs["TRANSMOGHUB_UNBAN"] = NamePopup(L["Снять бан за рекламу с персонажа (ник; мир — если другой):"],
 	function(name)
 		local known, matches
 		name, known, matches = TH:ResolvePlayerName(name)
 		if not name then return end
 		if not known then
-			TH:Notify("|cffff9020Игрок «" .. name .. "» аддону не встречался|r" .. (matches and #matches > 1
-				and (" (похожие: " .. table.concat(matches, ", ") .. ")") or "") .. " — проверьте имя. Решение всё равно отправлено.")
+			TH:Notify(L["|cffff9020Игрок «"] .. name .. L["» аддону не встречался|r"] .. (matches and #matches > 1
+				and (L[" (похожие: "] .. table.concat(matches, ", ") .. ")") or "") .. L[" — проверьте имя. Решение всё равно отправлено."])
 		end
 		TH:ModDecision("y", name)
-		TH:Notify("Бан снят: " .. name .. ". Дойдёт до тех, кто сейчас в сети; насовсем — с обновлением чёрного списка.")
+		TH:Notify(L["Бан снят: "] .. name .. L[". Дойдёт до тех, кто сейчас в сети; насовсем — с обновлением чёрного списка."])
 	end)
 
-StaticPopupDialogs["TRANSMOGHUB_AMNESTY"] = NamePopup("Снять ВСЕ ограничения с персонажа (ник; мир — если другой): бан, блокировки, запрет на публикацию, пометку за шутку, наказание за занижение:",
+StaticPopupDialogs["TRANSMOGHUB_AMNESTY"] = NamePopup(L["Снять ВСЕ ограничения с персонажа (ник; мир — если другой): бан, блокировки, запрет на публикацию, пометку за шутку, наказание за занижение:"],
 	function(name)
 		local known, matches
 		name, known, matches = TH:ResolvePlayerName(name)
 		if not name then return end
 		if not known then
-			TH:Notify("|cffff9020Игрок «" .. name .. "» аддону не встречался|r" .. (matches and #matches > 1
-				and (" (похожие: " .. table.concat(matches, ", ") .. ")") or "") .. " — проверьте имя. Решение всё равно отправлено.")
+			TH:Notify(L["|cffff9020Игрок «"] .. name .. L["» аддону не встречался|r"] .. (matches and #matches > 1
+				and (L[" (похожие: "] .. table.concat(matches, ", ") .. ")") or "") .. L[" — проверьте имя. Решение всё равно отправлено."])
 		end
 		TH:ModDecision("r", name)
-		TH:Notify("Амнистия: " .. name .. ". Дойдёт, когда игрок будет в сети; из чёрного списка уберёт ежедневный разбор.")
+		TH:Notify(L["Амнистия: "] .. name .. L[". Дойдёт, когда игрок будет в сети; из чёрного списка уберёт ежедневный разбор."])
 	end)
 
 StaticPopupDialogs["TRANSMOGHUB_UNDO_REPORTS"] = {
-	text = "Вернуть все скрытые вами образы и игроков рейтинга, отозвать жалобы этого персонажа и отметки «тег не подходит»?",
-	button1 = ACCEPT or "Да", button2 = CANCEL or "Отмена",
+	text = L["Вернуть все скрытые вами образы и игроков рейтинга, отозвать жалобы этого персонажа и отметки «тег не подходит»?"],
+	button1 = ACCEPT or L["Да"], button2 = CANCEL or L["Отмена"],
 	OnAccept = function() TH:UndoMyReports() end,
 	timeout = 0, whileDead = true, hideOnEscape = true,
 }
 
 -- Новое название вместо шуточного (просьба Стражей подиума)
 StaticPopupDialogs["TRANSMOGHUB_RENAME_SET"] = {
-	text = "Новое название для образа «%s»:",
-	button1 = "Переименовать", button2 = CANCEL or "Отмена", hasEditBox = true, maxLetters = 48,
+	text = L["Новое название для образа «%s»:"],
+	button1 = L["Переименовать"], button2 = CANCEL or L["Отмена"], hasEditBox = true, maxLetters = 48,
 	OnShow = function(dialog)
 		local eb = dialog.EditBox or dialog.editBox
 		if eb then eb:SetText(""); eb:SetFocus() end
@@ -1342,9 +1343,9 @@ StaticPopupDialogs["TRANSMOGHUB_RENAME_SET"] = {
 }
 
 StaticPopupDialogs["TRANSMOGHUB_RELOAD_STYLE"] = {
-	text = "Оформление Transmog Hub: %s.\nПерезагрузить интерфейс сейчас?",
-	button1 = "Перезагрузить",
-	button2 = "Позже",
+	text = L["Оформление Transmog Hub: %s.\nПерезагрузить интерфейс сейчас?"],
+	button1 = L["Перезагрузить"],
+	button2 = L["Позже"],
 	OnAccept = function() ReloadUI() end,
 	timeout = 0, whileDead = true, hideOnEscape = true,
 }
@@ -1352,11 +1353,11 @@ StaticPopupDialogs["TRANSMOGHUB_RELOAD_STYLE"] = {
 -- Переключить оформление: сейчас в стиле EllesmereUI — станет обычным, и наоборот
 function TH:ToggleStyle()
 	self.db.style = self:IsSkinned() and "blizzard" or "eui"
-	StaticPopup_Show("TRANSMOGHUB_RELOAD_STYLE", self.db.style == "eui" and "в стиле EllesmereUI" or "обычное")
+	StaticPopup_Show("TRANSMOGHUB_RELOAD_STYLE", self.db.style == "eui" and L["в стиле EllesmereUI"] or L["обычное"])
 end
 
 StaticPopupDialogs["TRANSMOGHUB_DELETE"] = {
-	text = "Удалить образ «%s»?%s",
+	text = L["Удалить образ «%s»?%s"],
 	button1 = YES,
 	button2 = NO,
 	OnAccept = function(_, localId) TH:DeleteMySet(localId) end,
@@ -1452,8 +1453,8 @@ function UI:RefreshAchievements()
 end
 
 StaticPopupDialogs["TRANSMOGHUB_REPORT"] = {
-	text = "Скрыть образ «%s»?\n\nОн пропадёт только у вас. Вернуть все скрытые: /thub unhide",
-	button1 = "Скрыть",
+	text = L["Скрыть образ «%s»?\n\nОн пропадёт только у вас. Вернуть все скрытые: /thub unhide"],
+	button1 = L["Скрыть"],
 	button2 = CANCEL,
 	OnAccept = function(_, setId) TH:HideSet(setId) end,
 	timeout = 0,
@@ -1474,21 +1475,21 @@ function UI:OpenSetMenu(owner, setId)
 	end
 	local own = mine ~= nil or TH:IsMine(set)
 	MenuUtil.CreateContextMenu(owner, function(_, root)
-		root:CreateTitle(set.name or "Образ")
+		root:CreateTitle(set.name or L["Образ"])
 
-		root:CreateButton(TH.db.favorites[set.id] and "Убрать из избранного" or "В избранное",
+		root:CreateButton(TH.db.favorites[set.id] and L["Убрать из избранного"] or L["В избранное"],
 			function() TH:ToggleFavorite(set.id) end)
-		root:CreateButton("Открыть в Wowhead", function() TH:ShowWowheadLink(set) end)
+		root:CreateButton(L["Открыть в Wowhead"], function() TH:ShowWowheadLink(set) end)
 		if set.author then
-			root:CreateButton("Профиль автора", function() self:OpenProfile(set.author) end)
+			root:CreateButton(L["Профиль автора"], function() self:OpenProfile(set.author) end)
 			if not TH.db.myChars[set.author] then
-				root:CreateButton(TH:IsFollowing(set.author) and "Отписаться от автора" or "Подписаться на автора",
+				root:CreateButton(TH:IsFollowing(set.author) and L["Отписаться от автора"] or L["Подписаться на автора"],
 					function() TH:ToggleFollow(set.author) end)
 			end
 		end
 
 		if TH:CanVote(set) then
-			local rate = root:CreateButton("Оценить")
+			local rate = root:CreateButton(L["Оценить"])
 			for stars = 5, 1, -1 do
 				rate:CreateRadio(string.rep(CreateAtlasMarkup("PetJournal-FavoritesIcon", 14, 14), stars),
 					function() return TH.db.myVotes[set.id] == stars end,
@@ -1498,12 +1499,12 @@ function UI:OpenSetMenu(owner, setId)
 
 		if mine then
 			if mine.renameRequired then
-				root:CreateButton("|cffff9020Переименовать|r", function() TH:AskRename(set.id) end)
+				root:CreateButton(L["|cffff9020Переименовать|r"], function() TH:AskRename(set.id) end)
 			end
 			if mine.status == "draft" or mine.status == "rejected" then
-				root:CreateButton("Опубликовать", function() TH:Publish(set.id) end)
+				root:CreateButton(L["Опубликовать"], function() TH:Publish(set.id) end)
 				-- у опубликованного иконку уже не поменять: другие игроки получили образ
-				root:CreateButton("Сменить иконку", function()
+				root:CreateButton(L["Сменить иконку"], function()
 					TH:OpenIconPicker({ current = mine.icon, tags = mine.tags, items = mine.items,
 						onPick = function(fileID)
 							mine.icon = fileID
@@ -1511,12 +1512,12 @@ function UI:OpenSetMenu(owner, setId)
 						end })
 				end)
 			end
-			root:CreateButton("|cffff6060Удалить|r", function()
-				local extra = mine.serverId and "\n\nОбраз будет снят с публикации." or ""
+			root:CreateButton(L["|cffff6060Удалить|r"], function()
+				local extra = mine.serverId and L["\n\nОбраз будет снят с публикации."] or ""
 				StaticPopup_Show("TRANSMOGHUB_DELETE", mine.name, extra, mine.id)
 			end)
 		elseif not own and not TH:IsTestId(set.id) and not TH:IsLocalId(set.id) then
-			local report = root:CreateButton("Пожаловаться")
+			local report = root:CreateButton(L["Пожаловаться"])
 			for _, reason in ipairs(TH.REPORT_REASONS) do
 				report:CreateButton(reason.label, function()
 					-- «Другое» — сначала спросим, что не так
@@ -1525,7 +1526,7 @@ function UI:OpenSetMenu(owner, setId)
 			end
 			-- неподходящий тег — не жалоба на образ, а отметка тега (см. «тег не подходит»)
 			if set.tags and #set.tags > 0 then
-				local wrong = report:CreateButton("Неподходящие теги")
+				local wrong = report:CreateButton(L["Неподходящие теги"])
 				for _, key in ipairs(set.tags) do
 					if TH.TAG_LABEL[key] then
 						wrong:CreateCheckbox(TH.TAG_LABEL[key], function() return TH:IsTagFlaggedByMe(set, key) end,
@@ -1533,7 +1534,7 @@ function UI:OpenSetMenu(owner, setId)
 					end
 				end
 			end
-			root:CreateButton("Скрыть образ", function()
+			root:CreateButton(L["Скрыть образ"], function()
 				StaticPopup_Show("TRANSMOGHUB_REPORT", set.name, nil, set.id)
 			end)
 		end
@@ -1559,7 +1560,7 @@ function UI:SetRace(raceID)
 		TH:TrackRaceTried(raceID)
 		TH:CheckAchievements()
 	end
-	self.raceBtn:SetText(raceID and ("Раса: " .. TH:GetRaceName(raceID)) or "Раса: свой персонаж")
+	self.raceBtn:SetText(raceID and (L["Раса: "] .. TH:GetRaceName(raceID)) or L["Раса: свой персонаж"])
 	-- длинное название расы — мельче, чтобы влезло в половину панели
 	local fs = self.raceBtn:GetFontString()
 	if fs and fs.GetStringWidth then
@@ -1574,13 +1575,13 @@ function UI:OpenRaceMenu(owner)
 	if not (MenuUtil and MenuUtil.CreateContextMenu) then return end
 	MenuUtil.CreateContextMenu(owner, function(_, root)
 		if root.SetScrollMode then root:SetScrollMode(400) end
-		root:CreateTitle("Примерить на расу")
-		root:CreateRadio("Свой персонаж",
+		root:CreateTitle(L["Примерить на расу"])
+		root:CreateRadio(L["Свой персонаж"],
 			function() return self.raceID == nil end,
 			function() self:SetRace(nil) end)
 		local set = TH:GetSet(self.selectedId)
 		if set and set.race and set.race ~= select(3, UnitRace("player")) then
-			root:CreateRadio("Как у автора: " .. TH:GetRaceName(set.race),
+			root:CreateRadio(L["Как у автора: "] .. TH:GetRaceName(set.race),
 				function() return self.raceID == set.race end,
 				function() self:SetRace(set.race) end)
 		end
@@ -1603,7 +1604,7 @@ function UI:OpenTagMenu(owner)
 		f:EnableMouse(true)
 		local title = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 		title:SetPoint("TOP", 0, -6)
-		title:SetText("Фильтр по тегам")
+		title:SetText(L["Фильтр по тегам"])
 
 		f.picker = TH:CreateTagPicker(f, { cols = 3, rows = 11, colW = 165,
 			onChange = function()
@@ -1615,18 +1616,18 @@ function UI:OpenTagMenu(owner)
 		f:SetSize(f.picker.width + 20, f.picker.height + 72)
 		f:Hide()
 
-		local suggest = Button(f, "Предложить тег", 150)
+		local suggest = Button(f, L["Предложить тег"], 150)
 		suggest:SetPoint("BOTTOMLEFT", 12, 10)
 		suggest:SetScript("OnClick", function() TH:OpenSuggestTag(f.picker.search:GetText()) end)
 		suggest:SetScript("OnEnter", function(b)
 			GameTooltip:SetOwner(b, "ANCHOR_TOP")
-			GameTooltip:SetText("Предложить тег")
-			GameTooltip:AddLine("Нужного тега нет? Предложите его: теги, которые просят многие, добавляются в обновлениях.", 1, 1, 1, true)
+			GameTooltip:SetText(L["Предложить тег"])
+			GameTooltip:AddLine(L["Нужного тега нет? Предложите его: теги, которые просят многие, добавляются в обновлениях."], 1, 1, 1, true)
 			GameTooltip:Show()
 		end)
 		suggest:SetScript("OnLeave", GameTooltip_Hide)
 
-		local reset = Button(f, "Сбросить", 100)
+		local reset = Button(f, L["Сбросить"], 100)
 		reset:SetPoint("BOTTOMRIGHT", -12, 10)
 		reset:SetScript("OnClick", function()
 			wipe(self.filter.tags)
@@ -1654,8 +1655,8 @@ function UI:OpenItemMenu(row)
 	GameTooltip:Hide()
 	MenuUtil.CreateContextMenu(row, function(_, root)
 		root:CreateTitle(det.name)
-		root:CreateButton("Ссылка на Wowhead", function() TH:ShowItemLink(det.itemID, det.name) end)
-		root:CreateButton("Вставить ссылку в чат", function()
+		root:CreateButton(L["Ссылка на Wowhead"], function() TH:ShowItemLink(det.itemID, det.name) end)
+		root:CreateButton(L["Вставить ссылку в чат"], function()
 			local _, link = C_Item.GetItemInfo(det.itemID)
 			if link and ChatFrameUtil and not ChatFrameUtil.InsertLink(link) then ChatFrameUtil.OpenChat(link) end
 		end)
@@ -1673,15 +1674,15 @@ function UI:ShowSlotTooltip(row)
 		GameTooltip:SetText(det.name)
 	end
 	GameTooltip:AddLine(" ")
-	GameTooltip:AddLine("Источник: " .. (det.typeText or "?"), 1, 1, 1)
+	GameTooltip:AddLine(L["Источник: "] .. (det.typeText or "?"), 1, 1, 1)
 	if det.where then GameTooltip:AddLine(det.where, 0.8, 0.8, 0.8, true) end
 	if not det.hidden then
 		if det.collected then
-			GameTooltip:AddLine("Облик собран", 0.25, 1, 0.25)
+			GameTooltip:AddLine(L["Облик собран"], 0.25, 1, 0.25)
 		else
-			GameTooltip:AddLine("Облик не собран", 1, 0.25, 0.25)
+			GameTooltip:AddLine(L["Облик не собран"], 1, 0.25, 0.25)
 		end
-		GameTooltip:AddLine("ПКМ — ссылка на Wowhead", 0.6, 0.6, 0.6)
+		GameTooltip:AddLine(L["ПКМ — ссылка на Wowhead"], 0.6, 0.6, 0.6)
 	end
 	GameTooltip:Show()
 	-- Сравнение с надетой вещью здесь только мешает
@@ -1726,7 +1727,7 @@ function UI:Refresh()
 	end
 	local nTags = 0
 	for _ in pairs(self.filter.tags) do nTags = nTags + 1 end
-	self.tagsBtn:SetText(nTags > 0 and ("Теги (" .. nTags .. ")") or "Теги")
+	self.tagsBtn:SetText(nTags > 0 and (L["Теги ("] .. nTags .. ")") or L["Теги"])
 	self.tagsReset:SetShown(nTags > 0)
 	if self.tagFrame and self.tagFrame:IsShown() then self.tagFrame.picker:Refresh() end
 
@@ -1766,7 +1767,7 @@ function UI:RefreshList()
 		local set = results[self.offset + i]
 		if set then
 			row.setId = set.id
-			row.name:SetText(set.name or "Без названия")
+			row.name:SetText(set.name or L["Без названия"])
 			row.author:SetText(set.author or "")
 
 			row.icon:SetTexture(TH:GetSetIcon(set))
@@ -1775,15 +1776,15 @@ function UI:RefreshList()
 				row.rating:SetText(STATUS_TEXT[set.status] or "")
 			elseif self.view == "moderation" then
 				local total, by = TH:GetReportStats(set.id)
-				row.rating:SetText(total > 0 and string.format("|cffff6060жалоб: %d|r", total) or "|cffff9020накрутка?|r")
-				row.author:SetText((set.author or "") .. (TH:IsBlocked(set) and " |cffff6060(блок)|r" or ""))
+				row.rating:SetText(total > 0 and string.format(L["|cffff6060жалоб: %d|r"], total) or L["|cffff9020накрутка?|r"])
+				row.author:SetText((set.author or "") .. (TH:IsBlocked(set) and L[" |cffff6060(блок)|r"] or ""))
 			else
 				local r = set.rating
 				if r and r.n and r.n > 0 then
 					-- вне чарта (мало оценок или проверка) — серым
 					row.rating:SetText(string.format(TH:IsCharted(set) and "|cffffd100%.1f|r (%d)" or "|cff999999%.1f (%d)|r", r.avg, r.n))
 				else
-					row.rating:SetText("|cff999999нет оценок|r")
+					row.rating:SetText(L["|cff999999нет оценок|r"])
 				end
 			end
 
@@ -1800,12 +1801,12 @@ function UI:RefreshList()
 			if total > 0 then row.barFill:SetWidth(math.max(1, 36 * have / total)) end
 			-- свой образ в общем списке — метка «ваш»
 			if self.view ~= "mine" and self.view ~= "moderation" and TH:IsMine(set) then
-				row.author:SetText((set.author or "") .. "  |cff40ff40(ваш)|r")
+				row.author:SetText((set.author or "") .. L["  |cff40ff40(ваш)|r"])
 			end
 			if self.view == "moderation" then
 				local total, by = TH:GetReportStats(set.id)
-				row.extra:SetText(total > 0 and string.format("р %d, о %d, д %d", by.a, by.o, by.x)
-					or string.format("оценок %d", set.rating and set.rating.n or 0))
+				row.extra:SetText(total > 0 and string.format(L["р %d, о %d, д %d"], by.a, by.o, by.x)
+					or string.format(L["оценок %d"], set.rating and set.rating.n or 0))
 			end
 			row.sel:SetShown(set.id == self.selectedId)
 			row:Show()
@@ -1817,23 +1818,23 @@ function UI:RefreshList()
 
 	local n = #results
 	self.listBar:Sync(self.offset, n - ROWS)
-	local page = n > 0 and string.format("%d—%d из %d", self.offset + 1, math.min(self.offset + ROWS, n), n) or ""
+	local page = n > 0 and string.format(L["%d—%d из %d"], self.offset + 1, math.min(self.offset + ROWS, n), n) or ""
 	if self.view == "author" then
-		page = "Образы " .. (self.authorFilter or "?"):gsub("%-.*", "") .. (page ~= "" and (": " .. page) or "")
+		page = L["Образы "] .. (self.authorFilter or "?"):gsub("%-.*", "") .. (page ~= "" and (": " .. page) or "")
 	end
 	self.pageText:SetText(page)
 	self.prevBtn:SetEnabled(self.offset > 0)
 	self.nextBtn:SetEnabled(self.offset + ROWS < n)
 	local filtered = (self.filter.text or "") ~= "" or next(self.filter.tags) ~= nil
-	self.emptyText:SetText(filtered and "По вашему запросу ничего нет.\n\nПопробуйте другие слова или сбросьте теги."
-		or (self.view == "guild" and not TH:GetGuildNames() and "Вы не состоите в гильдии.")
+	self.emptyText:SetText(filtered and L["По вашему запросу ничего нет.\n\nПопробуйте другие слова или сбросьте теги."]
+		or (self.view == "guild" and not TH:GetGuildNames() and L["Вы не состоите в гильдии."])
 		or (self.view == "top" and (self:GetSort() == "top" or self:GetSort() == "trending")
-			and string.format("В чарте пока пусто: ни один образ не набрал %d оценок.\n\nСвежие образы — во вкладке «Новые»:\nоцените их, и лучшие попадут сюда.", TH:GetMinChartVotes()))
+			and string.format(L["В чарте пока пусто: ни один образ не набрал %d оценок.\n\nСвежие образы — во вкладке «Новые»:\nоцените их, и лучшие попадут сюда."], TH:GetMinChartVotes()))
 		-- друзья, гильдия, подписки: в «Лучших» только чарт, как в «Образах»
 		or ((self.view == "friends" or self.view == "guild" or self.view == "subs")
 			and (self:GetSort() == "top" or self:GetSort() == "trending")
 			and #TH:QuerySets(self.view, { sort = "new" }) > 0
-			and string.format("Здесь, как и в «Образах», только образы из чарта\n(от %d оценок) — таких пока нет.\n\nОстальные — во вкладке «Новые».", TH:GetMinChartVotes()))
+			and string.format(L["Здесь, как и в «Образах», только образы из чарта\n(от %d оценок) — таких пока нет.\n\nОстальные — во вкладке «Новые»."], TH:GetMinChartVotes()))
 		or EMPTY_TEXT[self.view] or EMPTY_TEXT.default)
 	self.emptyText:SetShown(n == 0)
 	self.emptyBtn:SetShown(n == 0 and not filtered and (self.view == "top" or self.view == "mine"))
@@ -1866,23 +1867,23 @@ function UI:RefreshDetail()
 		return
 	end
 
-	self.dName:SetText(set.name or "Без названия")
+	self.dName:SetText(set.name or L["Без названия"])
 	local who = set.author or "?"
 	if set.race then who = who .. ", " .. TH:GetRaceName(set.race) end
 	if set.sex then who = who .. ", " .. TH:SexLabel(set.sex) end
 	local author = set.author or "?"
 	local extra = who:sub(#author + 1)
 	-- ширина «Автор: Имя» — за ней ставим «подписаться», а раса и класс — после ссылки
-	self.dAuthor:SetText("Автор: " .. author)
+	self.dAuthor:SetText(L["Автор: "] .. author)
 	local nameW = self.dAuthor:GetStringWidth() or 0
-	self.dAuthor:SetText("Автор: |cff69ccf0" .. author .. "|r")
+	self.dAuthor:SetText(L["Автор: |cff69ccf0"] .. author .. "|r")
 	self.dAuthorExtra:SetText((extra:gsub("^, ", "")))
 	self.dAuthorBtn:SetShown(set.author ~= nil)
 	local canFollow = set.author ~= nil and not TH.db.myChars[set.author] and not TH:IsTestId(set.id)
 	self.dFollow:SetShown(canFollow)
 	if canFollow then
 		local following = TH:IsFollowing(set.author)
-		self.dFollow:SetText(following and "|cff40ff40вы подписаны|r" or "+ подписаться")
+		self.dFollow:SetText(following and L["|cff40ff40вы подписаны|r"] or L["+ подписаться"])
 		local fs = self.dFollow:GetFontString()
 		self.dFollow:SetWidth((fs and fs:GetStringWidth() or 80) + 4)
 		self.dFollow:ClearAllPoints()
@@ -1904,8 +1905,8 @@ function UI:RefreshDetail()
 	self.dAuthorExtra:SetJustifyH("LEFT")
 
 	if set.sex and set.sex ~= TH:PlayerSex() then
-		self.sexHint:SetText(string.format("Собран на %s модели — точный вид\nв примерочной Wowhead",
-			set.sex == 1 and "женской" or "мужской"))
+		self.sexHint:SetText(string.format(L["Собран на %s модели — точный вид\nв примерочной Wowhead"],
+			set.sex == 1 and L["женской"] or L["мужской"]))
 	else
 		self.sexHint:SetText("")
 	end
@@ -1918,40 +1919,40 @@ function UI:RefreshDetail()
 	local r = netCopy and netCopy.rating or set.rating
 	if isLocal then
 		self.dRatingHint = nil
-		self.dRating:SetText("Рейтинг появится после публикации")
+		self.dRating:SetText(L["Рейтинг появится после публикации"])
 	elseif r and r.n and r.n > 0 then
 		-- одна строка: рейтинг и короткая пометка; подробности — в подсказке
 		local chartSet = netCopy or set
-		local note, hint = "", { "Рейтинг учитывает число оценок: пара пятёрок не обгонит образ с сотней четвёрок." }
+		local note, hint = "", { L["Рейтинг учитывает число оценок: пара пятёрок не обгонит образ с сотней четвёрок."] }
 		if TH:GetSuspicion(chartSet) then
-			note = "  |cffff9020на проверке|r"
-			hint[#hint + 1] = "|cffff9020Оценки на проверке у модератора: пока образ не в чарте.|r"
+			note = L["  |cffff9020на проверке|r"]
+			hint[#hint + 1] = L["|cffff9020Оценки на проверке у модератора: пока образ не в чарте.|r"]
 		elseif r.n < TH:GetMinChartVotes() and chartSet.rating then
 			local need, perDay = TH:GetMinChartVotes()
 			local left = math.ceil(need - r.n)
-			note = string.format("  |cff999999до чарта %d|r", left)
-			hint[#hint + 1] = string.format("В чарт («Лучшие» и «В тренде» вверху списка) образ попадает с %d оценок. Осталось %d.",
+			note = string.format(L["  |cff999999до чарта %d|r"], left)
+			hint[#hint + 1] = string.format(L["В чарт («Лучшие» и «В тренде» вверху списка) образ попадает с %d оценок. Осталось %d."],
 				need, left)
-			hint[#hint + 1] = string.format("|cff999999Порог пересчитывается каждый день: %d%% от числа игроков, ставящих оценки за день (сейчас ~%d, медиана за неделю), но не меньше %d.|r",
+			hint[#hint + 1] = string.format(L["|cff999999Порог пересчитывается каждый день: %d%% от числа игроков, ставящих оценки за день (сейчас ~%d, медиана за неделю), но не меньше %d.|r"],
 				TH.CHART_VOTES_SHARE * 100, perDay or 0, TH.MIN_CHART_VOTES)
 		end
 		-- Зал славы: образ вне конкурса
 		local hall = TH:GetHallDate(chartSet.id)
 		if hall then
-			note = note .. "  |cffe6cc80Зал славы|r"
-			hint[#hint + 1] = "|cffe6cc80В Зале славы с " .. hall .. ": вне конкурса — в местах и наградах за места не участвует.|r"
+			note = note .. L["  |cffe6cc80Зал славы|r"]
+			hint[#hint + 1] = L["|cffe6cc80В Зале славы с "] .. hall .. L[": вне конкурса — в местах и наградах за места не участвует.|r"]
 		end
 		-- официальное место (проверенный ежедневный чарт)
 		local place, pool = TH:GetOfficialRank("top", chartSet.id)
 		if place then
-			note = note .. string.format("  |cff40ff40место %d|r", place)
-			hint[#hint + 1] = string.format("|cff40ff40Официально: %d из %d в «Лучших» (на %s).|r", place, pool, TH:FormatChartsDate())
+			note = note .. string.format(L["  |cff40ff40место %d|r"], place)
+			hint[#hint + 1] = string.format(L["|cff40ff40Официально: %d из %d в «Лучших» (на %s).|r"], place, pool, TH:FormatChartsDate())
 		end
 		self.dRatingHint = hint
-		self.dRating:SetText(string.format("Рейтинг: |cffffd100%.1f|r из 5, голосов: %d", r.avg, r.n) .. note)
+		self.dRating:SetText(string.format(L["Рейтинг: |cffffd100%.1f|r из 5, голосов: %d"], r.avg, r.n) .. note)
 	else
 		self.dRatingHint = nil
-		self.dRating:SetText("Оценок пока нет — будьте первым")
+		self.dRating:SetText(L["Оценок пока нет — будьте первым"])
 	end
 
 	local canVote, reason = TH:CanVote(set)
@@ -1963,7 +1964,7 @@ function UI:RefreshDetail()
 	self:PaintStars()
 
 	local tags = TH:FormatSetTags(set)
-	self.dTags:SetText(tags ~= "" and ("Теги: " .. tags) or "")
+	self.dTags:SetText(tags ~= "" and (L["Теги: "] .. tags) or "")
 	local netId = set.serverId or set.id
 	self.dTagsBtn:SetShown(tags ~= "" and not TH:IsLocalId(netId) and not TH:IsTestId(netId))
 	self.dDesc:SetText(set.desc or "")
@@ -1995,7 +1996,7 @@ function UI:RefreshDetail()
 		if det then
 			row.icon:SetTexture(det.icon)
 			if det.hidden then
-				row.text:SetText("|cff999999скрыто|r")
+				row.text:SetText(L["|cff999999скрыто|r"])
 				row.source:Hide()
 				row.check:Hide()
 			else
@@ -2019,7 +2020,7 @@ function UI:RefreshDetail()
 
 	local have, total = TH:GetCollectedStats(set)
 	local color = (have == total) and "|cff40ff40" or "|cffffd100"
-	self.dCollected:SetText(string.format("Собрано: %s%d из %d|r", color, have, total))
+	self.dCollected:SetText(string.format(L["Собрано: %s%d из %d|r"], color, have, total))
 
 	if self.model.items ~= items then
 		-- другой образ — камера заново: отдалённая колесом модель не остаётся крошечной
@@ -2041,16 +2042,16 @@ function UI:RefreshDetail()
 	self.modSkipBtn:SetShown(modView)
 	if modView then
 		local blocks = TH.db.net.modBlocks
-		self.modSetBtn:SetText(blocks.sets[set.id] and "Разблок. образ" or "Нарушение...")
-		self.modAuthorBtn:SetText(set.author and blocks.authors[set.author] and "Разблок. автора" or "Блок. автора")
+		self.modSetBtn:SetText(blocks.sets[set.id] and L["Разблок. образ"] or L["Нарушение..."])
+		self.modAuthorBtn:SetText(set.author and blocks.authors[set.author] and L["Разблок. автора"] or L["Блок. автора"])
 		local total, by = TH:GetReportStats(set.id)
 		local sus = TH:GetSuspicion(set)
 		-- жалобы разбираем первыми, потом оценки
 		self.modVotesMode = sus ~= nil and (total == 0 or TH.db.modDismissed[set.id] ~= nil)
-		self.modDismissBtn:SetText(self.modVotesMode and "Оценки честные" or "Жалобы ложные")
+		self.modDismissBtn:SetText(self.modVotesMode and L["Оценки честные"] or L["Жалобы ложные"])
 		local lines = {}
 		if total > 0 then
-			lines[#lines + 1] = string.format("Жалоб: %d (реклама %d, оскорбление %d, другое %d)", total, by.a, by.o, by.x)
+			lines[#lines + 1] = string.format(L["Жалоб: %d (реклама %d, оскорбление %d, другое %d)"], total, by.a, by.o, by.x)
 		end
 		-- пояснения к «Другое» (приходят письмами вида r: «[id] текст»)
 		local prefix, notes = "[" .. set.id .. "] ", 0
@@ -2067,22 +2068,22 @@ function UI:RefreshDetail()
 			for _, f in pairs(list) do if f[1] == 1 then n = n + 1 end end
 			if n > 0 then flagged[#flagged + 1] = (TH.TAG_LABEL[tag] or tag) .. " (" .. n .. ")" end
 		end
-		if #flagged > 0 then lines[#lines + 1] = "«Тег не подходит»: " .. table.concat(flagged, ", ") end
+		if #flagged > 0 then lines[#lines + 1] = L["«Тег не подходит»: "] .. table.concat(flagged, ", ") end
 		if sus then
 			local d = set.rating and set.rating.dist or {}
-			lines[#lines + 1] = "|cffff9020Накрутка?|r " .. table.concat(sus, ", ")
-			lines[#lines + 1] = string.format("Оценки 1-5: %d / %d / %d / %d / %d", d[1] or 0, d[2] or 0, d[3] or 0, d[4] or 0, d[5] or 0)
+			lines[#lines + 1] = L["|cffff9020Накрутка?|r "] .. table.concat(sus, ", ")
+			lines[#lines + 1] = string.format(L["Оценки 1-5: %d / %d / %d / %d / %d"], d[1] or 0, d[2] or 0, d[3] or 0, d[4] or 0, d[5] or 0)
 		end
 		local disputed = {}
 		for tag, n in pairs(TH:GetDisputedTags(set)) do disputed[#disputed + 1] = (TH.TAG_LABEL[tag] or tag) .. " (" .. n .. ")" end
-		if #disputed > 0 then lines[#lines + 1] = "Погасшие теги: " .. table.concat(disputed, ", ") end
+		if #disputed > 0 then lines[#lines + 1] = L["Погасшие теги: "] .. table.concat(disputed, ", ") end
 		if TH:IsBlocked(set) then
 			local kind = TH:GetNameViolation(set.id)
-			lines[#lines + 1] = "|cffff6060Заблокирован|r" .. (kind == "e" and " (просим переименовать)" or kind == "o" and " (оскорбление)" or "")
+			lines[#lines + 1] = L["|cffff6060Заблокирован|r"] .. (kind == "e" and L[" (просим переименовать)"] or kind == "o" and L[" (оскорбление)"] or "")
 		end
 		local warned = TH:GetRenameWarning(set.author)
-		if warned and warned ~= set.id then lines[#lines + 1] = "|cffff9020Автора уже просили переименовать образ|r" end
-		if set.author and TH:IsBanned(set.author) then lines[#lines + 1] = "|cffff6060Автор забанен|r" end
+		if warned and warned ~= set.id then lines[#lines + 1] = L["|cffff9020Автора уже просили переименовать образ|r"] end
+		if set.author and TH:IsBanned(set.author) then lines[#lines + 1] = L["|cffff6060Автор забанен|r"] end
 		self.dStatus:SetText(table.concat(lines, "\n"))
 		self.deleteBtn:Hide()
 		self.publishBtn:Hide()
@@ -2092,18 +2093,18 @@ function UI:RefreshDetail()
 	local mine = TH.db.mySets[set.id]
 	self.deleteBtn:SetShown(mine ~= nil)
 	self.publishBtn:SetShown(mine ~= nil and (mine.status ~= "published" or mine.renameRequired == true))
-	self.publishBtn:SetText(mine and mine.renameRequired and "Переименовать" or "Опубликовать")
+	self.publishBtn:SetText(mine and mine.renameRequired and L["Переименовать"] or L["Опубликовать"])
 	if mine then
-		local s = "Статус: " .. (STATUS_TEXT[mine.status] or mine.status or "?")
+		local s = L["Статус: "] .. (STATUS_TEXT[mine.status] or mine.status or "?")
 		if mine.renameRequired then
-			s = s .. "\n|cffff9020Стражи подиума скрыли образ из-за названия: переименуйте его.|r"
+			s = s .. L["\n|cffff9020Стражи подиума скрыли образ из-за названия: переименуйте его.|r"]
 		end
 		if mine.status == "published" then
-			s = s .. "\n|cff999999Виден всем игрокам с аддоном.|r"
+			s = s .. L["\n|cff999999Виден всем игрокам с аддоном.|r"]
 			local net = mine.serverId and TH.byId[mine.serverId]
 			local off = {}
 			for tag in pairs(net and TH:GetDisputedTags(net) or {}) do off[#off + 1] = TH.TAG_LABEL[tag] or tag end
-			if #off > 0 then s = s .. "\n|cffff9020Погасли теги: " .. table.concat(off, ", ") .. "|r" end
+			if #off > 0 then s = s .. L["\n|cffff9020Погасли теги: "] .. table.concat(off, ", ") .. "|r" end
 		end
 		self.dStatus:SetText(s)
 	else
@@ -2115,17 +2116,17 @@ function UI:RefreshStatus()
 	local Net = TH.Net
 	local on = Net:IsConnected()
 	self.netDot:SetTexture(on and "Interface\\COMMON\\Indicator-Green" or "Interface\\COMMON\\Indicator-Gray")
-	self.netLabel:SetText(on and "Сеть" or "|cff999999Подключение...|r")
+	self.netLabel:SetText(on and L["Сеть"] or L["|cff999999Подключение...|r"])
 	self.netStats[1]:SetText(Net:PeerCount())
 	self.netStats[2]:SetText(Net:BNetPeerCount())
 	self.netStats[3]:SetText(Net:SetCount())
 	local note = ""
 	if Net:IsLocked() and Net:QueueLength() > 0 then
-		note = "|cffffd100отправка на паузе (бой или подземелье)|r"
+		note = L["|cffffd100отправка на паузе (бой или подземелье)|r"]
 	elseif Net:QueueLength() > 0 then
-		note = string.format("|cffffd100отправляется: %d|r", Net:QueueLength())
+		note = string.format(L["|cffffd100отправляется: %d|r"], Net:QueueLength())
 		local stall = Net:SendStallReason()
-		if stall then note = note .. " |cffff9020(игра не даёт: " .. stall .. ")|r" end
+		if stall then note = note .. L[" |cffff9020(игра не даёт: "] .. stall .. ")|r" end
 	end
 	self.status:SetText(note)
 	self.syncBtn:SetEnabled(TH.Net:IsConnected())

@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local TH = ns.TH
 
 ---------------------------------------------------------------------------
@@ -37,8 +38,8 @@ function TH:ApplyServerSecrets()
 					local set = setId and self:GetSet(setId)
 					if set then setName = set.name break end
 				end
-				a.desc = setName and ("Получено за образ «" .. setName .. "». Как именно — знают только Стражи подиума.")
-					or "Как именно получено — знают только Стражи подиума."
+				a.desc = setName and (L["Получено за образ «"] .. setName .. L["». Как именно — знают только Стражи подиума."])
+					or L["Как именно получено — знают только Стражи подиума."]
 			end
 		end
 	end
@@ -150,6 +151,6 @@ end
 function TH:CheckChartsFreshness()
 	if self.chartsWarned or not self:IsChartsStale() then return end
 	self.chartsWarned = true
-	self:Print(string.format("Официальный рейтинг устарел (%d дн.). Обновите аддон, чтобы места и награды за них были свежими.",
+	self:Print(string.format(L["Официальный рейтинг устарел (%d дн.). Обновите аддон, чтобы места и награды за них были свежими."],
 		self:GetChartsAge()))
 end

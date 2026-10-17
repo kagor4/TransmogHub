@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local TH = ns.TH
 
 -- Передача образа в примерочную Wowhead через официальную строку игры
@@ -84,12 +85,12 @@ local function Build()
 
 	local title = dlg:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 	title:SetPoint("TOP", 0, -6)
-	title:SetText("Примерочная Wowhead")
+	title:SetText(L["Примерочная Wowhead"])
 
-	Label(dlg, "1. Откройте в браузере примерочную Wowhead:", -32)
+	Label(dlg, L["1. Откройте в браузере примерочную Wowhead:"], -32)
 	dlg.url = ReadOnlyBox(dlg, -50)
 
-	Label(dlg, "2. Нажмите «Импортировать» > «Загрузить через внутриигровую ссылку» и вставьте строку:", -80)
+	Label(dlg, L["2. Нажмите «Импортировать» > «Загрузить через внутриигровую ссылку» и вставьте строку:"], -80)
 	dlg.command = ReadOnlyBox(dlg, -112)
 
 	dlg.hint = Label(dlg, "", -142, "GameFontHighlightSmall")
@@ -111,7 +112,7 @@ function TH:ShowWowheadLink(set)
 	dlg.command.value = self:BuildCustomSetCommand(set)
 	dlg.command:SetText(dlg.command.value)
 	dlg.hint:SetText(string.format(
-		"Копирование: щёлкните по полю и нажмите Ctrl+C.\nРасу и пол выберите на Wowhead — автор собирал образ на модели «%s, %s».\n|cff999999Эту же строку можно вставить в чат игры — откроется штатная примерочная.|r",
+		L["Копирование: щёлкните по полю и нажмите Ctrl+C.\nРасу и пол выберите на Wowhead — автор собирал образ на модели «%s, %s».\n|cff999999Эту же строку можно вставить в чат игры — откроется штатная примерочная.|r"],
 		self:GetRaceName(set.race), self:SexLabel(set.sex)))
 	dlg:Show()
 	TH:SkinNow(dlg)
@@ -138,7 +139,7 @@ local function BuildItemDialog()
 
 	itemDlg.name = Label(itemDlg, "", -32)
 	itemDlg.url = ReadOnlyBox(itemDlg, -54)
-	Label(itemDlg, "Щёлкните по полю и нажмите Ctrl+C, затем вставьте в браузер.", -82, "GameFontHighlightSmall")
+	Label(itemDlg, L["Щёлкните по полю и нажмите Ctrl+C, затем вставьте в браузер."], -82, "GameFontHighlightSmall")
 
 	local close = CreateFrame("Button", nil, itemDlg, "UIPanelButtonTemplate")
 	TH.PadButton(close)
@@ -152,7 +153,7 @@ function TH:ShowItemLink(itemID, name)
 	if not itemID then return end
 	self:TrackCount("wowhead")
 	if not itemDlg then BuildItemDialog() end
-	itemDlg.name:SetText(name or ("Предмет " .. itemID))
+	itemDlg.name:SetText(name or (L["Предмет "] .. itemID))
 	itemDlg.url.value = self:WowheadURL("item=" .. itemID)
 	itemDlg.url:SetText(itemDlg.url.value)
 	itemDlg:Show()

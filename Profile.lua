@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local TH = ns.TH
 
 ---------------------------------------------------------------------------
@@ -50,36 +51,36 @@ end
 -- Титулы за достижения: m — для мужского персонажа, f — для женского
 ---------------------------------------------------------------------------
 TH.TITLES = {
-	{ ach = "publish_1", m = "Дебютант", f = "Дебютантка" },
-	{ ach = "night", m = "Ночной дозорный", f = "Ночная дозорная" },
-	{ ach = "vote_100", m = "Член жюри", f = "Член жюри" },
-	{ ach = "ratings_100", m = "Любимец публики", f = "Любимица публики" },
-	{ ach = "found_100", m = "Собиратель Азерота", f = "Собирательница Азерота" },
-	{ ach = "colors_all", m = "Призматический", f = "Призматическая" },
-	{ ach = "publish_20", m = "Кутюрье", f = "Кутюрье" },
-	{ ach = "complete_10", m = "Двойник", f = "Двойник" },
-	{ ach = "trend_1", m = "Законодатель моды", f = "Законодательница моды" },
-	{ ach = "liked_1000", m = "Кумир Азерота", f = "Муза Азерота" },
-	{ ach = "tag_first5", m = "Многогранный талант", f = "Многогранный талант" },
-	{ ach = "board_1", m = "Первый среди равных", f = "Первая среди равных" },
-	{ ach = "top_1", m = "Легенда подиума", f = "Легенда подиума" },
-	{ ach = "pct_top_01", m = "Сезонная легенда", f = "Сезонная легенда" },
-	{ ach = "first_find_1", m = "Первооткрыватель", f = "Первооткрывательница" },
-	{ ach = "first_find_3", m = "Картограф тайн", f = "Картограф тайн" },
-	{ ach = "pct_board_01", m = "Легенда ключей", f = "Легенда ключей" },
-	{ ach = "raid_aotc", m = "Герой рейдовой моды", f = "Героиня рейдовой моды" },
-	{ ach = "raid_ce", m = "На кромке лезвия", f = "На кромке лезвия" },
-	{ ach = "publish_100", m = "Владелец дома моды", f = "Владелица дома моды" },
-	{ ach = "all", m = "Повелитель гардероба", f = "Повелительница гардероба" },
-	{ ach = "hid_lichking", m = "Наследник Ледяного трона", f = "Наследница Ледяного трона" },
-	{ ach = "hid_illidan", m = "Иллидари", f = "Иллидари" },
-	{ ach = "hid_bloodsail", m = "Капитан Кровавого Паруса", f = "Капитан Кровавого Паруса" },
-	{ ach = "hid_chen", m = "Хмельной мастер", f = "Хмельная мастерица" },
-	{ ach = "hid_gnome", m = "Гномреганский модник", f = "Гномреганская модница" },
-	{ ach = "hid_murloc", m = "Почётный мурлок", f = "Почётная мурлочиха" },
-	{ ach = "hid_plan", m = "Тот, кто бежит первым", f = "Та, кто бежит первой" },
-	{ ach = "hid_medivh", m = "Гость Каражана", f = "Гостья Каражана" },
-	{ ach = "hid_neighbours", m = "Беглец из Гилнеаса", f = "Беглянка из Гилнеаса" },
+	{ ach = "publish_1", m = L["Дебютант"], f = L["Дебютантка"] },
+	{ ach = "night", m = L["Ночной дозорный"], f = L["Ночная дозорная"] },
+	{ ach = "vote_100", m = L["Член жюри"], f = L["Член жюри"] },
+	{ ach = "ratings_100", m = L["Любимец публики"], f = L["Любимица публики"] },
+	{ ach = "found_100", m = L["Собиратель Азерота"], f = L["Собирательница Азерота"] },
+	{ ach = "colors_all", m = L["Призматический"], f = L["Призматическая"] },
+	{ ach = "publish_20", m = L["Кутюрье"], f = L["Кутюрье"] },
+	{ ach = "complete_10", m = L["Двойник"], f = L["Двойник"] },
+	{ ach = "trend_1", m = L["Законодатель моды"], f = L["Законодательница моды"] },
+	{ ach = "liked_1000", m = L["Кумир Азерота"], f = L["Муза Азерота"] },
+	{ ach = "tag_first5", m = L["Многогранный талант"], f = L["Многогранный талант"] },
+	{ ach = "board_1", m = L["Первый среди равных"], f = L["Первая среди равных"] },
+	{ ach = "top_1", m = L["Легенда подиума"], f = L["Легенда подиума"] },
+	{ ach = "pct_top_01", m = L["Сезонная легенда"], f = L["Сезонная легенда"] },
+	{ ach = "first_find_1", m = L["Первооткрыватель"], f = L["Первооткрывательница"] },
+	{ ach = "first_find_3", m = L["Картограф тайн"], f = L["Картограф тайн"] },
+	{ ach = "pct_board_01", m = L["Легенда ключей"], f = L["Легенда ключей"] },
+	{ ach = "raid_aotc", m = L["Герой рейдовой моды"], f = L["Героиня рейдовой моды"] },
+	{ ach = "raid_ce", m = L["На кромке лезвия"], f = L["На кромке лезвия"] },
+	{ ach = "publish_100", m = L["Владелец дома моды"], f = L["Владелица дома моды"] },
+	{ ach = "all", m = L["Повелитель гардероба"], f = L["Повелительница гардероба"] },
+	{ ach = "hid_lichking", m = L["Наследник Ледяного трона"], f = L["Наследница Ледяного трона"] },
+	{ ach = "hid_illidan", m = L["Иллидари"], f = L["Иллидари"] },
+	{ ach = "hid_bloodsail", m = L["Капитан Кровавого Паруса"], f = L["Капитан Кровавого Паруса"] },
+	{ ach = "hid_chen", m = L["Хмельной мастер"], f = L["Хмельная мастерица"] },
+	{ ach = "hid_gnome", m = L["Гномреганский модник"], f = L["Гномреганская модница"] },
+	{ ach = "hid_murloc", m = L["Почётный мурлок"], f = L["Почётная мурлочиха"] },
+	{ ach = "hid_plan", m = L["Тот, кто бежит первым"], f = L["Та, кто бежит первой"] },
+	{ ach = "hid_medivh", m = L["Гость Каражана"], f = L["Гостья Каражана"] },
+	{ ach = "hid_neighbours", m = L["Беглец из Гилнеаса"], f = L["Беглянка из Гилнеаса"] },
 }
 
 local function MySex()
@@ -123,8 +124,8 @@ function TH:OpenTitleMenu(owner)
 	if not (MenuUtil and MenuUtil.CreateContextMenu) then return end
 	local sex = MySex()
 	MenuUtil.CreateContextMenu(owner, function(_, root)
-		root:CreateTitle("Титул")
-		root:CreateRadio("Без титула", function() return not self.db.leader.title end, function() self:SetMyTitle(nil) end)
+		root:CreateTitle(L["Звание"])
+		root:CreateRadio(L["Без звания"], function() return not self.db.leader.title end, function() self:SetMyTitle(nil) end)
 		local locked = 0
 		for _, t in ipairs(self.TITLES) do
 			if self.db.achievements[t.ach] then
@@ -137,51 +138,51 @@ function TH:OpenTitleMenu(owner)
 		end
 		if locked > 0 then
 			root:CreateDivider()
-			root:CreateTitle(string.format("Ещё %d — за достижения", locked))
+			root:CreateTitle(string.format(L["Ещё %d — за достижения"], locked))
 		end
 	end)
 end
 
 TH.AVATAR_REWARDS = {
-	{ ach = "hid_lichking", icon = "achievement_boss_lichking", name = "Король-лич" },
-	{ ach = "hid_illidan", icon = "achievement_boss_illidan", name = "Иллидан Ярость Бури" },
-	{ ach = "hid_bloodsail", icon = "ability_rogue_ghostpirate", name = "Призрачный пират" },
-	{ ach = "hid_murloc", icon = "inv_misc_head_murloc_01", name = "Мурлок" },
-	{ ach = "hid_gnome", icon = "achievement_boss_zuldazar_mekkatorque", name = "Гелбин Меггакрут" },
-	{ ach = "hid_medivh", icon = "inv_staff_medivh", name = "Посох Медива" },
-	{ ach = "colors_all", icon = "achievement_dungeon_blackwingdescent_raid_nefarian", name = "Нефариан" },
-	{ ach = "races_all", icon = "achievement_raid_revendrethraid_siredenathrius", name = "Сир Денатрий" },
-	{ ach = "vote_500", icon = "achievement_leader_genngraymane", name = "Генн Седогрив" },
-	{ ach = "publish_20", icon = "achievement_boss_ladyvashj", name = "Леди Вайш" },
-	{ ach = "ratings_1000", icon = "achievement_leader_tyrande_whisperwind", name = "Тиранда Шелест Ветра" },
-	{ ach = "liked_100", icon = "achievement_leader_prophet_velen", name = "Пророк Велен" },
-	{ ach = "liked_1000", icon = "achievement_boss_azshara", name = "Королева Азшара" },
-	{ ach = "complete_10", icon = "achievement_boss_algalon_01", name = "Алгалон Наблюдатель" },
-	{ ach = "complete_50", icon = "achievement_boss_yoggsaron_01", name = "Йогг-Сарон" },
-	{ ach = "found_500", icon = "achievement_boss_zuldazar_jaina", name = "Джайна Праудмур" },
-	{ ach = "trend_1", icon = "achievement_leader_sylvanas", name = "Сильвана Ветрокрылая" },
-	{ ach = "board_10", icon = "achievement_leader_king_magni_bronzebeard", name = "Король Магни Бронзобород" },
-	{ ach = "board_1", icon = "achievement_boss_ragnaros", name = "Рагнарос" },
-	{ ach = "publish_100", icon = "achievement_boss_onyxia", name = "Ониксия" },
-	{ ach = "tag_first5", icon = "achievement_boss_kael'thassunstrider_01", name = "Кель'тас Солнечный Скиталец" },
-	{ ach = "top_1", icon = "achievement_leader_king_varian_wrynn", name = "Вариан Ринн" },
-	{ ach = "all", icon = "achievement_boss_kiljaeden2", name = "Кил'джеден" },
-	{ ach = "vote_100", icon = "inv_achievement_raid_progenitorraid_jailer", name = "Тюремщик" },
-	{ ach = "network_500", icon = "quest_khadgar", name = "Кадгар" },
-	{ ach = "holiday_all", icon = "inv_111_raid_achievement_chromekinggallywix", name = "Галливикс" },
-	{ ach = "five_100", icon = "inv_120_raid_marchonqueldanas_lura", name = "Л'ура" },
-	{ ach = "trend_10", icon = "inv_achievement_raidemeralddream_fyrakk", name = "Фиракк" },
-	{ ach = "top_10", icon = "achievement_thenighthold_guldan", name = "Гул'дан" },
-	{ ach = "tag_top1", icon = "achievement_boss_hellfire_archimonde", name = "Архимонд" },
-	{ ach = "first_find_1", icon = "inv_120_raid_voidspire_alleria", name = "Аллерия Ветрокрылая" },
-	{ ach = "first_find_3", icon = "achievement_nzothraid_nzoth", name = "Н'Зот" },
-	{ ach = "pct_board_1", icon = "achievement_nzothraid_wrathion", name = "Гневион" },
-	{ ach = "pct_board_01", icon = "achievement_boss_garrosh", name = "Гаррош Адский Крик" },
-	{ ach = "pct_top_1", icon = "achievement_boss_kelthuzad_01", name = "Кел'Тузад" },
-	{ ach = "pct_top_01", icon = "inv_achievement_raid_progenitorraid_anduin", name = "Андуин Ринн" },
-	{ ach = "raid_aotc", icon = "achievement_raidprimalist_raszageth", name = "Рашагет" },
-	{ ach = "raid_ce", icon = "inv_achievement_raidnerubian_queenansurek", name = "Королева Ансурек" },
-	{ ach = "hidden_8", icon = "inv_112_achievement_raid_salhadaar", name = "Нексус-король Сал'хадаар" },
+	{ ach = "hid_lichking", icon = "achievement_boss_lichking", name = L["Король-лич"] },
+	{ ach = "hid_illidan", icon = "achievement_boss_illidan", name = L["Иллидан Ярость Бури"] },
+	{ ach = "hid_bloodsail", icon = "ability_rogue_ghostpirate", name = L["Призрачный пират"] },
+	{ ach = "hid_murloc", icon = "inv_misc_head_murloc_01", name = L["Мурлок"] },
+	{ ach = "hid_gnome", icon = "achievement_boss_zuldazar_mekkatorque", name = L["Гелбин Меггакрут"] },
+	{ ach = "hid_medivh", icon = "inv_staff_medivh", name = L["Посох Медива"] },
+	{ ach = "colors_all", icon = "achievement_dungeon_blackwingdescent_raid_nefarian", name = L["Нефариан"] },
+	{ ach = "races_all", icon = "achievement_raid_revendrethraid_siredenathrius", name = L["Сир Денатрий"] },
+	{ ach = "vote_500", icon = "achievement_leader_genngraymane", name = L["Генн Седогрив"] },
+	{ ach = "publish_20", icon = "achievement_boss_ladyvashj", name = L["Леди Вайш"] },
+	{ ach = "ratings_1000", icon = "achievement_leader_tyrande_whisperwind", name = L["Тиранда Шелест Ветра"] },
+	{ ach = "liked_100", icon = "achievement_leader_prophet_velen", name = L["Пророк Велен"] },
+	{ ach = "liked_1000", icon = "achievement_boss_azshara", name = L["Королева Азшара"] },
+	{ ach = "complete_10", icon = "achievement_boss_algalon_01", name = L["Алгалон Наблюдатель"] },
+	{ ach = "complete_50", icon = "achievement_boss_yoggsaron_01", name = L["Йогг-Сарон"] },
+	{ ach = "found_500", icon = "achievement_boss_zuldazar_jaina", name = L["Джайна Праудмур"] },
+	{ ach = "trend_1", icon = "achievement_leader_sylvanas", name = L["Сильвана Ветрокрылая"] },
+	{ ach = "board_10", icon = "achievement_leader_king_magni_bronzebeard", name = L["Король Магни Бронзобород"] },
+	{ ach = "board_1", icon = "achievement_boss_ragnaros", name = L["Рагнарос"] },
+	{ ach = "publish_100", icon = "achievement_boss_onyxia", name = L["Ониксия"] },
+	{ ach = "tag_first5", icon = "achievement_boss_kael'thassunstrider_01", name = L["Кель'тас Солнечный Скиталец"] },
+	{ ach = "top_1", icon = "achievement_leader_king_varian_wrynn", name = L["Вариан Ринн"] },
+	{ ach = "all", icon = "achievement_boss_kiljaeden2", name = L["Кил'джеден"] },
+	{ ach = "vote_100", icon = "inv_achievement_raid_progenitorraid_jailer", name = L["Тюремщик"] },
+	{ ach = "network_500", icon = "quest_khadgar", name = L["Кадгар"] },
+	{ ach = "holiday_all", icon = "inv_111_raid_achievement_chromekinggallywix", name = L["Галливикс"] },
+	{ ach = "five_100", icon = "inv_120_raid_marchonqueldanas_lura", name = L["Л'ура"] },
+	{ ach = "trend_10", icon = "inv_achievement_raidemeralddream_fyrakk", name = L["Фиракк"] },
+	{ ach = "top_10", icon = "achievement_thenighthold_guldan", name = L["Гул'дан"] },
+	{ ach = "tag_top1", icon = "achievement_boss_hellfire_archimonde", name = L["Архимонд"] },
+	{ ach = "first_find_1", icon = "inv_120_raid_voidspire_alleria", name = L["Аллерия Ветрокрылая"] },
+	{ ach = "first_find_3", icon = "achievement_nzothraid_nzoth", name = L["Н'Зот"] },
+	{ ach = "pct_board_1", icon = "achievement_nzothraid_wrathion", name = L["Гневион"] },
+	{ ach = "pct_board_01", icon = "achievement_boss_garrosh", name = L["Гаррош Адский Крик"] },
+	{ ach = "pct_top_1", icon = "achievement_boss_kelthuzad_01", name = L["Кел'Тузад"] },
+	{ ach = "pct_top_01", icon = "inv_achievement_raid_progenitorraid_anduin", name = L["Андуин Ринн"] },
+	{ ach = "raid_aotc", icon = "achievement_raidprimalist_raszageth", name = L["Рашагет"] },
+	{ ach = "raid_ce", icon = "inv_achievement_raidnerubian_queenansurek", name = L["Королева Ансурек"] },
+	{ ach = "hidden_8", icon = "inv_112_achievement_raid_salhadaar", name = L["Нексус-король Сал'хадаар"] },
 }
 
 local iconIDs = {} -- кэш: имя или путь иконки -> номер файла
@@ -311,8 +312,8 @@ function TH:OpenAvatarPicker()
 			local has = self.db.achievements[a.id] ~= nil
 			if has then opened = opened + 1 else locked[id] = true end
 			-- условие скрытого достижения не раскрываем, пока оно не получено
-			local how = (a.hidden and not has) and ("Скрытое достижение. Подсказка: " .. a.hint)
-				or ("Достижение «" .. a.name .. "»: " .. a.desc)
+			local how = (a.hidden and not has) and (L["Скрытое достижение. Подсказка: "] .. a.hint)
+				or (L["Достижение «"] .. a.name .. "»: " .. a.desc)
 			tips[id] = { r.name, how }
 		end
 	end
@@ -327,28 +328,28 @@ function TH:OpenAvatarPicker()
 			tips[id] = tips[id] or { title, text }
 		end
 	end
-	Add(self:GetRacePortrait(myRace, mySex, myClass), RACE_PORTRAIT[myRace] and "Портрет вашей расы" or "Иконка вашего класса")
+	Add(self:GetRacePortrait(myRace, mySex, myClass), RACE_PORTRAIT[myRace] and L["Портрет вашей расы"] or L["Иконка вашего класса"])
 	for _, race in ipairs(self:GetPlayableRaces()) do
 		if RACE_PORTRAIT[race.id] then
 			for sex = 0, 1 do Add(self:GetRacePortrait(race.id, sex), race.name) end
 		end
 	end
 	for _, c in ipairs(ClassIcons()) do Add(c[1], c[2]) end
-	for _, set in pairs(self.db.mySets) do Add(self:GetSetIcon(set), "Иконка образа", set.name) end
+	for _, set in pairs(self.db.mySets) do Add(self:GetSetIcon(set), L["Иконка образа"], set.name) end
 	for _, a in ipairs(self.ACHIEVEMENTS) do
-		if self.db.achievements[a.id] and not a.shame then Add(a.texture, a.name, "Полученное достижение") end
+		if self.db.achievements[a.id] and not a.shame then Add(a.texture, a.name, L["Полученное достижение"]) end
 	end
 	self:OpenIconPicker({
-		title = "Аватар",
-		recLabel = string.format("Наградные аватары — открываются достижениями (открыто %d из %d)", opened, #rewards),
+		title = L["Аватар"],
+		recLabel = string.format(L["Наградные аватары — открываются достижениями (открыто %d из %d)"], opened, #rewards),
 		recommended = rewards,
 		recRows = math.min(4, math.max(2, math.ceil(#rewards / 12))),
 		list = list,
-		allLabel = "Обычные: портреты рас, классы и специализации, ваши образы и достижения",
+		allLabel = L["Обычные: портреты рас, классы и специализации, ваши образы и достижения"],
 		locked = locked,
 		tooltips = tips,
 		borders = borders,
-		defaultHint = "Портрет расы этого персонажа (у союзных рас — иконка класса). Аватар у каждого персонажа свой.",
+		defaultHint = L["Портрет расы этого персонажа (у союзных рас — иконка класса). Аватар у каждого персонажа свой."],
 		current = self.db.avatars[self.Net.Me()],
 		onPick = function(fileID)
 			self.db.avatars[self.Net.Me()] = fileID -- у каждого персонажа свой
@@ -444,24 +445,24 @@ local function ShowIconTooltip(icon)
 	-- скрытое раскрываем, только если оно есть и у вас
 	local secret = a.hidden and not mineToo
 	GameTooltip:SetOwner(icon, "ANCHOR_RIGHT")
-	GameTooltip:SetText(TH:RarityHex(a.rarity) .. (secret and "Скрытое достижение" or a.name) .. "|r")
+	GameTooltip:SetText(TH:RarityHex(a.rarity) .. (secret and L["Скрытое достижение"] or a.name) .. "|r")
 	GameTooltip:AddLine(TH:FormatAchievementPoints(a, not icon.own), 0.8, 0.8, 0.8, true)
 	GameTooltip:AddLine(secret and a.hint or a.desc, 1, 1, 1, true)
 	if icon.own then
 		-- свой профиль: одна строка, без «есть у меня» и «есть и у вас»
 		local at = TH.db.achievements[a.id]
 		if at then
-			GameTooltip:AddLine("Получено " .. date("%d.%m.%Y", at), 0.25, 1, 0.25)
+			GameTooltip:AddLine(L["Получено "] .. date("%d.%m.%Y", at), 0.25, 1, 0.25)
 		else
-			GameTooltip:AddLine("Ещё не получено", 0.6, 0.6, 0.6)
+			GameTooltip:AddLine(L["Ещё не получено"], 0.6, 0.6, 0.6)
 		end
 	else
 		if icon.has then
-			GameTooltip:AddLine("Есть у " .. SplitName(p.name), 0.25, 1, 0.25)
+			GameTooltip:AddLine(L["Есть у "] .. SplitName(p.name), 0.25, 1, 0.25)
 		else
-			GameTooltip:AddLine("Нет у " .. SplitName(p.name), 0.6, 0.6, 0.6)
+			GameTooltip:AddLine(L["Нет у "] .. SplitName(p.name), 0.6, 0.6, 0.6)
 		end
-		GameTooltip:AddLine(mineToo and "Есть и у вас" or "У вас нет", 0.6, 0.8, 1)
+		GameTooltip:AddLine(mineToo and L["Есть и у вас"] or L["У вас нет"], 0.6, 0.8, 1)
 	end
 	GameTooltip:Show()
 end
@@ -484,8 +485,8 @@ function TH:BuildProfilePanel(p)
 	p.avatarBtn:SetScript("OnClick", function() TH:OpenAvatarPicker() end)
 	p.avatarBtn:SetScript("OnEnter", function(b)
 		GameTooltip:SetOwner(b, "ANCHOR_RIGHT")
-		GameTooltip:SetText("Сменить аватар")
-		GameTooltip:AddLine("Его видят другие игроки в вашем профиле и в рейтинге, если вы участвуете в рейтинге очков стиля.", 1, 1, 1, true)
+		GameTooltip:SetText(L["Сменить аватар"])
+		GameTooltip:AddLine(L["Его видят другие игроки в вашем профиле и в рейтинге, если вы участвуете в рейтинге очков стиля."], 1, 1, 1, true)
 		GameTooltip:Show()
 	end)
 	p.avatarBtn:SetScript("OnLeave", GameTooltip_Hide)
@@ -515,32 +516,32 @@ function TH:BuildProfilePanel(p)
 	p.followInfoBtn:SetScript("OnClick", function(b) TH:OpenFollowersMenu(b, p.name) end)
 	p.followInfoBtn:SetScript("OnEnter", function(b)
 		GameTooltip:SetOwner(b, "ANCHOR_TOP")
-		GameTooltip:SetText("Подписчики")
-		GameTooltip:AddLine("Нажмите: кто подписан — можно подписаться в ответ.", 1, 1, 1, true)
+		GameTooltip:SetText(L["Подписчики"])
+		GameTooltip:AddLine(L["Нажмите: кто подписан — можно подписаться в ответ."], 1, 1, 1, true)
 		GameTooltip:Show()
 	end)
 	p.followInfoBtn:SetScript("OnLeave", GameTooltip_Hide)
 
-	-- справа: «Назад» в чужом профиле; в своём — аватар и титул
+	-- справа: «Назад» в чужом профиле; в своём — аватар и звание
 	p.back = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
 	TH.PadButton(p.back)
 	p.back:SetSize(130, 22)
 	p.back:SetPoint("TOPRIGHT", -10, -10)
-	p.back:SetText("Назад")
+	p.back:SetText(L["Назад"])
 	p.back:SetScript("OnClick", function() TH.UI:CloseProfile() end)
 
 	p.changeAvatar = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
 	TH.PadButton(p.changeAvatar)
 	p.changeAvatar:SetSize(130, 22)
 	p.changeAvatar:SetPoint("TOPRIGHT", -10, -10)
-	p.changeAvatar:SetText("Сменить аватар")
+	p.changeAvatar:SetText(L["Сменить аватар"])
 	p.changeAvatar:SetScript("OnClick", function() TH:OpenAvatarPicker() end)
 
 	p.changeTitle = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
 	TH.PadButton(p.changeTitle)
 	p.changeTitle:SetSize(130, 22)
 	p.changeTitle:SetPoint("TOPRIGHT", -10, -36)
-	p.changeTitle:SetText("Титул")
+	p.changeTitle:SetText(L["Звание"])
 	p.changeTitle:SetScript("OnClick", function(b) TH:OpenTitleMenu(b) end)
 
 	-- чужой профиль: подписаться (под «Назад»)
@@ -551,15 +552,15 @@ function TH:BuildProfilePanel(p)
 	p.followBtn:SetScript("OnClick", function() TH:ToggleFollow(p.name) end)
 	p.followBtn:SetScript("OnEnter", function(b)
 		GameTooltip:SetOwner(b, "ANCHOR_LEFT")
-		GameTooltip:SetText("Подписка")
-		GameTooltip:AddLine("Новые образы автора — во вкладке «Подписки» и уведомлением. Что присылать — в настройках (шестерёнка вверху).", 1, 1, 1, true)
+		GameTooltip:SetText(L["Подписка"])
+		GameTooltip:AddLine(L["Новые образы автора — во вкладке «Подписки» и уведомлением. Что присылать — в настройках (шестерёнка вверху)."], 1, 1, 1, true)
 		GameTooltip:Show()
 	end)
 	p.followBtn:SetScript("OnLeave", GameTooltip_Hide)
 
 	-- статистика плитками: подпись и крупное число
 	p.tiles = {}
-	for i, label in ipairs({ "Образов", "Средняя оценка", "Оценок получено", "Очки стиля", "Место в рейтинге" }) do
+	for i, label in ipairs({ L["Образов"], L["Средняя оценка"], L["Оценок получено"], L["Очки стиля"], L["Место в рейтинге"] }) do
 		-- плитки между именем и кнопками справа (кнопки занимают ~140 px)
 		local x = 340 + (i - 1) * 96
 		local cap = p:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
@@ -619,8 +620,8 @@ function TH:BuildProfilePanel(p)
 			if not r.char then return end
 			GameTooltip:SetOwner(r, "ANCHOR_RIGHT")
 			GameTooltip:SetText(r.char)
-			GameTooltip:AddLine("ЛКМ — свернуть или развернуть образы персонажа.", 1, 1, 1, true)
-			GameTooltip:AddLine("Перетащите заголовок, чтобы поднять персонажа выше или опустить ниже. ПКМ — то же через меню.", 1, 1, 1, true)
+			GameTooltip:AddLine(L["ЛКМ — свернуть или развернуть образы персонажа."], 1, 1, 1, true)
+			GameTooltip:AddLine(L["Перетащите заголовок, чтобы поднять персонажа выше или опустить ниже. ПКМ — то же через меню."], 1, 1, 1, true)
 			GameTooltip:Show()
 		end)
 		row:SetScript("OnLeave", GameTooltip_Hide)
@@ -630,7 +631,7 @@ function TH:BuildProfilePanel(p)
 	end
 	p.noSets = p:CreateFontString(nil, "OVERLAY", "GameFontDisable")
 	p.noSets:SetPoint("TOPLEFT", LIST_X + 6, BODY_Y - 26)
-	p.noSets:SetText("Опубликованных образов в вашей базе нет.")
+	p.noSets:SetText(L["Опубликованных образов в вашей базе нет."])
 
 
 	-- примерка выбранного образа прямо в профиле
@@ -656,7 +657,7 @@ function TH:BuildProfilePanel(p)
 	TH.PadButton(p.details)
 	p.details:SetSize(VIEW_W, 22)
 	p.details:SetPoint("BOTTOMLEFT", VIEW_X, 10)
-	p.details:SetText("Вещи, оценка и примерка на другой расе")
+	p.details:SetText(L["Вещи, оценка и примерка на другой расе"])
 	p.details:SetScript("OnClick", function() TH:ProfileOpenList(p) end)
 
 	-- достижения
@@ -692,7 +693,7 @@ function TH:BuildProfilePanel(p)
 	p.noAch:SetPoint("TOPLEFT", ACH_X, BODY_Y - 24)
 	p.noAch:SetWidth(330)
 	p.noAch:SetJustifyH("LEFT")
-	p.noAch:SetText("Достижения автора неизвестны: он не участвует в рейтинге очков стиля или ещё не заходил в игру с новой версией аддона.")
+	p.noAch:SetText(L["Достижения автора неизвестны: он не участвует в рейтинге очков стиля или ещё не заходил в игру с новой версией аддона."])
 end
 
 -- Переход к образам в обычном списке (свои — в список «Мои образы» с черновиками)
@@ -717,8 +718,8 @@ function TH:ProfileSelect(p, setId)
 	p.selectedId = set and set.id
 	if set then
 		local r = self:GetSetRating(set)
-		p.viewName:SetText(set.name or "Без названия")
-		local info = r and (r.n or 0) > 0 and string.format("|cffffd100%.1f|r из 5, оценок: %d", r.avg, r.n) or "|cff999999нет оценок|r"
+		p.viewName:SetText(set.name or L["Без названия"])
+		local info = r and (r.n or 0) > 0 and string.format(L["|cffffd100%.1f|r из 5, оценок: %d"], r.avg, r.n) or L["|cff999999нет оценок|r"]
 		local tags = self:FormatTags(set.tags)
 		if tags ~= "" then info = info .. "  —  " .. tags end
 		p.viewInfo:SetText(info)
@@ -840,11 +841,11 @@ function TH:OpenProfileCharMenu(p, owner, name)
 			local b = root:CreateButton(text, function() TH:MoveProfileChar(p, name, to) end)
 			if not enabled then b:SetEnabled(false) end
 		end
-		Item("В самый верх", index > 1, 1)
-		Item("Выше", index > 1, index - 1)
-		Item("Ниже", index < count, index + 1)
-		Item("В самый низ", index < count, count)
-		root:CreateButton(self.db.collapsedChars[name] and "Развернуть" or "Свернуть", function() TH:ToggleProfileChar(p, name) end)
+		Item(L["В самый верх"], index > 1, 1)
+		Item(L["Выше"], index > 1, index - 1)
+		Item(L["Ниже"], index < count, index + 1)
+		Item(L["В самый низ"], index < count, count)
+		root:CreateButton(self.db.collapsedChars[name] and L["Развернуть"] or L["Свернуть"], function() TH:ToggleProfileChar(p, name) end)
 	end)
 end
 
@@ -920,7 +921,7 @@ function TH:RefreshProfileSets(p)
 			local color = e.class and RAID_CLASS_COLORS and RAID_CLASS_COLORS[e.class]
 			local text = ShortName(row.char)
 			if color and color.WrapTextInColorCode then text = color:WrapTextInColorCode(text) end
-			if row.char == self.Net.Me() then text = text .. " |cff999999(этот персонаж)|r" end
+			if row.char == self.Net.Me() then text = text .. L[" |cff999999(этот персонаж)|r"] end
 			row.name:ClearAllPoints()
 			row.name:SetPoint("LEFT", row.arrow, "RIGHT", 6, 0)
 			row.name:SetWidth(200)
@@ -933,11 +934,11 @@ function TH:RefreshProfileSets(p)
 			row.name:SetPoint("LEFT", row.icon, "RIGHT", 6, 0)
 			local r = self:GetSetRating(set)
 			row.icon:SetTexture(self:GetSetIcon(set))
-			row.name:SetText(set.name or "Без названия")
+			row.name:SetText(set.name or L["Без названия"])
 			if p.own and set.status ~= "published" then
-				row.rating:SetText("|cff999999черновик|r")
+				row.rating:SetText(L["|cff999999черновик|r"])
 			else
-				row.rating:SetText(r and (r.n or 0) > 0 and string.format("|cffffd100%.1f|r (%d)", r.avg, r.n) or "|cff999999нет оценок|r")
+				row.rating:SetText(r and (r.n or 0) > 0 and string.format("|cffffd100%.1f|r (%d)", r.avg, r.n) or L["|cff999999нет оценок|r"])
 			end
 			if set.id == p.selectedId then
 				row.bg:SetColorTexture(TH:SelColor(0.18))
@@ -973,11 +974,11 @@ function TH:RefreshProfile(p, name)
 	p.sets, p.own = stats.sets, stats.own
 	self:BuildProfileEntries(p)
 	p.offset = math.min(p.offset or 0, math.max(0, #p.entries - SET_ROWS))
-	p.setsLabel:SetText(p.own and (p.grouped and "Мои образы по персонажам (ПКМ — действия)"
-		or "Мои образы (новые сверху, ПКМ — действия)") or "Образы (лучшие сверху)")
-	p.noSets:SetText(p.own and "Образов пока нет. Наденьте трансмог и нажмите «Новый образ»."
-		or "Опубликованных образов в вашей базе нет.")
-	p.details:SetText(p.own and "Вещи, статус и публикация" or "Вещи, оценка и примерка на другой расе")
+	p.setsLabel:SetText(p.own and (p.grouped and L["Мои образы по персонажам (ПКМ — действия)"]
+		or L["Мои образы (новые сверху, ПКМ — действия)"]) or L["Образы (лучшие сверху)"])
+	p.noSets:SetText(p.own and L["Образов пока нет. Наденьте трансмог и нажмите «Новый образ»."]
+		or L["Опубликованных образов в вашей базе нет."])
+	p.details:SetText(p.own and L["Вещи, статус и публикация"] or L["Вещи, оценка и примерка на другой расе"])
 
 	-- аватар: раса и пол из последнего образа автора, для себя — свой персонаж
 	local look = self:GetAuthorLook(stats.sets)
@@ -997,13 +998,13 @@ function TH:RefreshProfile(p, name)
 	local canFollow = not self.db.myChars[name]
 	p.followBtn:SetShown(canFollow)
 	if canFollow then
-		p.followBtn:SetText(self:IsFollowing(name) and "Отписаться" or "Подписаться")
+		p.followBtn:SetText(self:IsFollowing(name) and L["Отписаться"] or L["Подписаться"])
 	end
 	local followers = self:GetFollowerCount(name)
-	local info = "|cff69ccf0Подписчиков: " .. followers .. "|r"
-	if not canFollow then info = info .. "  ·  |cff69ccf0подписок: " .. #self:GetFollowingList() .. "|r" end
+	local info = L["|cff69ccf0Подписчиков: "] .. followers .. "|r"
+	if not canFollow then info = info .. L["  ·  |cff69ccf0подписок: "] .. #self:GetFollowingList() .. "|r" end
 	if canFollow and self:FollowsMe(name) then
-		info = info .. (self:IsFollowing(name) and "  ·  |cff40ff40подписка взаимная|r" or "  ·  |cff40ff40подписан на вас|r")
+		info = info .. (self:IsFollowing(name) and L["  ·  |cff40ff40подписка взаимная|r"] or L["  ·  |cff40ff40подписан на вас|r"])
 	end
 	p.followInfo:SetText(info)
 	local classAtlas = class and GetClassAtlas and GetClassAtlas(class:lower())
@@ -1021,7 +1022,7 @@ function TH:RefreshProfile(p, name)
 	p.tiles[2]:SetText(stats.avg and string.format("|cffffd100%.1f|r", stats.avg) or dash)
 	p.tiles[3]:SetText(stats.avg and stats.votes or dash)
 	p.tiles[4]:SetText(entry and ("|cffffd100" .. entry.points .. "|r") or dash)
-	p.tiles[5]:SetText(entry and string.format("%d |cff999999из %d|r", entry.place, total) or dash)
+	p.tiles[5]:SetText(entry and string.format(L["%d |cff999999из %d|r"], entry.place, total) or dash)
 	p.titleText:SetText(self:GetPlayerTitle(name) or "")
 
 	-- сразу показываем лучший образ
@@ -1043,7 +1044,7 @@ function TH:RefreshProfile(p, name)
 			if has[a.id] then count = count + 1 end
 		end
 	end
-	p.achLabel:SetText(known and string.format("Достижения: %d из %d", count, normal) or "Достижения")
+	p.achLabel:SetText(known and string.format(L["Достижения: %d из %d"], count, normal) or L["Достижения"])
 
 	-- порядок: полученные (редкие впереди), полученные позорные, остальные по редкости,
 	-- неполученные скрытые и позорные — в конце
@@ -1110,7 +1111,7 @@ function TH:LayoutProfileAch(p)
 	p.achBar:SetHeight(visible * (ICON + ICON_GAP) - ICON_GAP - 36)
 	p.achBar:Sync(p.achOffset, p.achKnown and rows - visible or 0)
 	if p.achMore then
-		p.achMore:SetText(rows > visible and string.format("колесо мыши: ещё рядов — %d", rows - visible - p.achOffset) or "")
+		p.achMore:SetText(rows > visible and string.format(L["колесо мыши: ещё рядов — %d"], rows - visible - p.achOffset) or "")
 		p.achMore:SetShown(rows > visible and p.achOffset < rows - visible)
 	end
 end

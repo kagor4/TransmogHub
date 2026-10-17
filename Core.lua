@@ -1,4 +1,5 @@
 local ADDON_NAME, ns = ...
+local L = ns.L
 
 local TH = CreateFrame("Frame")
 ns.TH = TH
@@ -90,7 +91,7 @@ end
 
 -- Заметное подтверждение: строка посреди экрана (как сообщения игры) и в чат
 -- Благодарность за обращение (жалоба, письмо, предложение): крупно на экране и в чат
-TH.THANKS = "Спасибо, что помогаете нам становиться лучше!"
+TH.THANKS = L["Спасибо, что помогаете нам становиться лучше!"]
 function TH:Thanks(detail)
 	if UIErrorsFrame and UIErrorsFrame.AddMessage then UIErrorsFrame:AddMessage(self.THANKS, 0.4, 1, 0.6, 1) end
 	self:Print(self.THANKS .. (detail and (" " .. detail) or ""))
@@ -133,128 +134,128 @@ TH.TEST_PREFIX = "test:"
 ---------------------------------------------------------------------------
 -- Ключи тегов уходят в сеть: существующие не переименовывать.
 TH.TAG_GROUPS = {
-	{ name = "Классы", tags = {
-		{ "warrior", "Воитель" }, { "knight", "Рыцарь" }, { "paladin", "Паладин" },
-		{ "hunter", "Охотник" }, { "rogue", "Разбойник" }, { "priest", "Жрец" },
-		{ "deathknight", "Рыцарь смерти" }, { "shaman", "Шаман" }, { "mage", "Маг" },
-		{ "warlock", "Чернокнижник" }, { "monk", "Монах" }, { "druid", "Друид" },
-		{ "demonhunter", "Охотник на демонов" }, { "evoker", "Пробудитель" }, { "necro", "Некромант" },
+	{ name = L["Классы"], tags = {
+		{ "warrior", L["Воитель"] }, { "knight", L["Рыцарь"] }, { "paladin", L["Паладин"] },
+		{ "hunter", L["Охотник"] }, { "rogue", L["Разбойник"] }, { "priest", L["Жрец"] },
+		{ "deathknight", L["Рыцарь смерти"] }, { "shaman", L["Шаман"] }, { "mage", L["Маг"] },
+		{ "warlock", L["Чернокнижник"] }, { "monk", L["Монах"] }, { "druid", L["Друид"] },
+		{ "demonhunter", L["Охотник на демонов"] }, { "evoker", L["Пробудитель"] }, { "necro", L["Некромант"] },
 	} },
-	{ name = "Образ", tags = {
-		{ "pirate", "Пират" }, { "assassin", "Убийца" }, { "tribal", "Племенной" },
-		{ "royal", "Королевский" }, { "noble", "Аристократ" }, { "commoner", "Крестьянин" },
-		{ "scholar", "Учёный" }, { "adventurer", "Путешественник" }, { "gladiator", "Гладиатор" },
+	{ name = L["Образ"], tags = {
+		{ "pirate", L["Пират"] }, { "assassin", L["Убийца"] }, { "tribal", L["Племенной"] },
+		{ "royal", L["Королевский"] }, { "noble", L["Аристократ"] }, { "commoner", L["Крестьянин"] },
+		{ "scholar", L["Учёный"] }, { "adventurer", L["Путешественник"] }, { "gladiator", L["Гладиатор"] },
 	} },
-	{ name = "Стиль", tags = {
-		{ "minimal", "Минимализм" }, { "classic", "Классика" }, { "tier", "Классовый комплект" },
-		{ "retro", "Ретро" }, { "elegant", "Элегантный" }, { "casual", "Повседневный" },
-		{ "battle", "Боевой" }, { "heavy", "Массивный" }, { "light", "Лёгкий" },
-		{ "robe", "Мантия" }, { "dress", "Платье" }, { "cute", "Милый" }, { "funny", "Забавный" },
-		{ "scary", "Устрашающий" }, { "mysterious", "Загадочный" }, { "rp", "Для RP" },
-		{ "gothic", "Готика" }, { "military", "Военный" }, { "wizard", "Чародейский" }, { "barbarian", "Варвар" },
-		{ "victorian", "Викторианский" }, { "formal", "Парадный" }, { "battleworn", "Потрёпанный" },
-		{ "ornate", "Вычурный" }, { "bridal", "Свадебный" }, { "cozy", "Уютный" }, { "heroic", "Героический" },
-		{ "villain", "Злодейский" }, { "romantic", "Романтичный" }, { "peaceful", "Мирный" }, { "hooded", "С капюшоном" },
-		{ "masked", "В маске" }, { "no_helm", "Без шлема" }, { "asymmetric", "Асимметрия" },
+	{ name = L["Стиль"], tags = {
+		{ "minimal", L["Минимализм"] }, { "classic", L["Классика"] }, { "tier", L["Классовый комплект"] },
+		{ "retro", L["Ретро"] }, { "elegant", L["Элегантный"] }, { "casual", L["Повседневный"] },
+		{ "battle", L["Боевой"] }, { "heavy", L["Массивный"] }, { "light", L["Лёгкий"] },
+		{ "robe", L["Мантия"] }, { "dress", L["Платье"] }, { "cute", L["Милый"] }, { "funny", L["Забавный"] },
+		{ "scary", L["Устрашающий"] }, { "mysterious", L["Загадочный"] }, { "rp", L["Для RP"] },
+		{ "gothic", L["Готика"] }, { "military", L["Военный"] }, { "wizard", L["Чародейский"] }, { "barbarian", L["Варвар"] },
+		{ "victorian", L["Викторианский"] }, { "formal", L["Парадный"] }, { "battleworn", L["Потрёпанный"] },
+		{ "ornate", L["Вычурный"] }, { "bridal", L["Свадебный"] }, { "cozy", L["Уютный"] }, { "heroic", L["Героический"] },
+		{ "villain", L["Злодейский"] }, { "romantic", L["Романтичный"] }, { "peaceful", L["Мирный"] }, { "hooded", L["С капюшоном"] },
+		{ "masked", L["В маске"] }, { "no_helm", L["Без шлема"] }, { "asymmetric", L["Асимметрия"] },
 	} },
-	{ name = "Роли и занятия", tags = {
-		{ "tank", "Танк" }, { "healer", "Лекарь" }, { "mercenary", "Наёмник" }, { "bandit", "Бандит" },
-		{ "guard", "Стражник" }, { "inquisitor", "Инквизитор" }, { "cultist", "Культист" }, { "witch", "Ведьма" },
-		{ "vampire", "Вампир" }, { "bard", "Бард" }, { "merchant", "Торговец" }, { "farmer", "Фермер" },
-		{ "innkeeper", "Трактирщик" }, { "sailor", "Моряк" }, { "ranger", "Следопыт" }, { "bounty", "Охотник за головами" },
-		{ "spy", "Шпион" }, { "priestess", "Жрица" }, { "archmage", "Архимаг" }, { "warlord", "Полководец" },
+	{ name = L["Роли и занятия"], tags = {
+		{ "tank", L["Танк"] }, { "healer", L["Лекарь"] }, { "mercenary", L["Наёмник"] }, { "bandit", L["Бандит"] },
+		{ "guard", L["Стражник"] }, { "inquisitor", L["Инквизитор"] }, { "cultist", L["Культист"] }, { "witch", L["Ведьма"] },
+		{ "vampire", L["Вампир"] }, { "bard", L["Бард"] }, { "merchant", L["Торговец"] }, { "farmer", L["Фермер"] },
+		{ "innkeeper", L["Трактирщик"] }, { "sailor", L["Моряк"] }, { "ranger", L["Следопыт"] }, { "bounty", L["Охотник за головами"] },
+		{ "spy", L["Шпион"] }, { "priestess", L["Жрица"] }, { "archmage", L["Архимаг"] }, { "warlord", L["Полководец"] },
 	} },
-	{ name = "Профессии", tags = {
-		{ "p_alchemy", "Алхимик" }, { "p_blacksmith", "Кузнец" }, { "p_enchant", "Зачарователь" },
-		{ "p_engineer", "Инженер" }, { "p_herbalism", "Травник" }, { "p_mining", "Шахтёр" }, { "p_skinning", "Скорняк" },
-		{ "p_tailor", "Портной" }, { "p_leather", "Кожевник" }, { "p_jewel", "Ювелир" }, { "p_inscription", "Начертатель" },
-		{ "p_cooking", "Повар" }, { "p_fishing", "Рыболов" }, { "p_archaeology", "Археолог" },
+	{ name = L["Профессии"], tags = {
+		{ "p_alchemy", L["Алхимик"] }, { "p_blacksmith", L["Кузнец"] }, { "p_enchant", L["Зачарователь"] },
+		{ "p_engineer", L["Инженер"] }, { "p_herbalism", L["Травник"] }, { "p_mining", L["Шахтёр"] }, { "p_skinning", L["Скорняк"] },
+		{ "p_tailor", L["Портной"] }, { "p_leather", L["Кожевник"] }, { "p_jewel", L["Ювелир"] }, { "p_inscription", L["Начертатель"] },
+		{ "p_cooking", L["Повар"] }, { "p_fishing", L["Рыболов"] }, { "p_archaeology", L["Археолог"] },
 	} },
-	{ name = "Мир и фэнтези", tags = {
-		{ "dark", "Тёмный" }, { "holy", "Светлый" }, { "nature", "Природа" },
-		{ "elf", "Эльфийский" }, { "undead", "Нежить" }, { "demon", "Демонический" },
-		{ "fel", "Скверна" }, { "void", "Бездна" }, { "dragon", "Драконий" },
-		{ "cosmic", "Звёздный" }, { "elemental", "Стихии" }, { "steampunk", "Стимпанк" },
-		{ "sea", "Морской" }, { "oriental", "Восточный" }, { "desert", "Пустынный" },
-		{ "titan", "Титаны" },
+	{ name = L["Мир и фэнтези"], tags = {
+		{ "dark", L["Тёмный"] }, { "holy", L["Светлый"] }, { "nature", L["Природа"] },
+		{ "elf", L["Эльфийский"] }, { "undead", L["Нежить"] }, { "demon", L["Демонический"] },
+		{ "fel", L["Скверна"] }, { "void", L["Бездна"] }, { "dragon", L["Драконий"] },
+		{ "cosmic", L["Звёздный"] }, { "elemental", L["Стихии"] }, { "steampunk", L["Стимпанк"] },
+		{ "sea", L["Морской"] }, { "oriental", L["Восточный"] }, { "desert", L["Пустынный"] },
+		{ "titan", L["Титаны"] },
 	} },
-	{ name = "Расы и народы", tags = {
-		{ "r_human", "Люди" }, { "r_orc", "Орки" }, { "r_dwarf", "Дворфы" }, { "r_nightelf", "Ночные эльфы" },
-		{ "r_bloodelf", "Эльфы крови" }, { "r_draenei", "Дренеи" }, { "r_tauren", "Таурены" }, { "r_troll", "Тролли" },
-		{ "r_gnome", "Гномы" }, { "r_goblin", "Гоблины" }, { "r_forsaken", "Отрёкшиеся" }, { "r_worgen", "Воргены" },
-		{ "r_pandaren", "Пандарены" }, { "r_vulpera", "Вульперы" }, { "r_nightborne", "Ночнорождённые" },
-		{ "r_voidelf", "Эльфы Бездны" }, { "r_lightforged", "Озарённые дренеи" }, { "r_highmountain", "Таурены Крутогорья" },
-		{ "r_darkiron", "Дворфы Чёрного Железа" }, { "r_maghar", "Маг'хары" }, { "r_kultiran", "Култирасцы" },
-		{ "r_zandalari", "Зандалары" }, { "r_mechagnome", "Механогномы" }, { "r_dracthyr", "Драктиры" },
-		{ "r_earthen", "Земельники" }, { "r_haranir", "Харанир" }, { "r_naga", "Наги" }, { "r_centaur", "Кентавры" },
-		{ "r_ethereal", "Эфириалы" }, { "r_titanforged", "Титанорождённые" },
+	{ name = L["Расы и народы"], tags = {
+		{ "r_human", L["Люди"] }, { "r_orc", L["Орки"] }, { "r_dwarf", L["Дворфы"] }, { "r_nightelf", L["Ночные эльфы"] },
+		{ "r_bloodelf", L["Эльфы крови"] }, { "r_draenei", L["Дренеи"] }, { "r_tauren", L["Таурены"] }, { "r_troll", L["Тролли"] },
+		{ "r_gnome", L["Гномы"] }, { "r_goblin", L["Гоблины"] }, { "r_forsaken", L["Отрёкшиеся"] }, { "r_worgen", L["Воргены"] },
+		{ "r_pandaren", L["Пандарены"] }, { "r_vulpera", L["Вульперы"] }, { "r_nightborne", L["Ночнорождённые"] },
+		{ "r_voidelf", L["Эльфы Бездны"] }, { "r_lightforged", L["Озарённые дренеи"] }, { "r_highmountain", L["Таурены Крутогорья"] },
+		{ "r_darkiron", L["Дворфы Чёрного Железа"] }, { "r_maghar", L["Маг'хары"] }, { "r_kultiran", L["Култирасцы"] },
+		{ "r_zandalari", L["Зандалары"] }, { "r_mechagnome", L["Механогномы"] }, { "r_dracthyr", L["Драктиры"] },
+		{ "r_earthen", L["Земельники"] }, { "r_haranir", L["Харанир"] }, { "r_naga", L["Наги"] }, { "r_centaur", L["Кентавры"] },
+		{ "r_ethereal", L["Эфириалы"] }, { "r_titanforged", L["Титанорождённые"] },
 	} },
-	{ name = "Фракции и ордены", tags = {
-		{ "f_argent", "Серебряный Авангард" }, { "f_silverhand", "Серебряная Длань" }, { "f_kirintor", "Кирин-Тор" },
-		{ "f_cenarion", "Круг Кенария" }, { "f_scarlet", "Алый орден" }, { "f_ebonblade", "Орден Чёрного Клинка" },
-		{ "f_illidari", "Иллидари" }, { "f_scourge", "Плеть" }, { "f_twilight", "Сумеречный Молот" },
-		{ "f_sentinels", "Часовые" }, { "f_farstriders", "Следопыты Кель'Таласа" }, { "f_explorers", "Лига исследователей" },
-		{ "f_earthenring", "Служители Земли" }, { "f_shadopan", "Шадо-Пан" }, { "f_kultiras", "Флот Кул-Тираса" },
-		{ "f_bloodsail", "Кровавый Парус" }, { "f_steamwheedle", "Картель Хитрой Шестерёнки" },
-		{ "f_dragonflights", "Драконьи стаи" }, { "f_kyrian", "Кирии" }, { "f_venthyr", "Вентиры" },
-		{ "f_nightfae", "Ночной народец" }, { "f_necrolord", "Некролорды" }, { "f_oldgods", "Древние боги" },
-		{ "f_naaru", "Наару" }, { "f_burninglegion", "Пылающий Легион" }, { "f_shadowlands", "Тёмные Земли" },
+	{ name = L["Фракции и ордены"], tags = {
+		{ "f_argent", L["Серебряный Авангард"] }, { "f_silverhand", L["Серебряная Длань"] }, { "f_kirintor", L["Кирин-Тор"] },
+		{ "f_cenarion", L["Круг Кенария"] }, { "f_scarlet", L["Алый орден"] }, { "f_ebonblade", L["Орден Чёрного Клинка"] },
+		{ "f_illidari", L["Иллидари"] }, { "f_scourge", L["Плеть"] }, { "f_twilight", L["Сумеречный Молот"] },
+		{ "f_sentinels", L["Часовые"] }, { "f_farstriders", L["Следопыты Кель'Таласа"] }, { "f_explorers", L["Лига исследователей"] },
+		{ "f_earthenring", L["Служители Земли"] }, { "f_shadopan", L["Шадо-Пан"] }, { "f_kultiras", L["Флот Кул-Тираса"] },
+		{ "f_bloodsail", L["Кровавый Парус"] }, { "f_steamwheedle", L["Картель Хитрой Шестерёнки"] },
+		{ "f_dragonflights", L["Драконьи стаи"] }, { "f_kyrian", L["Кирии"] }, { "f_venthyr", L["Вентиры"] },
+		{ "f_nightfae", L["Ночной народец"] }, { "f_necrolord", L["Некролорды"] }, { "f_oldgods", L["Древние боги"] },
+		{ "f_naaru", L["Наару"] }, { "f_burninglegion", L["Пылающий Легион"] }, { "f_shadowlands", L["Тёмные Земли"] },
 	} },
-	{ name = "Места", tags = {
-		{ "z_stormwind", "Штормград" }, { "z_orgrimmar", "Оргриммар" }, { "z_ironforge", "Стальгорн" },
-		{ "z_darnassus", "Дарнас" }, { "z_silvermoon", "Луносвет" }, { "z_undercity", "Подгород" },
-		{ "z_thunderbluff", "Громовой Утёс" }, { "z_exodar", "Экзодар" }, { "z_gilneas", "Гилнеас" },
-		{ "z_dalaran", "Даларан" }, { "z_suramar", "Сурамар" }, { "z_outland", "Запределье" }, { "z_northrend", "Нордскол" },
-		{ "z_pandaria", "Пандария" }, { "z_draenor", "Дренор" }, { "z_zandalar", "Зандалар" },
-		{ "z_dragonisles", "Драконьи острова" }, { "z_khazalgar", "Каз Алгар" }, { "z_quelthalas", "Кель'Талас" },
-		{ "z_emerald", "Изумрудный Сон" }, { "z_karazhan", "Каражан" },
+	{ name = L["Места"], tags = {
+		{ "z_stormwind", L["Штормград"] }, { "z_orgrimmar", L["Оргриммар"] }, { "z_ironforge", L["Стальгорн"] },
+		{ "z_darnassus", L["Дарнас"] }, { "z_silvermoon", L["Луносвет"] }, { "z_undercity", L["Подгород"] },
+		{ "z_thunderbluff", L["Громовой Утёс"] }, { "z_exodar", L["Экзодар"] }, { "z_gilneas", L["Гилнеас"] },
+		{ "z_dalaran", L["Даларан"] }, { "z_suramar", L["Сурамар"] }, { "z_outland", L["Запределье"] }, { "z_northrend", L["Нордскол"] },
+		{ "z_pandaria", L["Пандария"] }, { "z_draenor", L["Дренор"] }, { "z_zandalar", L["Зандалар"] },
+		{ "z_dragonisles", L["Драконьи острова"] }, { "z_khazalgar", L["Каз Алгар"] }, { "z_quelthalas", L["Кель'Талас"] },
+		{ "z_emerald", L["Изумрудный Сон"] }, { "z_karazhan", L["Каражан"] },
 	} },
-	{ name = "Праздники и сезоны", tags = {
-		{ "holiday", "Праздник" }, { "hallows", "Тыквовин" }, { "winterveil", "Зимний Покров" },
-		{ "lovefest", "Любовная лихорадка" }, { "brewfest", "Хмельной фестиваль" }, { "winter", "Зимний" },
-		{ "summer", "Летний" }, { "beach", "Пляжный" },
-		{ "lunar", "Лунный фестиваль" }, { "noblegarden", "Сад чудес" }, { "midsummer", "Огненный солнцеворот" },
-		{ "pilgrim", "Пиршество странников" }, { "deadday", "День мёртвых" }, { "piratesday", "День пирата" },
-		{ "darkmoon", "Ярмарка Новолуния" }, { "spring", "Весенний" }, { "autumn", "Осенний" },
+	{ name = L["Праздники и сезоны"], tags = {
+		{ "holiday", L["Праздник"] }, { "hallows", L["Тыквовин"] }, { "winterveil", L["Зимний Покров"] },
+		{ "lovefest", L["Любовная лихорадка"] }, { "brewfest", L["Хмельной фестиваль"] }, { "winter", L["Зимний"] },
+		{ "summer", L["Летний"] }, { "beach", L["Пляжный"] },
+		{ "lunar", L["Лунный фестиваль"] }, { "noblegarden", L["Сад чудес"] }, { "midsummer", L["Огненный солнцеворот"] },
+		{ "pilgrim", L["Пиршество странников"] }, { "deadday", L["День мёртвых"] }, { "piratesday", L["День пирата"] },
+		{ "darkmoon", L["Ярмарка Новолуния"] }, { "spring", L["Весенний"] }, { "autumn", L["Осенний"] },
 	} },
-	{ name = "Тип брони", tags = {
-		{ "a_cloth", "Ткань" }, { "a_leather", "Кожа" }, { "a_mail", "Кольчуга" }, { "a_plate", "Латы" },
-		{ "a_any", "Любой тип брони" },
+	{ name = L["Тип брони"], tags = {
+		{ "a_cloth", L["Ткань"] }, { "a_leather", L["Кожа"] }, { "a_mail", L["Кольчуга"] }, { "a_plate", L["Латы"] },
+		{ "a_any", L["Любой тип брони"] },
 	} },
-	{ name = "Оружие", tags = {
-		{ "w_sword", "Меч" }, { "w_axe", "Топор" }, { "w_mace", "Булава" }, { "w_staff", "Посох" },
-		{ "w_polearm", "Древковое" }, { "w_bow", "Лук" }, { "w_gun", "Огнестрельное" }, { "w_dagger", "Кинжал" },
-		{ "w_glaive", "Боевые клинки" }, { "w_fist", "Кистевое" }, { "w_wand", "Жезл" }, { "w_shield", "Щит" },
-		{ "w_offhand", "В левой руке" }, { "w_dual", "Два оружия" }, { "w_twohand", "Двуручное" },
-		{ "w_none", "Без оружия" },
+	{ name = L["Оружие"], tags = {
+		{ "w_sword", L["Меч"] }, { "w_axe", L["Топор"] }, { "w_mace", L["Булава"] }, { "w_staff", L["Посох"] },
+		{ "w_polearm", L["Древковое"] }, { "w_bow", L["Лук"] }, { "w_gun", L["Огнестрельное"] }, { "w_dagger", L["Кинжал"] },
+		{ "w_glaive", L["Боевые клинки"] }, { "w_fist", L["Кистевое"] }, { "w_wand", L["Жезл"] }, { "w_shield", L["Щит"] },
+		{ "w_offhand", L["В левой руке"] }, { "w_dual", L["Два оружия"] }, { "w_twohand", L["Двуручное"] },
+		{ "w_none", L["Без оружия"] },
 	} },
-	{ name = "Детали", tags = {
-		{ "d_wings", "Крылья" }, { "d_cloak", "Плащ" }, { "d_tabard", "Гербовая накидка" }, { "d_fur", "Мех" },
-		{ "d_feathers", "Перья" }, { "d_bones", "Кости" }, { "d_skulls", "Черепа" }, { "d_spikes", "Шипы" },
-		{ "d_chains", "Цепи" }, { "d_crystals", "Кристаллы" }, { "d_runes", "Руны" }, { "d_glow", "Свечение" },
-		{ "d_flowers", "Цветы" }, { "d_leaves", "Листья" }, { "d_horns", "Рога" }, { "d_belts", "Ремни" },
+	{ name = L["Детали"], tags = {
+		{ "d_wings", L["Крылья"] }, { "d_cloak", L["Плащ"] }, { "d_tabard", L["Гербовая накидка"] }, { "d_fur", L["Мех"] },
+		{ "d_feathers", L["Перья"] }, { "d_bones", L["Кости"] }, { "d_skulls", L["Черепа"] }, { "d_spikes", L["Шипы"] },
+		{ "d_chains", L["Цепи"] }, { "d_crystals", L["Кристаллы"] }, { "d_runes", L["Руны"] }, { "d_glow", L["Свечение"] },
+		{ "d_flowers", L["Цветы"] }, { "d_leaves", L["Листья"] }, { "d_horns", L["Рога"] }, { "d_belts", L["Ремни"] },
 	} },
-	{ name = "Рейды", tags = {
-		{ "raid_classic", "Рейд: Classic" }, { "raid_bc", "Рейд: Burning Crusade" }, { "raid_wotlk", "Рейд: Wrath of the Lich King" },
-		{ "raid_cata", "Рейд: Cataclysm" }, { "raid_mop", "Рейд: Mists of Pandaria" }, { "raid_wod", "Рейд: Warlords of Draenor" },
-		{ "raid_legion", "Рейд: Legion" }, { "raid_bfa", "Рейд: Battle for Azeroth" }, { "raid_sl", "Рейд: Shadowlands" },
-		{ "raid_df", "Рейд: Dragonflight" }, { "raid_tww", "Рейд: The War Within" }, { "raid_midnight", "Рейд: Midnight" },
+	{ name = L["Рейды"], tags = {
+		{ "raid_classic", L["Рейд: Classic"] }, { "raid_bc", L["Рейд: Burning Crusade"] }, { "raid_wotlk", L["Рейд: Wrath of the Lich King"] },
+		{ "raid_cata", L["Рейд: Cataclysm"] }, { "raid_mop", L["Рейд: Mists of Pandaria"] }, { "raid_wod", L["Рейд: Warlords of Draenor"] },
+		{ "raid_legion", L["Рейд: Legion"] }, { "raid_bfa", L["Рейд: Battle for Azeroth"] }, { "raid_sl", L["Рейд: Shadowlands"] },
+		{ "raid_df", L["Рейд: Dragonflight"] }, { "raid_tww", L["Рейд: The War Within"] }, { "raid_midnight", L["Рейд: Midnight"] },
 	} },
 	{ name = "PvP", tags = {
-		{ "pvp", "PvP" }, { "arena", "Арена" }, { "battleground", "Поле боя" }, { "elite", "Элитный PvP" },
-		{ "alliance", "Альянс" }, { "horde", "Орда" },
+		{ "pvp", "PvP" }, { "arena", L["Арена"] }, { "battleground", L["Поле боя"] }, { "elite", L["Элитный PvP"] },
+		{ "alliance", L["Альянс"] }, { "horde", L["Орда"] },
 	} },
-	{ name = "Цвет", tags = {
-		{ "c_black", "Чёрный" }, { "c_white", "Белый" }, { "c_red", "Красный" },
-		{ "c_blue", "Синий" }, { "c_green", "Зелёный" }, { "c_purple", "Фиолетовый" },
-		{ "c_gold", "Золотой" }, { "c_brown", "Коричневый" }, { "c_pink", "Розовый" },
-		{ "c_orange", "Оранжевый" }, { "c_yellow", "Жёлтый" }, { "c_gray", "Серый" },
-		{ "c_teal", "Бирюзовый" }, { "c_silver", "Серебряный" }, { "c_multi", "Разноцветный" },
-		{ "c_navy", "Тёмно-синий" }, { "c_cyan", "Голубой" }, { "c_lime", "Салатовый" }, { "c_olive", "Оливковый" },
-		{ "c_emerald", "Изумрудный" }, { "c_lavender", "Лавандовый" }, { "c_magenta", "Пурпурный" },
-		{ "c_burgundy", "Бордовый" }, { "c_beige", "Бежевый" }, { "c_bronze", "Бронзовый" }, { "c_copper", "Медный" },
-		{ "c_peach", "Персиковый" }, { "c_mint", "Мятный" }, { "c_khaki", "Хаки" }, { "c_mono", "Монохром" },
-		{ "c_pastel", "Пастельный" }, { "c_neon", "Кислотный" }, { "c_duo", "Двухцветный" },
+	{ name = L["Цвет"], tags = {
+		{ "c_black", L["Чёрный"] }, { "c_white", L["Белый"] }, { "c_red", L["Красный"] },
+		{ "c_blue", L["Синий"] }, { "c_green", L["Зелёный"] }, { "c_purple", L["Фиолетовый"] },
+		{ "c_gold", L["Золотой"] }, { "c_brown", L["Коричневый"] }, { "c_pink", L["Розовый"] },
+		{ "c_orange", L["Оранжевый"] }, { "c_yellow", L["Жёлтый"] }, { "c_gray", L["Серый"] },
+		{ "c_teal", L["Бирюзовый"] }, { "c_silver", L["Серебряный"] }, { "c_multi", L["Разноцветный"] },
+		{ "c_navy", L["Тёмно-синий"] }, { "c_cyan", L["Голубой"] }, { "c_lime", L["Салатовый"] }, { "c_olive", L["Оливковый"] },
+		{ "c_emerald", L["Изумрудный"] }, { "c_lavender", L["Лавандовый"] }, { "c_magenta", L["Пурпурный"] },
+		{ "c_burgundy", L["Бордовый"] }, { "c_beige", L["Бежевый"] }, { "c_bronze", L["Бронзовый"] }, { "c_copper", L["Медный"] },
+		{ "c_peach", L["Персиковый"] }, { "c_mint", L["Мятный"] }, { "c_khaki", L["Хаки"] }, { "c_mono", L["Монохром"] },
+		{ "c_pastel", L["Пастельный"] }, { "c_neon", L["Кислотный"] }, { "c_duo", L["Двухцветный"] },
 	} },
 }
 
@@ -288,54 +289,54 @@ TH.TAG_COLORS = {
 -- Темы в окне тегов. Один тег может быть в нескольких темах.
 TH.TAG_THEMES = {
 	-- первая тема — классы (по ней считается достижение «классы»)
-	{ name = "Классы", tags = { "warrior", "paladin", "hunter", "rogue", "priest", "deathknight", "shaman",
+	{ name = L["Классы"], tags = { "warrior", "paladin", "hunter", "rogue", "priest", "deathknight", "shaman",
 		"mage", "warlock", "monk", "druid", "demonhunter", "evoker", "tier" } },
-	{ name = "Образы и роли", tags = { "pirate", "knight", "warrior", "assassin", "necro", "tribal", "royal", "noble",
+	{ name = L["Образы и роли"], tags = { "pirate", "knight", "warrior", "assassin", "necro", "tribal", "royal", "noble",
 		"commoner", "scholar", "adventurer", "gladiator", "tank", "healer", "mercenary", "bandit", "guard", "inquisitor",
 		"cultist", "witch", "vampire", "bard", "merchant", "farmer", "innkeeper", "sailor", "ranger", "bounty", "spy",
 		"priestess", "archmage", "warlord", "barbarian", "wizard" } },
-	{ name = "Стиль", tags = { "minimal", "classic", "tier", "retro", "elegant", "casual", "battle", "heavy",
+	{ name = L["Стиль"], tags = { "minimal", "classic", "tier", "retro", "elegant", "casual", "battle", "heavy",
 		"light", "robe", "dress", "cute", "funny", "scary", "mysterious", "gothic", "military", "victorian", "formal",
 		"battleworn", "ornate", "bridal", "cozy", "heroic", "villain", "romantic", "peaceful", "hooded", "masked",
 		"no_helm", "asymmetric" } },
-	{ name = "Магия и силы", tags = { "holy", "dark", "fel", "void", "nature", "elemental", "cosmic", "necro",
+	{ name = L["Магия и силы"], tags = { "holy", "dark", "fel", "void", "nature", "elemental", "cosmic", "necro",
 		"mage", "warlock", "shaman", "druid", "evoker", "archmage", "wizard", "d_runes", "d_glow", "d_crystals" } },
-	{ name = "Расы и народы", tags = { "elf", "undead", "demon", "dragon", "titan", "r_human", "r_orc", "r_dwarf",
+	{ name = L["Расы и народы"], tags = { "elf", "undead", "demon", "dragon", "titan", "r_human", "r_orc", "r_dwarf",
 		"r_nightelf", "r_bloodelf", "r_draenei", "r_tauren", "r_troll", "r_gnome", "r_goblin", "r_forsaken", "r_worgen",
 		"r_pandaren", "r_vulpera", "r_nightborne", "r_voidelf", "r_lightforged", "r_highmountain", "r_darkiron", "r_maghar",
 		"r_kultiran", "r_zandalari", "r_mechagnome", "r_dracthyr", "r_earthen", "r_haranir", "r_naga", "r_centaur",
 		"r_ethereal", "r_titanforged" } },
-	{ name = "Фракции и лор", tags = { "f_argent", "f_silverhand", "f_kirintor", "f_cenarion", "f_scarlet", "f_ebonblade",
+	{ name = L["Фракции и лор"], tags = { "f_argent", "f_silverhand", "f_kirintor", "f_cenarion", "f_scarlet", "f_ebonblade",
 		"f_illidari", "f_scourge", "f_twilight", "f_sentinels", "f_farstriders", "f_explorers", "f_earthenring", "f_shadopan",
 		"f_kultiras", "f_bloodsail", "f_steamwheedle", "f_dragonflights", "f_kyrian", "f_venthyr", "f_nightfae",
 		"f_necrolord", "f_oldgods", "f_naaru", "f_burninglegion", "f_shadowlands", "alliance", "horde" } },
-	{ name = "Места", tags = { "z_stormwind", "z_orgrimmar", "z_ironforge", "z_darnassus", "z_silvermoon", "z_undercity",
+	{ name = L["Места"], tags = { "z_stormwind", "z_orgrimmar", "z_ironforge", "z_darnassus", "z_silvermoon", "z_undercity",
 		"z_thunderbluff", "z_exodar", "z_gilneas", "z_dalaran", "z_suramar", "z_outland", "z_northrend", "z_pandaria",
 		"z_draenor", "z_zandalar", "z_dragonisles", "z_khazalgar", "z_quelthalas", "z_emerald", "z_karazhan",
 		"steampunk", "oriental", "desert", "sea" } },
-	{ name = "Тёмное и жуткое", tags = { "dark", "undead", "scary", "demon", "void", "fel", "necro",
+	{ name = L["Тёмное и жуткое"], tags = { "dark", "undead", "scary", "demon", "void", "fel", "necro",
 		"assassin", "deathknight", "warlock", "hallows", "gothic", "villain", "cultist", "vampire", "witch",
 		"d_bones", "d_skulls", "d_spikes", "d_chains", "f_scourge", "f_oldgods" } },
-	{ name = "Рейды", tags = { "raid_classic", "raid_bc", "raid_wotlk", "raid_cata", "raid_mop", "raid_wod",
+	{ name = L["Рейды"], tags = { "raid_classic", "raid_bc", "raid_wotlk", "raid_cata", "raid_mop", "raid_wod",
 		"raid_legion", "raid_bfa", "raid_sl", "raid_df", "raid_tww", "raid_midnight", "tier" } },
 	{ name = "PvP", tags = { "pvp", "arena", "battleground", "elite", "gladiator", "alliance", "horde" } },
-	{ name = "Праздники и сезоны", tags = { "holiday", "hallows", "winterveil", "lovefest", "brewfest", "lunar",
+	{ name = L["Праздники и сезоны"], tags = { "holiday", "hallows", "winterveil", "lovefest", "brewfest", "lunar",
 		"noblegarden", "midsummer", "pilgrim", "deadday", "piratesday", "darkmoon", "winter", "summer", "spring",
 		"autumn", "beach", "sea", "casual" } },
-	{ name = "Броня и оружие", tags = { "a_cloth", "a_leather", "a_mail", "a_plate", "a_any", "robe", "dress", "heavy",
+	{ name = L["Броня и оружие"], tags = { "a_cloth", "a_leather", "a_mail", "a_plate", "a_any", "robe", "dress", "heavy",
 		"light", "w_sword", "w_axe", "w_mace", "w_staff", "w_polearm", "w_bow", "w_gun", "w_dagger", "w_glaive",
 		"w_fist", "w_wand", "w_shield", "w_offhand", "w_dual", "w_twohand", "w_none" } },
-	{ name = "Детали", tags = { "d_wings", "d_cloak", "d_tabard", "d_fur", "d_feathers", "d_bones", "d_skulls",
+	{ name = L["Детали"], tags = { "d_wings", "d_cloak", "d_tabard", "d_fur", "d_feathers", "d_bones", "d_skulls",
 		"d_spikes", "d_chains", "d_crystals", "d_runes", "d_glow", "d_flowers", "d_leaves", "d_horns", "d_belts",
 		"hooded", "masked", "no_helm" } },
-	{ name = "Профессии", tags = { "p_alchemy", "p_blacksmith", "p_enchant", "p_engineer", "p_herbalism", "p_mining",
+	{ name = L["Профессии"], tags = { "p_alchemy", "p_blacksmith", "p_enchant", "p_engineer", "p_herbalism", "p_mining",
 		"p_skinning", "p_tailor", "p_leather", "p_jewel", "p_inscription", "p_cooking", "p_fishing", "p_archaeology",
 		"merchant", "farmer", "innkeeper", "scholar" } },
-	{ name = "Цвета", tags = { "c_black", "c_white", "c_red", "c_blue", "c_green", "c_purple", "c_gold",
+	{ name = L["Цвета"], tags = { "c_black", "c_white", "c_red", "c_blue", "c_green", "c_purple", "c_gold",
 		"c_brown", "c_pink", "c_orange", "c_yellow", "c_gray", "c_teal", "c_silver", "c_multi", "c_navy", "c_cyan",
 		"c_lime", "c_olive", "c_emerald", "c_lavender", "c_magenta", "c_burgundy", "c_beige", "c_bronze", "c_copper",
 		"c_peach", "c_mint", "c_khaki", "c_mono", "c_pastel", "c_neon", "c_duo" } },
-	{ name = "Для RP", tags = { "rp", "commoner", "noble", "royal", "scholar", "adventurer", "casual",
+	{ name = L["Для RP"], tags = { "rp", "commoner", "noble", "royal", "scholar", "adventurer", "casual",
 		"elegant", "dress", "pirate", "mysterious", "funny", "bard", "innkeeper", "merchant", "farmer", "guard",
 		"sailor", "priestess", "cozy", "romantic" } },
 }
@@ -408,7 +409,7 @@ TH.TAG_RETIRED = {
 }
 
 -- Короткие подписи для сетки тегов (полное название — в подсказке и карточке)
-TH.TAG_SHORT = { raid_wotlk = "Рейд: WotLK", raid_wod = "Рейд: WoD", raid_bfa = "Рейд: BfA" }
+TH.TAG_SHORT = { raid_wotlk = L["Рейд: WotLK"], raid_wod = L["Рейд: WoD"], raid_bfa = L["Рейд: BfA"] }
 
 TH.TAG_LABEL = {}
 TH.TAG_GROUP = {}
@@ -483,12 +484,12 @@ function TH:ToggleTagFlag(set, tag)
 	local label = self.TAG_LABEL[tag] or tag
 	if on == 1 then
 		if self:IsMine(set) then
-			self:Notify("Тег «" .. label .. "» убран из вашего образа.")
+			self:Notify(L["Тег «"] .. label .. L["» убран из вашего образа."])
 		else
-			self:Thanks("Отметка принята: тег «" .. label .. "» не подходит. Если так отметят и другие, он погаснет у этого образа.")
+			self:Thanks(L["Отметка принята: тег «"] .. label .. L["» не подходит. Если так отметят и другие, он погаснет у этого образа."])
 		end
 	else
-		self:Notify("Отметка снята: тег «" .. label .. "» снова считается подходящим.")
+		self:Notify(L["Отметка снята: тег «"] .. label .. L["» снова считается подходящим."])
 	end
 end
 
@@ -503,12 +504,12 @@ function TH:GetTagCounts(since)
 end
 
 TH.TAG_SORTS = {
-	{ key = "popular", text = "Популярные" },
-	{ key = "trending", text = "В тренде", hint = "Чаще всего в образах за последние 14 дней" },
-	{ key = "rare", text = "Редкие" },
-	{ key = "new", text = "Новые теги", hint = "Недавно добавленные в аддон" },
-	{ key = "alpha", text = "По алфавиту" },
-	{ key = "theme", text = "По темам" },
+	{ key = "popular", text = L["Популярные"] },
+	{ key = "trending", text = L["В тренде"], hint = L["Чаще всего в образах за последние 14 дней"] },
+	{ key = "rare", text = L["Редкие"] },
+	{ key = "new", text = L["Новые теги"], hint = L["Недавно добавленные в аддон"] },
+	{ key = "alpha", text = L["По алфавиту"] },
+	{ key = "theme", text = L["По темам"] },
 }
 
 -- Теги под поиск (и из списка keys, если задан), отсортированные способом mode.
@@ -568,7 +569,7 @@ function TH:FormatSetTags(set)
 	local out = {}
 	for _, key in ipairs(set.tags or {}) do
 		if self.TAG_LABEL[key] then
-			out[#out + 1] = disputed[key] and ("|cff808080" .. self.TAG_LABEL[key] .. " (оспорен)|r") or self.TAG_LABEL[key]
+			out[#out + 1] = disputed[key] and ("|cff808080" .. self.TAG_LABEL[key] .. L[" (оспорен)|r"]) or self.TAG_LABEL[key]
 		end
 	end
 	return table.concat(out, ", ")
@@ -583,7 +584,7 @@ function TH:CheckDisputedOwnTags()
 				local key = set.id .. ":" .. tag
 				if n > 0 and not self.db.warnedTags[key] then
 					self.db.warnedTags[key] = self.Net.Now()
-					self:Print(string.format("Игроки (%d) отметили, что тег «%s» не подходит вашему образу «%s». Тег погас: по нему образ не ищется.",
+					self:Print(string.format(L["Игроки (%d) отметили, что тег «%s» не подходит вашему образу «%s». Тег погас: по нему образ не ищется."],
 						n, self.TAG_LABEL[tag] or tag, mine.name or ""))
 				end
 			end
@@ -597,11 +598,11 @@ function TH:OpenTagFlagMenu(owner, set)
 	local mine = self:IsMine(set)
 	local disputed = self:GetDisputedTags(set)
 	MenuUtil.CreateContextMenu(owner, function(_, root)
-		root:CreateTitle(mine and "Убрать тег из своего образа" or "Какой тег не подходит образу?")
+		root:CreateTitle(mine and L["Убрать тег из своего образа"] or L["Какой тег не подходит образу?"])
 		for _, key in ipairs(set.tags or {}) do
 			local label = self.TAG_LABEL[key]
 			if label then
-				if disputed[key] and not self:IsTagFlaggedByMe(set, key) then label = label .. " (уже погас)" end
+				if disputed[key] and not self:IsTagFlaggedByMe(set, key) then label = label .. L[" (уже погас)"] end
 				root:CreateCheckbox(label, function() return self:IsTagFlaggedByMe(set, key) end,
 					function() self:ToggleTagFlag(set, key) end)
 			end
@@ -679,7 +680,7 @@ function TH:Print(...)
 end
 
 function TH:SexLabel(sex)
-	return sex == 1 and "жен." or "муж."
+	return sex == 1 and L["жен."] or L["муж."]
 end
 
 function TH:PlayerSex()
@@ -1315,7 +1316,7 @@ function TH:Publish(localId)
 	if restricted then return self:Notify(restricted) end
 	local err = self:ValidateSetText(set.name, set.desc)
 	if err then
-		self:Print(err .. " Удалите образ и сохраните заново с другим названием.")
+		self:Print(err .. L[" Удалите образ и сохраните заново с другим названием."])
 		return
 	end
 	local payload = { id = "n" .. self:NewUid(), created = self.Net.Now() }
@@ -1334,7 +1335,7 @@ function TH:Publish(localId)
 	self:NotifyChanged()
 	self:CheckAchievements()
 	if not self.Net:IsConnected() then
-		self:Print("Сеть ещё подключается — образ уйдёт другим игрокам автоматически.")
+		self:Print(L["Сеть ещё подключается — образ уйдёт другим игрокам автоматически."])
 	end
 end
 
@@ -1365,15 +1366,15 @@ function TH:GetVoteChar(setId)
 end
 
 function TH:CanVote(set)
-	if not set then return false, "Образ не найден" end
-	if self:IsMine(set) then return false, "Свой образ оценивать нельзя" end
+	if not set then return false, L["Образ не найден"] end
+	if self:IsMine(set) then return false, L["Свой образ оценивать нельзя"] end
 	local restricted = self.VoteRestrictionText and self:VoteRestrictionText()
 	if restricted then return false, restricted end
-	if self:IsLocalId(set.id) then return false, "Образ ещё не опубликован" end
+	if self:IsLocalId(set.id) then return false, L["Образ ещё не опубликован"] end
 	-- одна оценка на аккаунт: изменить её можно только тем же персонажем
 	local who = self:GetVoteChar(set.id)
 	if who and who ~= self.Net.Me() then
-		return false, "Вы уже оценили этот образ персонажем " .. who:gsub("%-.*", "")
+		return false, L["Вы уже оценили этот образ персонажем "] .. who:gsub("%-.*", "")
 	end
 	return true
 end
@@ -1382,18 +1383,18 @@ end
 -- Строка состояния сети для окна и кнопки у миникарты
 function TH:NetworkStatusText()
 	local Net = self.Net
-	local base = string.format("образов в базе: %d", Net:SetCount())
+	local base = string.format(L["образов в базе: %d"], Net:SetCount())
 	if not Net:IsConnected() then
-		return "|cff999999Сеть: подключение...|r, " .. base
+		return L["|cff999999Сеть: подключение...|r, "] .. base
 	end
-	local text = string.format("|cff40ff40Сеть подключена|r, игроков с аддоном: %d, друзей с других серверов: %d, %s",
+	local text = string.format(L["|cff40ff40Сеть подключена|r, игроков с аддоном: %d, друзей с других серверов: %d, %s"],
 		Net:PeerCount(), Net:BNetPeerCount(), base)
 	if Net:IsLocked() and Net:QueueLength() > 0 then
-		text = text .. ", |cffffd100отправка на паузе (бой или подземелье)|r"
+		text = text .. L[", |cffffd100отправка на паузе (бой или подземелье)|r"]
 	elseif Net:QueueLength() > 0 then
-		text = text .. string.format(", |cffffd100отправляется: %d|r", Net:QueueLength())
+		text = text .. string.format(L[", |cffffd100отправляется: %d|r"], Net:QueueLength())
 		local stall = Net:SendStallReason()
-		if stall then text = text .. " |cffff9020(игра не даёт отправить: " .. stall .. ")|r" end
+		if stall then text = text .. L[" |cffff9020(игра не даёт отправить: "] .. stall .. ")|r" end
 	end
 	return text
 end
@@ -1503,7 +1504,7 @@ end
 ---------------------------------------------------------------------------
 -- Тестовая лента: копии своих образов со случайным рейтингом
 ---------------------------------------------------------------------------
-local FAKE_AUTHORS = { "Ксарн-Гордунни", "Лиара-Свежеватель Душ", "Thrall-Draenor", "Мирабель-Ревущий фьорд", "Огрим-Галакронд" }
+local FAKE_AUTHORS = { L["Ксарн-Гордунни"], L["Лиара-Свежеватель Душ"], "Thrall-Draenor", L["Мирабель-Ревущий фьорд"], L["Огрим-Галакронд"] }
 
 function TH:MakeTestFeed()
 	local sources = {}
@@ -1514,7 +1515,7 @@ function TH:MakeTestFeed()
 	end
 	self:CaptureCurrent(function(items)
 		if not items then
-			self:Print("Не удалось запомнить, во что одет персонаж.")
+			self:Print(L["Не удалось запомнить, во что одет персонаж."])
 			return
 		end
 		self:FillTestFeed({ { items = items, race = select(3, UnitRace("player")), sex = UnitSex("player") - 2 } })
@@ -1533,8 +1534,8 @@ function TH:FillTestFeed(sources)
 		end
 		tinsert(self.db.testSets, {
 			id = self.TEST_PREFIX .. i,
-			name = "Тестовый образ " .. i,
-			desc = "Сгенерировано командой /thub test",
+			name = L["Тестовый образ "] .. i,
+			desc = L["Сгенерировано командой /thub test"],
 			author = FAKE_AUTHORS[math.random(1, #FAKE_AUTHORS)],
 			tags = tags,
 			items = CopyTable(src.items),
@@ -1547,7 +1548,7 @@ function TH:FillTestFeed(sources)
 	end
 	self:LoadFeed()
 	self:NotifyChanged()
-	self:Print("Создано 25 тестовых образов.")
+	self:Print(L["Создано 25 тестовых образов."])
 end
 
 ---------------------------------------------------------------------------
@@ -1587,7 +1588,7 @@ function TH:PLAYER_LOGIN()
 	end
 	self:CleanAvatars()
 	if self:ResetForRelease() then
-		self:Print("Transmog Hub вышел! Позорные достижения и наказания, полученные во время проверки, сняты — удачи на подиуме.")
+		self:Print(L["Transmog Hub вышел! Позорные достижения и наказания, полученные во время проверки, сняты — удачи на подиуме."])
 	end
 	-- 0.21.0 сохраняла «как в игре» без выбора игрока: теперь по умолчанию — как в EllesmereUI
 	if self.db.font == "default" and not self.db.fontChosen then self.db.font = "auto" end
@@ -1701,33 +1702,33 @@ SlashCmdList.TRANSMOGHUB = function(msg)
 		wipe(TH.db.testSets)
 		TH:LoadFeed()
 		TH:NotifyChanged()
-		TH:Print("Тестовые образы удалены.")
+		TH:Print(L["Тестовые образы удалены."])
 	elseif msg == "sync" then
 		TH.Net:RequestSync()
-		TH:Print("Запрос синхронизации отправлен.")
+		TH:Print(L["Запрос синхронизации отправлен."])
 	elseif msg == "net" then
 		local Net = TH.Net
-		TH:Print(string.format("Сеть: %s, канал %d (участников: %s), игроков с аддоном: %d, образов в базе: %d, в очереди: %d%s. Вы: %s",
-			Net:IsConnected() and "подключено" or "нет подключения", Net.channelId, tostring(Net:ChannelMemberCount() or "?"),
+		TH:Print(string.format(L["Сеть: %s, канал %d (участников: %s), игроков с аддоном: %d, образов в базе: %d, в очереди: %d%s. Вы: %s"],
+			Net:IsConnected() and L["подключено"] or L["нет подключения"], Net.channelId, tostring(Net:ChannelMemberCount() or "?"),
 			Net:PeerCount(), Net:SetCount(), Net:QueueLength(),
-			Net:IsLocked() and ", отправка на паузе (бой или подземелье)" or "", Net.Me()))
+			Net:IsLocked() and L[", отправка на паузе (бой или подземелье)"] or "", Net.Me()))
 		local friends = {}
 		for _, peer in pairs(Net.bnPeers) do friends[#friends + 1] = peer.name end
-		TH:Print("Друзья Battle.net с аддоном: " .. (#friends > 0 and table.concat(friends, ", ") or "нет"))
+		TH:Print(L["Друзья Battle.net с аддоном: "] .. (#friends > 0 and table.concat(friends, ", ") or L["никого"]))
 	elseif msg:match("^scale") then
 		local pct = tonumber(msg:match("^scale%s+(%d+)"))
 		if pct then TH:SetScale(pct / 100) end
-		TH:Print(string.format("Масштаб окна: %d%%. Изменить: /thub scale 60—150", math.floor(TH.db.scale * 100 + 0.5)))
+		TH:Print(string.format(L["Масштаб окна: %d%%. Изменить: /thub scale 60—150"], math.floor(TH.db.scale * 100 + 0.5)))
 	elseif msg == "style" or msg == "style auto" or msg == "style eui" or msg == "style blizzard" then
 		if msg ~= "style" then TH.db.style = msg:sub(7) end
-		local names = { auto = "авто (как EllesmereUI, если он стоит)", eui = "в стиле EllesmereUI", blizzard = "обычное, как в игре" }
-		TH:Print("Оформление окон: " .. (names[TH.db.style] or TH.db.style) .. ". /thub style auto|eui|blizzard"
-			.. (msg ~= "style" and " — изменится после /reload." or ""))
+		local names = { auto = L["авто (как EllesmereUI, если он стоит)"], eui = L["в стиле EllesmereUI"], blizzard = L["обычное, как в игре"] }
+		TH:Print(L["Оформление окон: "] .. (names[TH.db.style] or TH.db.style) .. ". /thub style auto|eui|blizzard"
+			.. (msg ~= "style" and L[" — изменится после /reload."] or ""))
 	elseif msg == "usage" or msg == "usage on" or msg == "usage off" then
 		if msg ~= "usage" then TH.db.sendUsage = msg == "usage on" end
 		if not TH.db.sendUsage then wipe(TH.db.clicks) end
-		TH:Print("Статистика нажатий на кнопки: " .. (TH.db.sendUsage and "|cff40ff40собирается|r" or "|cffff4040выключена|r")
-			.. ". Раз в неделю разработчику уходят только названия кнопок аддона и число нажатий. /thub usage on|off, /thub clicks — сводка")
+		TH:Print(L["Статистика нажатий на кнопки: "] .. (TH.db.sendUsage and L["|cff40ff40собирается|r"] or L["|cffff4040выключена|r"])
+			.. L[". Раз в неделю разработчику уходят только названия кнопок аддона и число нажатий. /thub usage on|off, /thub clicks — сводка"])
 	elseif msg == "settings" or msg == "config" or msg == "options" then
 		TH:OpenSettings()
 	elseif msg == "fonts" then
@@ -1736,21 +1737,21 @@ SlashCmdList.TRANSMOGHUB = function(msg)
 		TH:PrintUsage()
 	elseif msg == "errors" or msg == "errors on" or msg == "errors off" then
 		if msg ~= "errors" then TH.db.sendErrors = msg == "errors on" end
-		TH:Print("Отчёты об ошибках аддона: " .. (TH.db.sendErrors and "|cff40ff40отправляются|r" or "|cffff4040выключены|r")
-			.. " (ловит: " .. (TH.errorReportsVia or "—") .. ")"
-			.. ". Уходят только ошибки Transmog Hub: текст ошибки и место в коде, без ваших данных. /thub errors on|off")
+		TH:Print(L["Отчёты об ошибках аддона: "] .. (TH.db.sendErrors and L["|cff40ff40отправляются|r"] or L["|cffff4040выключены|r"])
+			.. L[" (ловит: "] .. (TH.errorReportsVia or "—") .. ")"
+			.. L[". Уходят только ошибки Transmog Hub: текст ошибки и место в коде, без ваших данных. /thub errors on|off"])
 	elseif msg == "unhide" then
 		wipe(TH.db.hidden)
 		TH:LoadFeed()
 		TH:NotifyChanged()
-		TH:Print("Скрытые образы снова показываются.")
+		TH:Print(L["Скрытые образы снова показываются."])
 	elseif msg == "capture" then
 		TH:CaptureCurrent(function(items, method)
 			if not items then
-				TH:Print("Не удалось запомнить, во что одет персонаж.")
+				TH:Print(L["Не удалось запомнить, во что одет персонаж."])
 				return
 			end
-			TH:Print("Облик снят способом:", method)
+			TH:Print(L["Облик снят способом:"], method)
 			for slotID, it in pairs(items) do
 				print(slotID, it[1], it[2] or "-", it[3] or "-")
 			end

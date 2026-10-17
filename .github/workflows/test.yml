@@ -16,13 +16,16 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y lua5.1
 
       - name: Syntax check
-        run: luac5.1 -p *.lua Data/*.lua
+        run: luac5.1 -p *.lua Data/*.lua Locales/*.lua
 
       - name: Smoke test
         run: lua5.1 tests/smoke.lua .
 
       - name: Name filter test
         run: lua5.1 tests/filter.lua .
+
+      - name: Translations
+        run: lua5.1 tests/locales.lua .
 
       - name: Official chart test
         run: lua5.1 tests/charts.lua .

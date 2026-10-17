@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local TH = ns.TH
 
 -- Порядок слотов, как в окне трансмогрификации.
@@ -25,18 +26,18 @@ TH.DETAIL_SLOTS = {}
 for _, slot in ipairs(TH.SLOTS) do
 	TH.DETAIL_SLOTS[#TH.DETAIL_SLOTS + 1] = { id = slot.id, index = 1, slot = slot }
 	if slot.id == 3 then
-		TH.DETAIL_SLOTS[#TH.DETAIL_SLOTS + 1] = { id = 3, index = 2, slot = slot, label = "Лев. плечо" }
+		TH.DETAIL_SLOTS[#TH.DETAIL_SLOTS + 1] = { id = 3, index = 2, slot = slot, label = L["Лев. плечо"] }
 	end
 	-- чары (иллюзия) на оружии — отдельной строкой под ним, если есть
 	if slot.id == 16 or slot.id == 17 then
-		TH.DETAIL_SLOTS[#TH.DETAIL_SLOTS + 1] = { id = slot.id, index = 3, slot = slot, label = "  Чары", illusion = true }
+		TH.DETAIL_SLOTS[#TH.DETAIL_SLOTS + 1] = { id = slot.id, index = 3, slot = slot, label = L["  Чары"], illusion = true }
 	end
 end
 
 -- Короткие подписи для карточки образа (полные — из игры, для подсказок)
 local SHORT_LABELS = {
-	[4] = "Рубашка", [19] = "Накидка", [10] = "Кисти",
-	[16] = "Пр. рука", [17] = "Лев. рука",
+	[4] = L["Рубашка"], [19] = L["Накидка"], [10] = L["Кисти"],
+	[16] = L["Пр. рука"], [17] = L["Лев. рука"],
 }
 for _, slot in ipairs(TH.SLOTS) do
 	slot.short = SHORT_LABELS[slot.id]
@@ -162,7 +163,7 @@ function TH:GuessSource(d, info, sourceID)
 		if text then
 			d.typeText, d.sourceType = text, oi.sourceType
 			local name = oi.name ~= "" and oi.name or (oi.itemID and C_Item.GetItemNameByID(oi.itemID))
-			d.where = "Такой же облик у вещи " .. (name and ("«" .. name .. "»") or "другой вещи") .. " — источник: " .. text .. "."
+			d.where = L["Такой же облик у вещи "] .. (name and ("«" .. name .. "»") or L["другой вещи"]) .. L[" — источник: "] .. text .. "."
 			return
 		end
 	end
@@ -171,15 +172,15 @@ function TH:GuessSource(d, info, sourceID)
 		and C_TransmogSets.GetSetsContainingSourceID(sourceID)
 	local text = sets and sets[1] and SetText(sets[1])
 	if text then
-		d.typeText, d.fromSet = "Комплект", true
-		d.where = "Вещь из комплекта " .. text .. ". Подробности — в коллекции, вкладка «Комплекты»."
+		d.typeText, d.fromSet = L["Комплект"], true
+		d.where = L["Вещь из комплекта "] .. text .. L[". Подробности — в коллекции, вкладка «Комплекты»."]
 		return
 	end
-	d.typeText = "Другое"
+	d.typeText = L["Другое"]
 	local exp = info.itemID and C_Item.GetItemInfo and select(15, C_Item.GetItemInfo(info.itemID))
 	local expName = exp and _G["EXPANSION_NAME" .. exp]
-	d.where = "Игра не сообщает, откуда эта вещь (обычно акции, магазин или события)."
-		.. (expName and (" Дополнение: " .. expName .. ".") or "")
+	d.where = L["Игра не сообщает, откуда эта вещь (обычно акции, магазин или события)."]
+		.. (expName and (L[" Дополнение: "] .. expName .. ".") or "")
 end
 
 -- Возвращает таблицу:
@@ -191,7 +192,7 @@ function TH:GetSourceDetails(sourceID)
 
 	local info = C_TransmogCollection.GetSourceInfo(sourceID)
 	if not info then
-		return { pending = true, name = "Облик #" .. sourceID }
+		return { pending = true, name = L["Облик #"] .. sourceID }
 	end
 
 	d = {
@@ -208,19 +209,19 @@ function TH:GetSourceDetails(sourceID)
 			d.pending = true
 		end
 	end
-	d.name = d.name or ("Предмет #" .. (info.itemID or sourceID))
+	d.name = d.name or (L["Предмет #"] .. (info.itemID or sourceID))
 	d.icon = info.itemID and C_Item.GetItemIconByID(info.itemID) or 134400
 
 	if d.hidden then
-		d.typeText = "Скрыто"
+		d.typeText = L["Скрыто"]
 		d.collected = true
 	else
 		d.typeText = info.sourceType and _G["TRANSMOG_SOURCE_" .. info.sourceType]
 		-- артефактное оружие (Легион): игра не даёт источника, но качество «Артефакт»
 		if not d.typeText and info.quality == 6 then
-			d.typeText = "Артефакт"
+			d.typeText = L["Артефакт"]
 			d.artifact = true
-			d.where = "Артефактное оружие Легиона: облики открываются заданиями, достижениями и прокачкой артефакта."
+			d.where = L["Артефактное оружие Легиона: облики открываются заданиями, достижениями и прокачкой артефакта."]
 		end
 		if not d.typeText then self:GuessSource(d, info, sourceID) end
 		d.collected = info.isCollected
@@ -239,7 +240,7 @@ function TH:GetSourceDetails(sourceID)
 			local where = (drop.instance or "?") .. " — " .. (drop.encounter or "?")
 			local diff = JoinDifficulties(drop.difficulties)
 			if diff then where = where .. " (" .. diff .. ")" end
-			if #drops > 1 then where = where .. string.format(" и ещё %d", #drops - 1) end
+			if #drops > 1 then where = where .. string.format(L[" и ещё %d"], #drops - 1) end
 			d.where = where
 		else
 			-- Данные о добыче могут прийти не сразу: спросим ещё несколько раз
@@ -253,7 +254,7 @@ function TH:GetSourceDetails(sourceID)
 			if tries.n < MAX_DROP_TRIES then
 				d.pending = true
 			else
-				d.where = "Место добычи неизвестно (нет в путеводителе по подземельям)."
+				d.where = L["Место добычи неизвестно (нет в путеводителе по подземельям)."]
 			end
 		end
 	end
@@ -271,16 +272,16 @@ function TH:GetIllusionDetails(illusionID)
 	local info = C.GetIllusionInfo and C.GetIllusionInfo(illusionID)
 	local name, _, sourceText
 	if C.GetIllusionStrings then name, _, sourceText = C.GetIllusionStrings(illusionID) end
-	if not info and not name then return { pending = true, name = "Чары #" .. illusionID } end
+	if not info and not name then return { pending = true, name = L["Чары #"] .. illusionID } end
 	local d = {
 		illusion = true,
-		name = (name and name ~= "") and name or ("Чары #" .. illusionID),
+		name = (name and name ~= "") and name or (L["Чары #"] .. illusionID),
 		icon = info and info.icon or 135913,
 		collected = info and info.isCollected or false,
 		hidden = info and info.isHideVisual or false,
 		quality = 4,
-		typeText = "Чары для оружия (иллюзия)",
-		where = (sourceText and sourceText ~= "") and sourceText:gsub("|n", "\n") or "Игра не сообщает, откуда эти чары.",
+		typeText = L["Чары для оружия (иллюзия)"],
+		where = (sourceText and sourceText ~= "") and sourceText:gsub("|n", "\n") or L["Игра не сообщает, откуда эти чары."],
 	}
 	illusions[illusionID] = d
 	return d

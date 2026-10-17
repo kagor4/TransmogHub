@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local TH = ns.TH
 
 -- Выбор тегов: слева темы (вкладки), справа теги выбранной темы флажками,
@@ -53,11 +54,11 @@ function Picker:Toggle(key)
 	if self.selected[key] then
 		self.selected[key] = nil
 	elseif not ok then
-		TH:Print(TH.TAG_LABEL[key] .. ": " .. (why or "этот тег сейчас выбрать нельзя."))
+		TH:Print(TH.TAG_LABEL[key] .. ": " .. (why or L["этот тег сейчас выбрать нельзя."]))
 		self:Refresh(true)
 		return
 	elseif self.max and self:CountSelected() >= self.max then
-		TH:Print("Можно выбрать не больше " .. self.max .. " тегов.")
+		TH:Print(L["Можно выбрать не больше "] .. self.max .. L[" тегов."])
 	else
 		self.selected[key] = true
 	end
@@ -94,7 +95,7 @@ end
 function Picker:OpenSortMenu(owner)
 	if not (MenuUtil and MenuUtil.CreateContextMenu) then return end
 	MenuUtil.CreateContextMenu(owner, function(_, root)
-		root:CreateTitle("Сортировка тегов")
+		root:CreateTitle(L["Сортировка тегов"])
 		for _, s in ipairs(TH.TAG_SORTS) do
 			local radio = root:CreateRadio(s.text,
 				function() return SortMode(self) == s.key end,
@@ -144,7 +145,7 @@ function Picker:Refresh(keepList)
 	local rowsTotal = math.ceil(#self.list / self.cols)
 	self.scrollBar:Sync(self.offset, rowsTotal - self.rows)
 	self.empty:SetShown(#self.list == 0)
-	self.emptyText:SetText(searching and "Такого тега пока нет." or "Ничего не выбрано.")
+	self.emptyText:SetText(searching and L["Такого тега пока нет."] or L["Ничего не выбрано."])
 	self.suggestBtn:SetShown(searching)
 	self.sortBtn:SetText(SortText(mode))
 
@@ -165,8 +166,8 @@ function Picker:Refresh(keepList)
 
 	local labels = {}
 	for _, key in ipairs(self:GetSelectedList()) do labels[#labels + 1] = TH.TAG_LABEL[key] end
-	self.summary:SetText(#labels > 0 and ("Выбрано: |cffffd100" .. table.concat(labels, ", ") .. "|r")
-		or "|cff999999Теги не выбраны|r")
+	self.summary:SetText(#labels > 0 and (L["Выбрано: |cffffd100"] .. table.concat(labels, ", ") .. "|r")
+		or L["|cff999999Теги не выбраны|r"])
 end
 
 local function ThemeButton(p, key, name, y, h)
@@ -205,7 +206,7 @@ function TH:CreateTagPicker(parent, opts)
 	search:SetSize(THEME_W + 120, 20)
 	search:SetPoint("TOPLEFT", 6, 0)
 	search:SetAutoFocus(false)
-	if type(search.Instructions) == "table" then search.Instructions:SetText("Поиск по всем тегам") end
+	if type(search.Instructions) == "table" then search.Instructions:SetText(L["Поиск по всем тегам"]) end
 	search:HookScript("OnTextChanged", function()
 		p.offset = 0
 		p:Refresh()
@@ -221,10 +222,10 @@ function TH:CreateTagPicker(parent, opts)
 	p.sortBtn = sortBtn
 	local sortLabel = p:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 	sortLabel:SetPoint("RIGHT", sortBtn, "LEFT", -4, 0)
-	sortLabel:SetText("Сортировка:")
+	sortLabel:SetText(L["Сортировка:"])
 
 	-- темы
-	local entries = { { "all", "Все теги" }, { "selected", "Выбранные" } }
+	local entries = { { "all", L["Все теги"] }, { "selected", L["Выбранные"] } }
 	for i, theme in ipairs(TH.TAG_THEMES) do entries[#entries + 1] = { i, theme.name } end
 	local h = math.min(18, math.floor(rows * rowH / #entries))
 	p.themeButtons = {}
@@ -273,12 +274,12 @@ function TH:CreateTagPicker(parent, opts)
 			GameTooltip:SetOwner(b, "ANCHOR_RIGHT")
 			GameTooltip:SetText(TH.TAG_LABEL[b.key])
 			GameTooltip:AddLine(TH.TAG_GROUP[b.key], 0.7, 0.7, 0.7)
-			GameTooltip:AddLine("Образов с тегом: " .. (p.counts[b.key] or 0), 1, 1, 1)
-			if p.trend then GameTooltip:AddLine("За 14 дней: " .. (p.trend[b.key] or 0), 1, 1, 1) end
+			GameTooltip:AddLine(L["Образов с тегом: "] .. (p.counts[b.key] or 0), 1, 1, 1)
+			if p.trend then GameTooltip:AddLine(L["За 14 дней: "] .. (p.trend[b.key] or 0), 1, 1, 1) end
 			local ok, why = p:CanSelect(b.key)
 			if not ok and why then GameTooltip:AddLine(why, 1, 0.3, 0.3, true) end
 			if TH.RAID_TAGS[b.key] and ok and p.canSelect then
-				GameTooltip:AddLine("Подходит: не меньше половины видимых вещей — из рейдов этого дополнения.", 0.3, 1, 0.3, true)
+				GameTooltip:AddLine(L["Подходит: не меньше половины видимых вещей — из рейдов этого дополнения."], 0.3, 1, 0.3, true)
 			end
 			GameTooltip:Show()
 		end)
@@ -308,7 +309,7 @@ function TH:CreateTagPicker(parent, opts)
 	TH.PadButton(p.suggestBtn)
 	p.suggestBtn:SetSize(160, 22)
 	p.suggestBtn:SetPoint("TOPLEFT", 0, -18)
-	p.suggestBtn:SetText("Предложить тег")
+	p.suggestBtn:SetText(L["Предложить тег"])
 	p.suggestBtn:SetScript("OnClick", function() TH:OpenSuggestTag(p.search:GetText()) end)
 
 	p.summary = p:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
@@ -351,13 +352,13 @@ function TH:OpenSuggestTag(text)
 
 		local title = d:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 		title:SetPoint("TOP", 0, -6)
-		title:SetText("Предложить тег")
+		title:SetText(L["Предложить тег"])
 
 		local info = d:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 		info:SetPoint("TOPLEFT", 16, -34)
 		info:SetWidth(308)
 		info:SetJustifyH("LEFT")
-		info:SetText("Тег появится в обновлении аддона, если его предложат несколько игроков.")
+		info:SetText(L["Тег появится в обновлении аддона, если его предложат несколько игроков."])
 
 		d.edit = CreateFrame("EditBox", nil, d, "InputBoxTemplate")
 		d.edit:SetSize(296, 20)
@@ -377,7 +378,7 @@ function TH:OpenSuggestTag(text)
 		TH.PadButton(send)
 		send:SetSize(120, 24)
 		send:SetPoint("BOTTOMLEFT", 14, 12)
-		send:SetText("Отправить")
+		send:SetText(L["Отправить"])
 		send:SetScript("OnClick", SendSuggestion)
 		d.sendBtn = send
 

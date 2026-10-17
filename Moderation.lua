@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local TH = ns.TH
 
 -- Фильтр названий и описаний образов.
@@ -300,7 +301,7 @@ local MIN_NAME_LETTERS = 2 -- «12312» — не название
 -- Символы в названии: буквы любых языков, цифры, пробел и немного знаков.
 -- Значки (★ ♥ ═), эмодзи и «служебные» символы (@ # { } / …) запрещены.
 local NAME_PUNCT = "-'!?,.:()&"
-TH.NAME_ALLOWED_TEXT = "буквы, цифры, пробел и - ' ! ? , . : ( ) & « »"
+TH.NAME_ALLOWED_TEXT = L["буквы, цифры, пробел и - ' ! ? , . : ( ) & « »"]
 local MAX_PUNCT_RUN = 3
 
 local EXTRA_PUNCT = { [0xAB] = true, [0xBB] = true } -- « »
@@ -380,22 +381,22 @@ end
 
 function TH:ValidateSetText(name, desc)
 	name = strtrim(name or "")
-	if #name < 3 then return "Название слишком короткое." end
-	if LetterCount(name) < MIN_NAME_LETTERS then return "В названии должны быть буквы, а не только цифры." end
+	if #name < 3 then return L["Название слишком короткое."] end
+	if LetterCount(name) < MIN_NAME_LETTERS then return L["В названии должны быть буквы, а не только цифры."] end
 	local bad, why = TH.FindBadNameChar(name)
 	if bad then
-		if why == "run" then return "Не больше " .. MAX_PUNCT_RUN .. " знаков препинания подряд." end
-		return "Символ «" .. bad .. "» нельзя. Можно: " .. TH.NAME_ALLOWED_TEXT .. "."
+		if why == "run" then return L["Не больше "] .. MAX_PUNCT_RUN .. L[" знаков препинания подряд."] end
+		return L["Символ «"] .. bad .. L["» нельзя. Можно: "] .. TH.NAME_ALLOWED_TEXT .. "."
 	end
 	for _, text in ipairs({ name, desc or "" }) do
 		if text ~= "" and (not self:IsTextAllowed(text) or BlizzardSaysProfane(text)) then
 			if IsSpam(text) then
-				return "Ссылки и реклама в названии и описании запрещены."
+				return L["Ссылки и реклама в названии и описании запрещены."]
 			end
-			return text == name and "Название содержит недопустимые слова." or "Описание содержит недопустимые слова."
+			return text == name and L["Название содержит недопустимые слова."] or L["Описание содержит недопустимые слова."]
 		end
 	end
-	if TH.IsGibberish(name) then return "Название похоже на случайный набор букв. Придумайте настоящее." end
+	if TH.IsGibberish(name) then return L["Название похоже на случайный набор букв. Придумайте настоящее."] end
 end
 
 -- Можно ли показывать образ из сети
@@ -428,14 +429,14 @@ end
 --     образ или пожаловался. Авторов автоматически не блокируем.
 ---------------------------------------------------------------------------
 TH.REPORT_REASONS = {
-	{ key = "a", label = "Реклама" },
-	{ key = "o", label = "Оскорбительное название или описание" },
-	{ key = "x", label = "Другое (опишите сами)" },
+	{ key = "a", label = L["Реклама"] },
+	{ key = "o", label = L["Оскорбительное название или описание"] },
+	{ key = "x", label = L["Другое (опишите сами)"] },
 }
 TH.REPORT_LABEL = {}
 for _, r in ipairs(TH.REPORT_REASONS) do TH.REPORT_LABEL[r.key] = r.label end
 -- жалоба на игрока в рейтинге очков стиля: id «p:Имя-Сервер»
-TH.REPORT_LABEL.c = "Накрутка рейтинга"
+TH.REPORT_LABEL.c = L["Накрутка рейтинга"]
 TH.PLAYER_REPORT_PREFIX = "p:"
 
 local AUTO_HIDE_REPORTS = 100
@@ -490,11 +491,11 @@ function TH:GetModeratorList()
 	for name in pairs((TransmogHub_Blocklist and TransmogHub_Blocklist.moderators) or {}) do
 		if self:IsModerator(name) and not self:IsAdmin(name) then
 			seen[name] = true
-			list[#list + 1] = { name, "в обновлении" }
+			list[#list + 1] = { name, L["в обновлении"] }
 		end
 	end
 	for name, r in pairs(self.db.net.modRoles) do
-		if r[1] == 1 and not seen[name] and not self:IsAdmin(name) then list[#list + 1] = { name, "назначен в сети" } end
+		if r[1] == 1 and not seen[name] and not self:IsAdmin(name) then list[#list + 1] = { name, L["назначен в сети"] } end
 	end
 	table.sort(list, function(a, b) return a[1] < b[1] end)
 	return list
@@ -540,9 +541,9 @@ function TH:SetModerator(name, on)
 	if not self:IsAdmin(self.Net.Me()) then return end
 	name = self:ResolvePlayerName(name)
 	if not name then return end
-	if self:IsAdmin(name) then return self:Notify("Это персонаж админа.") end
+	if self:IsAdmin(name) then return self:Notify(L["Это персонаж админа."]) end
 	self:ModDecision(on and "m" or "x", name)
-	self:Notify(on and ("Назначен модератором: " .. name) or ("Снят с модераторов: " .. name))
+	self:Notify(on and (L["Назначен модератором: "] .. name) or (L["Снят с модераторов: "] .. name))
 end
 
 -- Клиент модератора копит журнал жалоб для выгрузки коннектором
@@ -638,23 +639,23 @@ end
 
 -- Возвращает nil или текст ошибки
 function TH:SuggestTag(text)
-	if self:IsExiled() then return "Стражи подиума закрыли для вас эту возможность." end
+	if self:IsExiled() then return L["Стражи подиума закрыли для вас эту возможность."] end
 	local norm = self.NormalizeTag(text)
-	if not norm then return "Тег — от " .. TAG_MIN .. " до " .. TAG_MAX .. " букв." end
-	if not self:IsTextAllowed(norm) or BlizzardSaysProfane(norm) then return "Тег содержит недопустимые слова." end
+	if not norm then return L["Тег — от "] .. TAG_MIN .. L[" до "] .. TAG_MAX .. L[" букв."] end
+	if not self:IsTextAllowed(norm) or BlizzardSaysProfane(norm) then return L["Тег содержит недопустимые слова."] end
 	for key, label in pairs(self.TAG_LABEL) do
-		if self.Lower(label) == norm and not self.TAG_RETIRED[key] then return "Такой тег уже есть." end
+		if self.Lower(label) == norm and not self.TAG_RETIRED[key] then return L["Такой тег уже есть."] end
 	end
-	if self.db.mySuggest[norm] then return "Вы уже предлагали этот тег." end
+	if self.db.mySuggest[norm] then return L["Вы уже предлагали этот тег."] end
 	local now, today = self.Net.Now(), 0
 	for _, t in pairs(self.db.mySuggest) do
 		if now - t < 86400 then today = today + 1 end
 	end
-	if today >= SUGGEST_PER_DAY then return "Не больше " .. SUGGEST_PER_DAY .. " предложений в день." end
+	if today >= SUGGEST_PER_DAY then return L["Не больше "] .. SUGGEST_PER_DAY .. L[" предложений в день."] end
 	self.db.mySuggest[norm] = now
 	self.Net:SendTagSuggestion(norm)
 	self:TrackCount("suggested")
-	self:Thanks("Тег «" .. norm .. "» предложен. Если его попросят и другие, он появится в обновлении.")
+	self:Thanks(L["Тег «"] .. norm .. L["» предложен. Если его попросят и другие, он появится в обновлении."])
 end
 
 -- Обращения (оспаривание решений) для коннектора: 1|кто|время|текст
@@ -766,11 +767,11 @@ local function CheckVotes(set)
 		burst = math.max(burst, i - first + 1)
 	end
 	local reasons = {}
-	if lonely / n >= SUS_LONELY then reasons[#reasons + 1] = string.format("разовые голоса %d%%", 100 * lonely / n) end
-	if burst / n >= SUS_BURST then reasons[#reasons + 1] = string.format("за час %d%%", 100 * burst / n) end
-	if sameRealm / n >= SUS_REALM then reasons[#reasons + 1] = string.format("сервер автора %d%%", 100 * sameRealm / n) end
+	if lonely / n >= SUS_LONELY then reasons[#reasons + 1] = string.format(L["разовые голоса %d%%"], 100 * lonely / n) end
+	if burst / n >= SUS_BURST then reasons[#reasons + 1] = string.format(L["за час %d%%"], 100 * burst / n) end
+	if sameRealm / n >= SUS_REALM then reasons[#reasons + 1] = string.format(L["сервер автора %d%%"], 100 * sameRealm / n) end
 	if #reasons == 0 then return nil end
-	table.insert(reasons, 1, string.format("пятёрок %d%%", 100 * fives / n))
+	table.insert(reasons, 1, string.format(L["пятёрок %d%%"], 100 * fives / n))
 	return reasons
 end
 
@@ -892,7 +893,7 @@ function TH:Report(setId, reason)
 	self.db.favorites[setId] = nil
 	self:LoadFeed()
 	self:NotifyChanged()
-	self:Thanks("Жалоба отправлена модератору. Образ скрыт у вас.")
+	self:Thanks(L["Жалоба отправлена модератору. Образ скрыт у вас."])
 end
 
 -- Вернуть один скрытый образ (или игрока рейтинга): своя жалоба на него отзывается
@@ -914,10 +915,10 @@ function TH:GetHiddenList()
 	for id in pairs(self.db.hidden) do
 		local name
 		if id:sub(1, #self.PLAYER_REPORT_PREFIX) == self.PLAYER_REPORT_PREFIX then
-			name = "Игрок рейтинга " .. id:sub(#self.PLAYER_REPORT_PREFIX + 1):gsub("%-.*", "")
+			name = L["Игрок рейтинга "] .. id:sub(#self.PLAYER_REPORT_PREFIX + 1):gsub("%-.*", "")
 		else
 			local set = self.db.net.sets[id]
-			name = set and ("«" .. (set.name or "?") .. "»  |cff888888" .. (set.author or "?"):gsub("%-.*", "") .. "|r") or "|cff888888образа уже нет в базе|r"
+			name = set and ("«" .. (set.name or "?") .. "»  |cff888888" .. (set.author or "?"):gsub("%-.*", "") .. "|r") or L["|cff888888образа уже нет в базе|r"]
 		end
 		local r = self.db.net.reports[id] and self.db.net.reports[id][self.Net.Me()]
 		list[#list + 1] = { id = id, name = name, reason = r and r[1] ~= "u" and (self.REPORT_LABEL[r[1]] or r[1]) or nil }
@@ -931,17 +932,17 @@ function TH:OpenHiddenMenu(owner)
 	if not (MenuUtil and MenuUtil.CreateContextMenu) then return end
 	local list = self:GetHiddenList()
 	MenuUtil.CreateContextMenu(owner, function(_, root)
-		root:CreateTitle("Скрыто у вас (" .. #list .. ")")
-		if #list == 0 then root:CreateTitle("|cff888888ничего не скрыто|r") end
+		root:CreateTitle(L["Скрыто у вас ("] .. #list .. ")")
+		if #list == 0 then root:CreateTitle(L["|cff888888ничего не скрыто|r"]) end
 		for i, e in ipairs(list) do
-			if i > 50 then root:CreateTitle("|cff888888и ещё " .. (#list - 50) .. "|r") break end
-			local label = e.name .. (e.reason and ("  |cffff9020жалоба: " .. e.reason .. "|r") or "")
+			if i > 50 then root:CreateTitle(L["|cff888888и ещё "] .. (#list - 50) .. "|r") break end
+			local label = e.name .. (e.reason and (L["  |cffff9020жалоба: "] .. e.reason .. "|r") or "")
 			local b = root:CreateButton(label, function()
 				local retracted = self:UndoReport(e.id)
-				self:Notify("Снова видно: " .. e.name .. (retracted and ". Жалоба отозвана." or "."))
+				self:Notify(L["Снова видно: "] .. e.name .. (retracted and L[". Жалоба отозвана."] or "."))
 			end)
 			if b and b.SetTooltip then
-				b:SetTooltip(function(tip) GameTooltip_SetTitle(tip, "Вернуть"); GameTooltip_AddNormalLine(tip, e.reason and "Образ снова будет виден, ваша жалоба отозвана у всех." or "Образ снова будет виден.") end)
+				b:SetTooltip(function(tip) GameTooltip_SetTitle(tip, L["Вернуть"]); GameTooltip_AddNormalLine(tip, e.reason and L["Образ снова будет виден, ваша жалоба отозвана у всех."] or L["Образ снова будет виден."]) end)
 			end
 		end
 	end)
@@ -975,7 +976,7 @@ function TH:UndoMyReports()
 	wipe(self.db.falseReports)
 	self:LoadFeed()
 	self:NotifyChanged()
-	self:Notify(string.format("Скрытых снова видно: %d. Отозвано жалоб: %d, отметок тегов: %d.", hidden, reports, flags))
+	self:Notify(string.format(L["Скрытых снова видно: %d. Отозвано жалоб: %d, отметок тегов: %d."], hidden, reports, flags))
 end
 
 -- Решение модератора: действует сразу у всех, до кого дотягиваемся напрямую,
@@ -996,7 +997,7 @@ function TH:ReportPlayer(name)
 	self.Net:SendReport(id, "c")
 	self.db.hidden[id] = true -- у пожаловавшегося игрок из рейтинга пропадает
 	self:NotifyChanged()
-	self:Thanks("Жалоба отправлена. Игрок скрыт из вашего рейтинга.")
+	self:Thanks(L["Жалоба отправлена. Игрок скрыт из вашего рейтинга."])
 end
 
 function TH:ModDecision(action, target)

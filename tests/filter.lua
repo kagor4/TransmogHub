@@ -1,4 +1,4 @@
-local ns = { TH = {} }
+local ns = { TH = {}, L = setmetatable({}, { __index = function(_, k) return k end }) }
 local TH = ns.TH
 strtrim = function(s) return (s:gsub("^%s+", ""):gsub("%s+$", "")) end
 -- Lower from Core.lua

@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local TH = ns.TH
 
 ---------------------------------------------------------------------------
@@ -10,23 +11,23 @@ local tour
 
 -- target(ui) — что подсветить; side — где пузырь: "below" | "above" | "right" | "left"
 local STEPS = {
-	{ title = "Разделы", side = "below",
-		text = "Наверху вкладки: все образы, образы друзей, избранное, ваш профиль и достижения. Подсказка есть у каждой — наведите курсор.",
+	{ title = L["Разделы"], side = "below",
+		text = L["Наверху вкладки: все образы, образы друзей, избранное, ваш профиль и достижения. Подсказка есть у каждой — наведите курсор."],
 		target = function(ui) return ui.tabs[1], ui.tabs[#ui.tabs] end },
-	{ title = "Список образов", side = "right",
-		text = "Сверху сортировка: лучшие, в тренде, новые, рекомендуемые (кубик — перемешать). Клик по образу — примерить. Звёздочка справа — добавить в избранное, полоска под иконкой — сколько вещей уже собрано у вас.",
+	{ title = L["Список образов"], side = "right",
+		text = L["Сверху сортировка: лучшие, в тренде, новые, рекомендуемые (кубик — перемешать). Клик по образу — примерить. Звёздочка справа — добавить в избранное, полоска под иконкой — сколько вещей уже собрано у вас."],
 		target = function(ui) return ui.listPanel end },
-	{ title = "Примерка", side = "right",
-		text = "Образ на вашем персонаже. Мышью можно вращать и приближать, двойной клик — вернуть камеру. Снизу — другая раса и примерочная Wowhead (там можно выбрать и пол).",
+	{ title = L["Примерка"], side = "right",
+		text = L["Образ на вашем персонаже. Мышью можно вращать и приближать, двойной клик — вернуть камеру. Снизу — другая раса и примерочная Wowhead (там можно выбрать и пол)."],
 		target = function(ui) return ui.previewPanel end },
-	{ title = "Подробности", side = "left",
-		text = "Название, автор (клик — его профиль), оценка звёздами, теги и все вещи: собрано ли и откуда (наведите на строку).",
+	{ title = L["Подробности"], side = "left",
+		text = L["Название, автор (клик — его профиль), оценка звёздами, теги и все вещи: собрано ли и откуда (наведите на строку)."],
 		target = function(ui) return ui.detailPanel end },
-	{ title = "Поделитесь своим", side = "below",
-		text = "Наденьте трансмог и нажмите «Новый образ» — его увидят все игроки с аддоном.",
+	{ title = L["Поделитесь своим"], side = "below",
+		text = L["Наденьте трансмог и нажмите «Новый образ» — его увидят все игроки с аддоном."],
 		target = function(ui) return ui.saveBtn end },
-	{ title = "Если что-то непонятно", side = "below",
-		text = "Справка всегда здесь: что где искать и как всё устроено. Удачи и красивых образов!",
+	{ title = L["Если что-то непонятно"], side = "below",
+		text = L["Справка всегда здесь: что где искать и как всё устроено. Удачи и красивых образов!"],
 		target = function(ui) return ui.helpBtn end },
 }
 
@@ -91,7 +92,7 @@ local function Build()
 	b.skip = CreateFrame("Button", nil, b)
 	b.skip:SetNormalFontObject("GameFontDisableSmall")
 	b.skip:SetHighlightFontObject("GameFontHighlightSmall")
-	b.skip:SetText("Пропустить")
+	b.skip:SetText(L["Пропустить"])
 	b.skip:SetSize(90, 20)
 	b.skip:SetPoint("BOTTOMLEFT", 8, 11)
 	b.skip:SetScript("OnClick", function() TH:EndTour() end)
@@ -113,8 +114,8 @@ function TH:TourStep(index)
 	local b = tour.bubble
 	b.title:SetText(step.title)
 	b.text:SetText(step.text)
-	b.step:SetText(index .. " из " .. #STEPS)
-	b.next:SetText(index == #STEPS and "Готово" or "Далее")
+	b.step:SetText(index .. L[" из "] .. #STEPS)
+	b.next:SetText(index == #STEPS and L["Готово"] or L["Далее"])
 	b:SetHeight((b.text:GetStringHeight() or 60) + 80)
 	b:ClearAllPoints()
 	if step.side == "below" then

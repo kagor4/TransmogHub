@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local TH = ns.TH
 
 ---------------------------------------------------------------------------
@@ -74,9 +75,9 @@ function TH:VoteRestrictionText()
 	local p = self:GetVotePenalty()
 	if not p then return nil end
 	if p.permanent then
-		return "Оценки и жалобы закрыты навсегда: повторное занижение оценок."
+		return L["Оценки и жалобы закрыты навсегда: повторное занижение оценок."]
 	end
-	return "Оценки и жалобы закрыты до " .. date("%d.%m", p.untilT) .. " за занижение оценок. Потом всё вернётся."
+	return L["Оценки и жалобы закрыты до "] .. date("%d.%m", p.untilT) .. L[" за занижение оценок. Потом всё вернётся."]
 end
 
 -- Снять голоса этого персонажа (каждый персонаж снимает свои — при входе)
@@ -104,8 +105,8 @@ function TH:CheckVotePenalty()
 		local count = (p and p.count or 0) + 1
 		p = { count = count, since = now, permanent = count >= 2, untilT = count < 2 and (now + PENALTY_DAYS * 86400) or nil, retracted = {} }
 		self.db.penalty = p
-		self:Notify(p.permanent and "Повторное занижение оценок: ваши оценки сняты, оценивать и жаловаться больше нельзя."
-			or string.format("Занижение оценок: ваши оценки сняты, оценивать и жаловаться нельзя %d дней.", PENALTY_DAYS))
+		self:Notify(p.permanent and L["Повторное занижение оценок: ваши оценки сняты, оценивать и жаловаться больше нельзя."]
+			or string.format(L["Занижение оценок: ваши оценки сняты, оценивать и жаловаться нельзя %d дней."], PENALTY_DAYS))
 	end
 	p = self.db.penalty
 	if not p then return end
@@ -116,7 +117,7 @@ function TH:CheckVotePenalty()
 	end
 	if not p.permanent and not p.washed and p.untilT and now >= p.untilT then
 		p.washed = now
-		self:Notify("Ограничения за занижение оценок сняты: снова можно оценивать и жаловаться. Повторное занижение — навсегда.")
+		self:Notify(L["Ограничения за занижение оценок сняты: снова можно оценивать и жаловаться. Повторное занижение — навсегда."])
 	end
 end
 
@@ -124,7 +125,7 @@ end
 function TH:LiftVotePenalty()
 	if not self.db.penalty then return end
 	self.db.penalty = nil
-	self:Notify("Модератор снял ограничения за занижение оценок.")
+	self:Notify(L["Модератор снял ограничения за занижение оценок."])
 	self:NotifyChanged()
 end
 
@@ -186,8 +187,8 @@ end
 function TH:PublishRestrictionText()
 	local s = self:GetPublishRestriction()
 	if not s then return nil end
-	if s.permanent then return "Публикация образов закрыта навсегда: повторное нарушение с названием образа." end
-	return "Публиковать образы можно будет с " .. date("%d.%m", s.untilT) .. ": Стражи подиума наказали за название образа."
+	if s.permanent then return L["Публикация образов закрыта навсегда: повторное нарушение с названием образа."] end
+	return L["Публиковать образы можно будет с "] .. date("%d.%m", s.untilT) .. L[": Стражи подиума наказали за название образа."]
 end
 
 local function Quote(mine)
@@ -196,25 +197,25 @@ end
 
 -- Письмо Стражей: шуточное название — переименуйте
 local function RenameLetter(self, localId, mine)
-	self:ShowStandingWarning("Письмо Стражей подиума",
-		"Стражи подиума остановили ваш образ " .. Quote(mine) .. " у ворот Штормграда: название рассмешило стражу, "
-		.. "но не всех прохожих.\n\nОбраз скрыт, пока вы его не переименуете, — потом он снова выйдет на подиум "
-		.. "(оценки старого образа не сохранятся). На этот раз обойдёмся без наказания, но Стражи занесли ваше имя "
-		.. "в свою книгу.\n\n|cffff9020Если в названии снова окажется брань или подобная шутка, Стражи будут вынуждены "
-		.. "принять меры: публикация образов закроется на " .. NAME_BAN_DAYS .. " дней.|r",
-		"Переименовать", function() self:AskRename(localId) end)
+	self:ShowStandingWarning(L["Письмо Стражей подиума"],
+		L["Стражи подиума остановили ваш образ "] .. Quote(mine) .. L[" у ворот Штормграда: название рассмешило стражу, "]
+		.. L["но не всех прохожих.\n\nОбраз скрыт, пока вы его не переименуете, — потом он снова выйдет на подиум "]
+		.. L["(оценки старого образа не сохранятся). На этот раз обойдёмся без наказания, но Стражи занесли ваше имя "]
+		.. L["в свою книгу.\n\n|cffff9020Если в названии снова окажется брань или подобная шутка, Стражи будут вынуждены "]
+		.. L["принять меры: публикация образов закроется на "] .. NAME_BAN_DAYS .. L[" дней.|r"],
+		L["Переименовать"], function() self:AskRename(localId) end)
 end
 
 local function PenaltyLetter(self, mine, joke)
 	local s = self.db.nameStrikes
 	local reason = joke
-		and ("Стражи подиума уже просили вас не шутить с названиями, а образ " .. Quote(mine) .. " снова остановлен у ворот.")
-		or ("Стражи подиума сняли ваш образ " .. Quote(mine) .. ": такие слова не звучат даже в тавернах Пиратской бухты.")
+		and (L["Стражи подиума уже просили вас не шутить с названиями, а образ "] .. Quote(mine) .. L[" снова остановлен у ворот."])
+		or (L["Стражи подиума сняли ваш образ "] .. Quote(mine) .. L[": такие слова не звучат даже в тавернах Пиратской бухты."])
 	local verdict = s.permanent
-		and "\n\nЭто уже второе нарушение: публиковать образы вы больше не можете. Смотреть, сохранять и оценивать — можно."
-		or ("\n\n" .. NAME_BAN_DAYS .. " дней (до " .. date("%d.%m", s.untilT) .. ") вы не можете публиковать образы. "
-			.. "Смотреть, сохранять и оценивать — можно. Повторное нарушение — запрет на публикацию навсегда.")
-	self:ShowStandingWarning("Решение Стражей подиума", reason .. verdict)
+		and L["\n\nЭто уже второе нарушение: публиковать образы вы больше не можете. Смотреть, сохранять и оценивать — можно."]
+		or ("\n\n" .. NAME_BAN_DAYS .. L[" дней (до "] .. date("%d.%m", s.untilT) .. L[") вы не можете публиковать образы. "]
+			.. L["Смотреть, сохранять и оценивать — можно. Повторное нарушение — запрет на публикацию навсегда."])
+	self:ShowStandingWarning(L["Решение Стражей подиума"], reason .. verdict)
 end
 
 -- Проверить свои образы: не пришло ли решение модератора по названию.
@@ -263,7 +264,7 @@ function TH:CheckNameViolations(remind)
 	local s = self.db.nameStrikes
 	if s and not s.permanent and s.untilT and not s.washed and now >= s.untilT then
 		s.washed = now
-		self:Notify("Запрет на публикацию снят: снова можно публиковать образы. Повторное нарушение — навсегда.")
+		self:Notify(L["Запрет на публикацию снят: снова можно публиковать образы. Повторное нарушение — навсегда."])
 	end
 	if letter then
 		PenaltyLetter(self, letter[1], letter[2])
@@ -283,9 +284,9 @@ end
 -- (если публикация не закрыта). Возвращает текст ошибки или nil.
 function TH:RenameViolatedSet(localId, name)
 	local mine = self.db.mySets[localId]
-	if not mine then return "Образ не найден." end
+	if not mine then return L["Образ не найден."] end
 	name = self.FormatSetName(strtrim(name or ""))
-	if name == mine.name then return "Придумайте другое название." end
+	if name == mine.name then return L["Придумайте другое название."] end
 	local err = self:ValidateSetText(name, mine.desc)
 	if err then return err end
 	if mine.serverId then
@@ -298,12 +299,12 @@ function TH:RenameViolatedSet(localId, name)
 	mine.name = name
 	local restricted = self:PublishRestrictionText()
 	if restricted then
-		self:Notify("Образ переименован в «" .. name .. "» и сохранён черновиком. " .. restricted)
+		self:Notify(L["Образ переименован в «"] .. name .. L["» и сохранён черновиком. "] .. restricted)
 		self:LoadFeed()
 		self:NotifyChanged()
 	else
 		self:Publish(localId)
-		self:Notify("Образ переименован в «" .. name .. "» и снова на подиуме. Спасибо!")
+		self:Notify(L["Образ переименован в «"] .. name .. L["» и снова на подиуме. Спасибо!"])
 	end
 end
 
@@ -330,16 +331,16 @@ function TH:Amnesty()
 		if a.shame then self.db.achievements[a.id] = nil end
 	end
 	wipe(self.db.falseReports)
-	self:Notify("Стражи подиума сняли с вас все ограничения и наказания. Чистый лист!")
+	self:Notify(L["Стражи подиума сняли с вас все ограничения и наказания. Чистый лист!"])
 	self:LoadFeed()
 	self:NotifyChanged()
 end
 
 -- Бан за рекламу пришёл напрямую от модератора
 function TH:OnAdBan()
-	self:ShowStandingWarning("Изгнание в Тканевые пустоши",
-		"Стражи подиума поймали вас на рекламе: Transmog Hub — подиум для образов, а не доска объявлений у аукциона.\n\n"
-		.. "Двери Transmog Hub для вас закрыты. Если это ошибка — оспорьте решение на экране изгнания.")
+	self:ShowStandingWarning(L["Изгнание в Тканевые пустоши"],
+		L["Стражи подиума поймали вас на рекламе: Transmog Hub — подиум для образов, а не доска объявлений у аукциона.\n\n"]
+		.. L["Двери Transmog Hub для вас закрыты. Если это ошибка — оспорьте решение на экране изгнания."])
 	if self.UI and self.UI.Refresh and self.UI.frame then self.UI:Refresh() end
 end
 
@@ -357,7 +358,7 @@ function TH:IsExiled()
 end
 
 function TH:ExileNotice()
-	self:Print("|cffff6060Стражи подиума закрыли для этого персонажа Transmog Hub.|r Что исправить — в своём профиле и на вкладке «Достижения».")
+	self:Print(L["|cffff6060Стражи подиума закрыли для этого персонажа Transmog Hub.|r Что исправить — в своём профиле и на вкладке «Достижения»."])
 end
 
 ---------------------------------------------------------------------------
@@ -398,27 +399,27 @@ function TH:GetStandingWarning()
 	if self:IsBanned(self.Net.Me()) then return nil end -- изгнанному показываем экран изгнания
 	if shame >= EXILE_SHAME then return nil end
 	if shame == EXILE_SHAME - 1 then
-		return "shame2", "Последнее предупреждение",
-			"Стражи подиума хмурятся всё сильнее. Ещё одно позорное достижение, и вас отправят в Тканевые пустоши: на этом персонаже Transmog Hub закроется, пока вы не исправитесь.\n\nПозорные достижения снимаются сами, когда поведение исправилось."
+		return "shame2", L["Последнее предупреждение"],
+			L["Стражи подиума хмурятся всё сильнее. Ещё одно позорное достижение, и вас отправят в Тканевые пустоши: на этом персонаже Transmog Hub закроется, пока вы не исправитесь.\n\nПозорные достижения снимаются сами, когда поведение исправилось."]
 	end
 	if shame == 1 then
-		return "shame1", "Ваше имя в книге Стражей",
-			"Стражи подиума записали ваше имя в свою книгу. Позорное достижение снимется, когда исправитесь.\n\nНо если таких наберётся три, Стражи закроют для этого персонажа двери Transmog Hub."
+		return "shame1", L["Ваше имя в книге Стражей"],
+			L["Стражи подиума записали ваше имя в свою книгу. Позорное достижение снимется, когда исправитесь.\n\nНо если таких наберётся три, Стражи закроют для этого персонажа двери Transmog Hub."]
 	end
 	local votes, ones = VoteShare(self)
 	if votes >= 10 and ones / votes >= 0.7 and not self.db.achievements.shame_troll then
-		return "troll", "Шёпот Стражей подиума",
-			"Вы ставите единицы почти всем подряд. Тролли под мостом тоже так начинали.\n\nОценивайте честно: если так пойдёт и дальше, к вашему имени приклеится позорное достижение."
+		return "troll", L["Шёпот Стражей подиума"],
+			L["Вы ставите единицы почти всем подряд. Тролли под мостом тоже так начинали.\n\nОценивайте честно: если так пойдёт и дальше, к вашему имени приклеится позорное достижение."]
 	end
 	if self:CountFalseReports() == 2 and not self.db.achievements.shame_cry then
-		return "cry", "Шёпот Стражей подиума",
-			"Стражи дважды бежали на ваш крик «Мурлок!», а мурлоков не было: две ваши жалобы признаны ложными.\n\nЖалуйтесь только на мат, оскорбления и рекламу. Третья ложная жалоба — и вас запишут в книгу ложных глашатаев."
+		return "cry", L["Шёпот Стражей подиума"],
+			L["Стражи дважды бежали на ваш крик «Мурлок!», а мурлоков не было: две ваши жалобы признаны ложными.\n\nЖалуйтесь только на мат, оскорбления и рекламу. Третья ложная жалоба — и вас запишут в книгу ложных глашатаев."]
 	end
 	for _, mine in pairs(self.db.mySets) do
 		local id = mine.serverId
 		if id and self:GetReportStats(id) >= 10 and not self:IsBlocked({ id = id, author = mine.author }) then
-			return "reported:" .. id, "На ваш образ жалуются",
-				"Игроки жалуются на ваш образ «" .. (mine.name or "?") .. "». Загляните в правила: может, в названии или описании есть что-то лишнее?\n\nЕсли модератор заблокирует образ, вы получите позорное достижение."
+			return "reported:" .. id, L["На ваш образ жалуются"],
+				L["Игроки жалуются на ваш образ «"] .. (mine.name or "?") .. L["». Загляните в правила: может, в названии или описании есть что-то лишнее?\n\nЕсли модератор заблокирует образ, вы получите позорное достижение."]
 		end
 	end
 end
@@ -450,7 +451,7 @@ local function BuildWarning()
 	warnFrame.title:SetPoint("TOPLEFT", warnFrame.icon, "TOPRIGHT", 12, -2)
 	warnFrame.who = warnFrame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
 	warnFrame.who:SetPoint("TOPLEFT", warnFrame.title, "BOTTOMLEFT", 0, -3)
-	warnFrame.who:SetText("Стражи подиума — модераторы Transmog Hub")
+	warnFrame.who:SetText(L["Стражи подиума — модераторы Transmog Hub"])
 
 	warnFrame.text = warnFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 	warnFrame.text:SetPoint("TOPLEFT", warnFrame.icon, "BOTTOMLEFT", 0, -10)
@@ -461,7 +462,7 @@ local function BuildWarning()
 	TH.PadButton(ok)
 	ok:SetSize(160, 22)
 	ok:SetPoint("BOTTOMRIGHT", -12, 12)
-	ok:SetText("Понял, исправлюсь")
+	ok:SetText(L["Понял, исправлюсь"])
 	ok:SetScript("OnClick", function()
 		warnFrame:Hide()
 		local onOk = warnFrame.onOk
@@ -474,7 +475,7 @@ local function BuildWarning()
 	TH.PadButton(rules)
 	rules:SetSize(100, 22)
 	rules:SetPoint("RIGHT", ok, "LEFT", -6, 0)
-	rules:SetText("Правила")
+	rules:SetText(L["Правила"])
 	rules:SetScript("OnClick", function()
 		warnFrame:Hide()
 		TH:OpenHelp(8) -- «Стражи подиума»
@@ -485,7 +486,7 @@ end
 function TH:ShowStandingWarning(title, text, okText, onOk)
 	if not warnFrame then BuildWarning() end
 	warnFrame.onOk = onOk
-	warnFrame.ok:SetText(okText or "Понял, исправлюсь")
+	warnFrame.ok:SetText(okText or L["Понял, исправлюсь"])
 	warnFrame.title:SetText(title)
 	warnFrame.text:SetText(text)
 	warnFrame:SetHeight((warnFrame.text:GetStringHeight() or 60) + 120)
@@ -516,7 +517,7 @@ function TH:BuildExilePanel(p)
 
 	p.title = p:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
 	p.title:SetPoint("TOP", p.icon, "BOTTOM", 0, -14)
-	p.title:SetText("Изгнание в Тканевые пустоши")
+	p.title:SetText(L["Изгнание в Тканевые пустоши"])
 
 	p.text = p:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 	p.text:SetPoint("TOP", p.title, "BOTTOM", 0, -16)
@@ -528,20 +529,20 @@ function TH:BuildExilePanel(p)
 	TH.PadButton(p.profile)
 	p.profile:SetSize(160, 24)
 	p.profile:SetPoint("BOTTOM", -84, 40)
-	p.profile:SetText("Мой профиль")
+	p.profile:SetText(L["Мой профиль"])
 	p.profile:SetScript("OnClick", function() TH.UI:OpenProfile(TH.Net.Me()) end)
 
 	p.ach = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
 	TH.PadButton(p.ach)
 	p.ach:SetSize(160, 24)
 	p.ach:SetPoint("BOTTOM", 84, 40)
-	p.ach:SetText("Достижения")
+	p.ach:SetText(L["Достижения"])
 	p.ach:SetScript("OnClick", function() TH.UI:SetView("achievements") end)
 
 	p.appeal = CreateFrame("Button", nil, p)
 	p.appeal:SetNormalFontObject("GameFontNormalSmall")
 	p.appeal:SetHighlightFontObject("GameFontHighlightSmall")
-	p.appeal:SetText("Считаете решение ошибкой? Оспорить")
+	p.appeal:SetText(L["Считаете решение ошибкой? Оспорить"])
 	p.appeal:SetSize(260, 20)
 	p.appeal:SetPoint("BOTTOM", 0, 14)
 	p.appeal:SetScript("OnClick", function() TH:OpenAppeal() end)
@@ -551,25 +552,25 @@ function TH:RefreshExilePanel(p)
 	local lines = {}
 	if self:IsBanned(self.Net.Me()) or self:IsAccountBanned() then
 		if self:IsBanned(self.Net.Me()) then
-			lines[#lines + 1] = "Стражи подиума решили закрыть для этого персонажа двери Transmog Hub."
+			lines[#lines + 1] = L["Стражи подиума решили закрыть для этого персонажа двери Transmog Hub."]
 		else
-			lines[#lines + 1] = "Стражи подиума закрыли двери Transmog Hub для другого вашего персонажа —"
-			lines[#lines + 1] = "а значит, и для всех персонажей этого аккаунта."
+			lines[#lines + 1] = L["Стражи подиума закрыли двери Transmog Hub для другого вашего персонажа —"]
+			lines[#lines + 1] = L["а значит, и для всех персонажей этого аккаунта."]
 		end
-		lines[#lines + 1] = "Образы, оценки и жалобы с него больше не принимаются у других игроков."
+		lines[#lines + 1] = L["Образы, оценки и жалобы с него больше не принимаются у других игроков."]
 		lines[#lines + 1] = ""
-		lines[#lines + 1] = "|cff999999Если это ошибка — нажмите «Оспорить» внизу.|r"
+		lines[#lines + 1] = L["|cff999999Если это ошибка — нажмите «Оспорить» внизу.|r"]
 	else
-		lines[#lines + 1] = "Ткачи судеб отвернулись от вас: на этом персонаже Transmog Hub закрыт,"
-		lines[#lines + 1] = "пока на вас висят три позорных достижения:"
+		lines[#lines + 1] = L["Ткачи судеб отвернулись от вас: на этом персонаже Transmog Hub закрыт,"]
+		lines[#lines + 1] = L["пока на вас висят три позорных достижения:"]
 		lines[#lines + 1] = ""
 		for _, a in ipairs(self:GetActiveShame()) do
 			lines[#lines + 1] = "|cffff6060" .. a.name .. "|r — " .. a.desc
 		end
 		lines[#lines + 1] = ""
-		lines[#lines + 1] = "Позорные достижения снимаются сами: оценки и жалобы старше 90 дней"
-		lines[#lines + 1] = "не считаются, а заблокированный образ можно удалить в своём профиле."
-		lines[#lines + 1] = "Снимите хотя бы одно — и двери откроются."
+		lines[#lines + 1] = L["Позорные достижения снимаются сами: оценки и жалобы старше 90 дней"]
+		lines[#lines + 1] = L["не считаются, а заблокированный образ можно удалить в своём профиле."]
+		lines[#lines + 1] = L["Снимите хотя бы одно — и двери откроются."]
 	end
 	p.text:SetText(table.concat(lines, "\n"))
 end
@@ -587,29 +588,29 @@ function TH:GetAppealContext()
 	local me = self.Net.Me()
 	if self:IsBanned(me) then
 		local reason = (Blocklist().banned or {})[me]
-		return "бан: " .. (reason and tostring(reason) or "реклама")
+		return L["бан: "] .. (reason and tostring(reason) or L["реклама"])
 	end
 	for name in pairs(self.db.myChars) do
-		if self:IsBanned(name) then return "бан персонажа аккаунта " .. name end
+		if self:IsBanned(name) then return L["бан персонажа аккаунта "] .. name end
 	end
-	if self:GetPublishRestriction() then return "запрет на публикацию за название" end
+	if self:GetPublishRestriction() then return L["запрет на публикацию за название"] end
 	local names = {}
 	for _, a in ipairs(self:GetActiveShame()) do names[#names + 1] = a.name end
-	if #names > 0 then return "позорные: " .. table.concat(names, ", ") end
-	return "другое"
+	if #names > 0 then return L["позорные: "] .. table.concat(names, ", ") end
+	return L["другое"]
 end
 
 function TH:SendAppeal(text)
 	text = strtrim(text or "")
-	if #text:gsub("[\128-\191]", "") < 15 then return "Опишите подробнее, что не так (хотя бы пару предложений)." end
+	if #text:gsub("[\128-\191]", "") < 15 then return L["Опишите подробнее, что не так (хотя бы пару предложений)."] end
 	local now = self.Net.Now()
 	if now - (self.db.myAppeal or 0) < APPEAL_COOLDOWN then
 		local days = math.ceil((APPEAL_COOLDOWN - (now - self.db.myAppeal)) / 86400)
-		return "Обращение уже отправлено. Следующее — через " .. days .. " дн."
+		return L["Обращение уже отправлено. Следующее — через "] .. days .. L[" дн."]
 	end
 	self.db.myAppeal = now
 	self.Net:SendAppeal("[" .. self:GetAppealContext() .. "] " .. text)
-	self:Thanks("Обращение отправлено Стражам подиума. Если решение изменят, это придёт с обновлением аддона.")
+	self:Thanks(L["Обращение отправлено Стражам подиума. Если решение изменят, это придёт с обновлением аддона."])
 end
 
 local function SendFromDialog()
@@ -635,7 +636,7 @@ function TH:OpenAppeal()
 
 		local title = d:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 		title:SetPoint("TOP", 0, -6)
-		title:SetText("Оспорить решение Стражей подиума")
+		title:SetText(L["Оспорить решение Стражей подиума"])
 
 		d.info = d:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 		d.info:SetPoint("TOPLEFT", 16, -34)
@@ -677,7 +678,7 @@ function TH:OpenAppeal()
 		TH.PadButton(send)
 		send:SetSize(140, 24)
 		send:SetPoint("BOTTOMLEFT", 14, 12)
-		send:SetText("Отправить")
+		send:SetText(L["Отправить"])
 		send:SetScript("OnClick", SendFromDialog)
 		if TH.StylePrimaryButton then TH.StylePrimaryButton(send) end
 		d.sendBtn = send
@@ -689,9 +690,9 @@ function TH:OpenAppeal()
 		cancel:SetText(CANCEL)
 		cancel:SetScript("OnClick", function() d:Hide() end)
 	end
-	d.info:SetText("Оспаривается: |cffffd100" .. self:GetAppealContext() .. "|r\n\n"
-		.. "Напишите, почему решение кажется вам ошибочным. Обращение прочитает модератор; "
-		.. "если решение изменят, это придёт с обновлением аддона. Одно обращение — раз в неделю.")
+	d.info:SetText(L["Оспаривается: |cffffd100"] .. self:GetAppealContext() .. "|r\n\n"
+		.. L["Напишите, почему решение кажется вам ошибочным. Обращение прочитает модератор; "]
+		.. L["если решение изменят, это придёт с обновлением аддона. Одно обращение — раз в неделю."])
 	d.edit:SetText("")
 	d.error:SetText("")
 	d.count:SetText("0 / " .. APPEAL_LETTERS)
