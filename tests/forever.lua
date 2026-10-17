@@ -47,6 +47,10 @@ assert(TH:GetRaceName(95) == "Небеснорождённый")
 assert(TH.TAG_LABEL.raid_onyxia and TH.TAG_LABEL.dg_drowned and TH.TAG_LABEL.dg_strat and TH.TAG_LABEL.r_skyborne)
 assert(not TH.TAG_LABEL.deathknight and not TH.TAG_LABEL.raid_midnight and not TH.TAG_LABEL.r_pandaren)
 assert(TH.RAID_TAGS.raid_hyjal and not TH.RAID_TAGS.raid_midnight)
+-- достижения на теги не требуют скрытых в Forever тегов
+local src = io.open(dir .. "/Achievements.lua"):read("*a")
+assert(TH.TAG_LABEL.midsummer and not TH.TAG_LABEL.brewfest)
+assert(src:find('TH.FOREVER and { "hallows", "winterveil", "lovefest", "midsummer" }', 1, true))
 for _, theme in ipairs(TH.TAG_THEMES) do
 	for _, key in ipairs(theme.tags) do assert(TH.TAG_LABEL[key], "тема " .. theme.name .. ": нет тега " .. key) end
 end

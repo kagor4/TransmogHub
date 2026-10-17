@@ -852,7 +852,9 @@ function TH:FormatSeasonLeft()
 end
 
 local ARMOR_TAGS = { "a_cloth", "a_leather", "a_mail", "a_plate" }
-local HOLIDAY_TAGS = { "hallows", "winterveil", "lovefest", "brewfest" }
+-- В Forever нет Хмельного фестиваля (тег скрыт): вместо него Огненный солнцеворот
+local HOLIDAY_TAGS = TH.FOREVER and { "hallows", "winterveil", "lovefest", "midsummer" }
+	or { "hallows", "winterveil", "lovefest", "brewfest" }
 
 local function CountListed(set, keys)
 	local n = 0
