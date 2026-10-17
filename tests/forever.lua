@@ -42,4 +42,9 @@ assert(#list == 10, #list)
 local ids = {}
 for _, r in ipairs(list) do ids[r.id] = true end
 assert(ids[95] and ids[96] and not ids[11] and not ids[52], "небеснорождённые есть, дренеев и драктиров нет")
+-- знаки, которых нет в шрифтах Forever, заменены
+local lns = {}
+assert(loadfile(dir .. "/Locales/Locale.lua"))("TransmogHub", lns)
+assert(lns.L["  ·  |cff69ccf0подписок: "] == "  —  |cff69ccf0подписок: ")
+assert(lns.L["Ждём…"] == "Ждём...")
 print("FOREVER OK")

@@ -16,7 +16,17 @@ function ns.ClientLocale()
 	return SAME[loc] or loc
 end
 
-ns.L = setmetatable({}, { __index = function(_, key)
+-- В шрифтах интерфейса WoW Forever нет некоторых знаков (квадратики): заменяем на похожие
+local FOREVER_GLYPHS = { ["·"] = "—", ["…"] = "...", ["×"] = "x" }
+local function IsForever()
+	local toc = GetBuildInfo and select(4, GetBuildInfo())
+	return (WOW_PROJECT_CAMELOT ~= nil and WOW_PROJECT_ID == WOW_PROJECT_CAMELOT)
+		or (type(toc) == "number" and toc >= 16000 and toc < 20000)
+end
+local glyphs = IsForever() and FOREVER_GLYPHS
+local fixed = {}
+
+local function Translate(key)
 	local loc = ns.ClientLocale()
 	if loc == "ruRU" then return key end
 	local own = ns.LOCALES[loc]
@@ -26,4 +36,17 @@ ns.L = setmetatable({}, { __index = function(_, key)
 		v = en and en[key]
 	end
 	return v or key
+end
+
+ns.L = setmetatable({}, { __index = function(_, key)
+	if not glyphs then return Translate(key) end
+	local v = fixed[key]
+	if v == nil then
+		v = Translate(key)
+		if type(v) == "string" then
+			for from, to in pairs(glyphs) do v = v:gsub(from, to) end
+		end
+		fixed[key] = v
+	end
+	return v
 end })
