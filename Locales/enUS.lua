@@ -1735,7 +1735,7 @@ ns.LOCALES.enUS = {
 	["Небеснорождённые"] = "Skyborne",
 	["Серебряный Рассвет"] = "Argent Dawn",
 	["Остров Зефрас"] = "Zephras Isle",
-	["Riverglades"] = "Riverglades",
+	["Лесоречье"] = "Riverglades",
 	["Подземелья Forever"] = "Forever dungeons",
 	["Подземелья"] = "Dungeons",
 }

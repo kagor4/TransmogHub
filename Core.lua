@@ -468,7 +468,7 @@ if TH.FOREVER then
 	local EXTRA = { -- [группа] = новые теги в конец
 		[L["Расы и народы"]] = { { "r_skyborne", L["Небеснорождённые"] } },
 		[L["Фракции и ордены"]] = { { "f_argentdawn", L["Серебряный Рассвет"] } },
-		[L["Места"]] = { { "z_zephras", L["Остров Зефрас"] }, { "z_riverglades", L["Riverglades"] } },
+		[L["Места"]] = { { "z_zephras", L["Остров Зефрас"] }, { "z_riverglades", L["Лесоречье"] } },
 	}
 	local function Keys(list) local out = {} for _, t in ipairs(list) do out[#out + 1] = t[1] end return out end
 
