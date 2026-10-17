@@ -423,6 +423,95 @@ for _, key in ipairs({ "raid_classic", "raid_bc", "raid_wotlk", "raid_cata", "ra
 TH.TAG_RETIRED = {
 }
 
+-- WoW Forever: теги того, что есть в игре. Ключи основной игры не трогаем: лишние скрыты,
+-- новые — со своими ключами (сети раздельные, в основной игре этих тегов нет).
+if TH.FOREVER then
+	local HIDE = {}
+	for _, key in ipairs({
+		-- классы и оружие, которых нет
+		"deathknight", "monk", "demonhunter", "evoker", "w_glaive",
+		-- профессии, появившиеся позже
+		"p_jewel", "p_inscription", "p_archaeology",
+		-- расы и народы из дополнений
+		"r_bloodelf", "r_draenei", "r_pandaren", "r_vulpera", "r_nightborne", "r_voidelf", "r_lightforged",
+		"r_highmountain", "r_maghar", "r_kultiran", "r_mechagnome", "r_dracthyr", "r_earthen", "r_haranir",
+		"r_ethereal", "r_titanforged",
+		-- фракции и места из дополнений
+		"f_argent", "f_ebonblade", "f_illidari", "f_earthenring", "f_shadopan", "f_kultiras", "f_kyrian", "f_venthyr",
+		"f_nightfae", "f_necrolord", "f_naaru", "f_shadowlands",
+		"z_silvermoon", "z_exodar", "z_suramar", "z_outland", "z_northrend", "z_pandaria", "z_draenor", "z_zandalar",
+		"z_dragonisles", "z_khazalgar", "z_gilneas",
+		-- праздники из дополнений, арены, рейды основной игры
+		"brewfest", "pilgrim", "deadday", "piratesday", "arena",
+		"raid_classic", "raid_bc", "raid_wotlk", "raid_cata", "raid_mop", "raid_wod", "raid_legion", "raid_bfa",
+		"raid_sl", "raid_df", "raid_tww", "raid_midnight",
+	}) do HIDE[key] = true end
+
+	local RAIDS = { { "raid_onyxia", L["Рейд: Логово Ониксии"] }, { "raid_hyjal", L["Рейд: Вершина Хиджала"] },
+		{ "raid_barrow", L["Рейд: Barrow Deeps"] } }
+	local NEW_DUNGEONS = {
+		{ "dg_thanes", L["Чертог танов"] }, { "dg_lordaeron", L["Руины Лордерона"] }, { "dg_excavation", L["Место раскопок"] },
+		{ "dg_dalaran", L["Город Даларан"] }, { "dg_drowned", L["Затонувший город"] }, { "dg_kroldok", L["Крепость Крол'док"] },
+		{ "dg_alcaz", L["Тюрьма острова Алькац"] }, { "dg_blackmaw", L["Логово Черной Пасти"] },
+		{ "dg_shapers", L["Терраса Творцов"] },
+	}
+	local DUNGEONS = {
+		{ "dg_ragefire", L["Огненная Пропасть"] }, { "dg_deadmines", L["Мертвые копи"] }, { "dg_wailing", L["Пещеры Стенаний"] },
+		{ "dg_shadowfang", L["Крепость Темного Клыка"] }, { "dg_bfd", L["Непроглядная Пучина"] },
+		{ "dg_stockade", L["Тюрьма Штормграда"] }, { "dg_gnomeregan", L["Гномреган"] },
+		{ "dg_kraul", L["Лабиринты Иглошкурых"] }, { "dg_scarlet", L["Монастырь Алого ордена"] },
+		{ "dg_uldaman", L["Ульдаман"] }, { "dg_downs", L["Курганы Иглошкурых"] }, { "dg_zulfarrak", L["Зул'Фаррак"] },
+		{ "dg_maraudon", L["Мародон"] }, { "dg_sunken", L["Храм Атал'Хаккара"] }, { "dg_brd", L["Глубины Черной горы"] },
+		{ "dg_blackrock", L["Пик Черной горы"] }, { "dg_diremaul", L["Забытый город"] },
+		{ "dg_strat", L["Стратхольм"] }, { "dg_scholo", L["Некроситет"] },
+	}
+	local EXTRA = { -- [группа] = новые теги в конец
+		[L["Расы и народы"]] = { { "r_skyborne", L["Небеснорождённые"] } },
+		[L["Фракции и ордены"]] = { { "f_argentdawn", L["Серебряный Рассвет"] } },
+		[L["Места"]] = { { "z_zephras", L["Остров Зефрас"] }, { "z_riverglades", L["Riverglades"] } },
+	}
+	local function Keys(list) local out = {} for _, t in ipairs(list) do out[#out + 1] = t[1] end return out end
+
+	for _, group in ipairs(TH.TAG_GROUPS) do
+		local kept = {}
+		for _, tag in ipairs(group.tags) do if not HIDE[tag[1]] then kept[#kept + 1] = tag end end
+		for _, tag in ipairs(EXTRA[group.name] or {}) do kept[#kept + 1] = tag end
+		if group.name == L["Рейды"] then kept = RAIDS end
+		group.tags = kept
+	end
+	for i, group in ipairs(TH.TAG_GROUPS) do
+		if group.name == L["Рейды"] then
+			table.insert(TH.TAG_GROUPS, i + 1, { name = L["Подземелья Forever"], tags = NEW_DUNGEONS })
+			table.insert(TH.TAG_GROUPS, i + 2, { name = L["Подземелья"], tags = DUNGEONS })
+			break
+		end
+	end
+
+	local themeExtra = {
+		[L["Расы и народы"]] = { "r_skyborne" }, [L["Фракции и лор"]] = { "f_argentdawn" },
+		[L["Места"]] = { "z_zephras", "z_riverglades" },
+	}
+	for i, theme in ipairs(TH.TAG_THEMES) do
+		local kept = {}
+		for _, key in ipairs(theme.tags) do if not HIDE[key] then kept[#kept + 1] = key end end
+		for _, key in ipairs(themeExtra[theme.name] or {}) do kept[#kept + 1] = key end
+		if theme.name == L["Рейды"] then
+			kept = Keys(RAIDS)
+			kept[#kept + 1] = "tier"
+			local dungeons = Keys(NEW_DUNGEONS)
+			for _, key in ipairs(Keys(DUNGEONS)) do dungeons[#dungeons + 1] = key end
+			table.insert(TH.TAG_THEMES, i + 1, { name = L["Подземелья"], tags = dungeons })
+		end
+		theme.tags = kept
+	end
+
+	TH.RAID_TAGS = {}
+	for _, tag in ipairs(RAIDS) do TH.RAID_TAGS[tag[1]] = true end
+	for _, list in ipairs({ RAIDS, NEW_DUNGEONS, DUNGEONS, { { "r_skyborne" }, { "f_argentdawn" }, { "z_zephras" }, { "z_riverglades" } } }) do
+		for _, tag in ipairs(list) do TH.TAG_ADDED[tag[1]] = TH.TAG_ADDED[tag[1]] or "2026-10-17" end
+	end
+end
+
 -- Короткие подписи для сетки тегов (полное название — в подсказке и карточке)
 TH.TAG_SHORT = { raid_wotlk = L["Рейд: WotLK"], raid_wod = L["Рейд: WoD"], raid_bfa = L["Рейд: BfA"] }
 

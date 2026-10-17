@@ -43,6 +43,14 @@ local ids = {}
 for _, r in ipairs(list) do ids[r.id] = true end
 assert(ids[95] and not ids[96] and not ids[11] and not ids[52], "небеснорождённые один раз, дренеев и драктиров нет")
 assert(TH:GetRaceName(95) == "Небеснорождённый")
+-- теги: лишних из основной игры нет, свои рейды и подземелья есть
+assert(TH.TAG_LABEL.raid_onyxia and TH.TAG_LABEL.dg_drowned and TH.TAG_LABEL.dg_strat and TH.TAG_LABEL.r_skyborne)
+assert(not TH.TAG_LABEL.deathknight and not TH.TAG_LABEL.raid_midnight and not TH.TAG_LABEL.r_pandaren)
+assert(TH.RAID_TAGS.raid_hyjal and not TH.RAID_TAGS.raid_midnight)
+for _, theme in ipairs(TH.TAG_THEMES) do
+	for _, key in ipairs(theme.tags) do assert(TH.TAG_LABEL[key], "тема " .. theme.name .. ": нет тега " .. key) end
+end
+
 -- знаки, которых нет в шрифтах Forever, заменены
 local lns = {}
 assert(loadfile(dir .. "/Locales/Locale.lua"))("TransmogHub", lns)
