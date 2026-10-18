@@ -211,7 +211,7 @@ function UI:Build()
 	self.netStats, self.netIcons = {}, {}
 	local prev = self.netLabel
 	for i, icon in ipairs({ "Interface\\Icons\\INV_Misc_GroupLooking", "Interface\\Icons\\Achievement_GuildPerk_EverybodysFriend",
-		"Interface\\Icons\\INV_Chest_Cloth_17" }) do
+		"Interface\\Icons\\Achievement_GuildPerk_MrPopularity", "Interface\\Icons\\INV_Chest_Cloth_17" }) do
 		local tex = self:CreateTexture(nil, "ARTWORK")
 		tex:SetSize(16, 16)
 		tex:SetPoint("LEFT", prev, "RIGHT", 16, 0)
@@ -380,7 +380,10 @@ function UI:AddTooltips()
 	Hover(self.netIcons[2], self.netStats[2], L["Друзья Battle.net с аддоном"], {
 		L["Друзья Battle.net, которые сейчас в игре с аддоном, — на любом сервере и за любую фракцию."],
 		L["Через них образы ходят между серверами: чем больше таких друзей, тем больше образов вы увидите."] })
-	Hover(self.netIcons[3], self.netStats[3], L["Образов в базе"], {
+	Hover(self.netIcons[3], self.netStats[3], L["Согильдийцы с аддоном"], {
+		L["Согильдийцы, которые сейчас в игре с аддоном. При входе аддон знакомится с ними и забирает новые образы."],
+		L["Если в гильдии есть игроки другой фракции или с других серверов, образы ходят и через гильдию."] })
+	Hover(self.netIcons[4], self.netStats[4], L["Образов в базе"], {
 		L["Сколько образов вы получили от других игроков. Хранится до 3000, старые и неоценённые уходят первыми."],
 		L["Ещё сотни лучших и свежих образов приходят с каждым обновлением аддона — они в ленте, но в этом числе не считаются."] })
 	Hover(self.status, self.status, L["Отправка"], {
@@ -2136,7 +2139,8 @@ function UI:RefreshStatus()
 	self.netLabel:SetText(on and L["Сеть"] or L["|cff999999Подключение...|r"])
 	self.netStats[1]:SetText(Net:PeerCount())
 	self.netStats[2]:SetText(Net:BNetPeerCount())
-	self.netStats[3]:SetText(Net:SetCount())
+	self.netStats[3]:SetText(Net:GuildPeerCount())
+	self.netStats[4]:SetText(Net:SetCount())
 	local note = ""
 	if Net:IsLocked() and Net:QueueLength() > 0 then
 		note = L["|cffffd100отправка на паузе (бой или подземелье)|r"]

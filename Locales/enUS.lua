@@ -1715,4 +1715,7 @@ ns.LOCALES.enUS = {
 	["  |cff40ff40№%d в «Лучших»|r"] = "  |cff40ff40#%d in \"Best\"|r",
 	["  |cff40c0ff№%d «В тренде»|r"] = "  |cff40c0ff#%d in \"Trending\"|r",
 	["|cff40c0ffОфициально: %d из %d «В тренде» (на %s).|r"] = "|cff40c0ffOfficial: %d of %d in \"Trending\" (as of %s).|r",
+	["Согильдийцы с аддоном"] = "Guildmates with the addon",
+	["Согильдийцы, которые сейчас в игре с аддоном. При входе аддон знакомится с ними и забирает новые образы."] = "Guildmates who are in the game with the addon right now. On login the addon greets them and picks up new outfits.",
+	["Если в гильдии есть игроки другой фракции или с других серверов, образы ходят и через гильдию."] = "If your guild has players from the other faction or other realms, outfits travel through the guild too.",
 }
