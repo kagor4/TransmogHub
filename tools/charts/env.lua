@@ -44,6 +44,7 @@ function M.install(now)
 	GetFileIDFromPath = function() return 1 end
 	BNGetNumFriends = function() return 0 end
 	IsInGroup = function() return false end
+	IsInGuild = function() return false end
 	PlaySound = function() end
 	GameTooltip_Hide = function() end
 end
