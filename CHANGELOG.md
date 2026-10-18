@@ -1,5 +1,8 @@
 # Transmog Hub — Changelog
 
+## 1.8.1
+- Smarter introductions: contacts passed between players now carry their faction, so the addon no longer tries to reach players of the other faction. From cross-faction groups it only remembers players of your own faction.
+
 ## 1.8.0
 - **Faster connections.** The addon remembers players you met who have it and reconnects to them right after you log in. Players you meet pass a few of their contacts to each other, so the network links up much faster.
 - It also quietly gets in touch with players you whispered or grouped with. Players without the addon see nothing.

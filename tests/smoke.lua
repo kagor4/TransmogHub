@@ -2523,6 +2523,21 @@ end)()
 	knockedTo = table.concat(Whispers("H"), ",")
 	assert(knockedTo:find("Друг-Гордунни", 1, true) and not knockedTo:find("Тест-Гордунни", 1, true),
 		"shared peers knocked, not self: " .. knockedTo)
+	-- контакты с отметкой фракции: чужой фракции не стучимся; свои — со своей отметкой
+	_G.UnitFactionGroup = function() return "Alliance" end
+	Net0:OnMessage("TMHUB", "Sk=H,Ордынец2-Гордунни", "WHISPER", "Знакомый-Ревущийфьорд")
+	Net0:OnMessage("TMHUB", "Sk=A,Альянсовец2-Гордунни", "WHISPER", "Знакомый-Ревущийфьорд")
+	flush()
+	knockedTo = table.concat(Whispers("H"), ",")
+	assert(knockedTo:find("Альянсовец2", 1, true) and not knockedTo:find("Ордынец2", 1, true), "faction-marked peers: " .. knockedTo)
+	Net0.whisperPeers["Свой-Гордунни"] = GetServerTime()
+	local shared
+	Net0:SharePeers({ kind = "WHISPER", target = "Кому-то" }, "Кому-то")
+	flush()
+	for _, m in ipairs(lastGroup) do shared = m:match("^WHISPER:Кому%-то:S?(k.*)$") or shared end
+	assert(shared and shared:find("^k=A,"), "own contacts sent with faction mark: " .. tostring(shared))
+	Net0.whisperPeers["Свой-Гордунни"] = nil
+	_G.UnitFactionGroup = nil
 	-- новичок, с которым переписывались, засчитывается приглашённым; давний игрок — нет
 	local now = GetServerTime()
 	Net0:OnMessage("TMHUB", "Sw" .. TH.Net.Enc(now - 3600), "WHISPER", "Собеседник-Гордунни")
