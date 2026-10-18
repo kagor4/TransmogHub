@@ -49,3 +49,4 @@ Toasts.lua
 Follow.lua
 Fonts.lua
 Settings.lua
+ChatLinks.lua
