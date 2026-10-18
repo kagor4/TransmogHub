@@ -11,18 +11,18 @@ SECRETS="$2"
 [ -f "$SNAP" ] || { echo "нет снимка: $SNAP"; exit 1; }
 TMP="$(mktemp)"
 gunzip -c "$SNAP" > "$TMP"
-lua5.1 tools/charts/build.lua . "$TMP" Data/Charts.lua "" "$SECRETS"
+lua5.1 tools/charts/build.lua . "$TMP" Data/Charts.lua "" "$SECRETS" Data/Bundled.lua
 rm -f "$TMP"
 luac5.1 -p *.lua Data/*.lua Locales/*.lua
 lua5.1 tests/smoke.lua . > /dev/null
 lua5.1 tests/filter.lua . > /dev/null
 lua5.1 tests/locales.lua . > /dev/null
 lua5.1 tests/charts.lua . > /dev/null
-if git diff --quiet -- Data/Charts.lua; then
+if git diff --quiet -- Data/Charts.lua Data/Bundled.lua; then
 	echo "Чарт не изменился, выпуск не нужен"
 	exit 0
 fi
-git add Data/Charts.lua
+git add Data/Charts.lua Data/Bundled.lua
 git commit -q -m "Официальный чарт $(date -u +%Y-%m-%d)
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
