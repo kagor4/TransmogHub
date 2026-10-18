@@ -1693,6 +1693,15 @@ function UI:ShowSlotTooltip(row)
 	GameTooltip:AddLine(" ")
 	GameTooltip:AddLine(L["Источник: "] .. (det.typeText or "?"), 1, 1, 1)
 	if det.where then GameTooltip:AddLine(det.where, 0.8, 0.8, 0.8, true) end
+	if not det.hidden and not det.illusion and TH.GetWhereToFind then
+		local title, lines, noATT = TH:GetWhereToFind(det.itemID, row.sourceID)
+		if title then
+			GameTooltip:AddLine(title, 1, 0.82, 0)
+			for _, line in ipairs(lines) do GameTooltip:AddLine(line, 0.8, 0.8, 0.8, true) end
+		elseif noATT and not (det.sourceType == 1 and det.where) then
+			GameTooltip:AddLine(L["Подробнее, где искать, покажет аддон AllTheThings, если его установить."], 0.6, 0.6, 0.6, true)
+		end
+	end
 	if not det.hidden then
 		if det.collected then
 			GameTooltip:AddLine(L["Облик собран"], 0.25, 1, 0.25)

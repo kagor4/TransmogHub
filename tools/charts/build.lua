@@ -1,6 +1,6 @@
 -- Официальный чарт Transmog Hub.
 --
---   lua5.1 tools/charts/build.lua <папка аддона> <TransmogHub.lua модератора> <выход Data/Charts.lua> [время] [папка secrets] [выход Data/Bundled.lua]
+--   lua5.1 tools/charts/build.lua <папка аддона> <TransmogHub.lua модератора> <выход Data/Charts.lua> [время] [папка secrets] [выход Data/Bundled.lua] [выход Data/Sources.lua]
 --
 -- Папка secrets — из закрытого репозитория (hidden.lua и master.txt): по ней чарт
 -- выдаёт скрытые достижения за теги и слово в названии. Условия в чарт не попадают.
@@ -17,7 +17,8 @@
 -- Награды копятся: из прошлого Data/Charts.lua берётся лучшее.
 -- С выходом Data/Bundled.lua ещё и каталог: образы из снимка, которые придут всем
 -- с обновлением аддона (видны и там, где рядом никого с аддоном).
-local dir, svPath, outPath, nowArg, secretsDir, bundledPath = arg[1], arg[2], arg[3], arg[4], arg[5], arg[6]
+-- С выходом Data/Sources.lua — сводка «где найти вещь» из находок игроков (modSources).
+local dir, svPath, outPath, nowArg, secretsDir, bundledPath, sourcesPath = arg[1], arg[2], arg[3], arg[4], arg[5], arg[6], arg[7]
 assert(dir and svPath and outPath, "usage: build.lua <addon dir> <SavedVariables> <out> [unix time] [secrets dir]")
 if nowArg == "" then nowArg = nil end
 if secretsDir == "" then secretsDir = nil end
@@ -25,6 +26,12 @@ if secretsDir == "" then secretsDir = nil end
 local env = dofile(dir .. "/tools/charts/env.lua")
 local now = tonumber(nowArg) or os.time()
 env.install(now)
+
+-- прошлая сводка источников: находки копятся, журнал модератора ограничен
+TransmogHub_Sources = nil
+local prevSources = sourcesPath and sourcesPath ~= "" and loadfile(sourcesPath)
+if prevSources then prevSources() end
+local prevSrc = type(TransmogHub_Sources) == "table" and TransmogHub_Sources.items or {}
 
 -- прошлый чарт (для накопленных наград и закреплённых первооткрывателей)
 local prevChunk = loadfile(outPath)
@@ -509,7 +516,107 @@ if bundledPath and bundledPath ~= "" then
 	bundledCount = #pick
 end
 
+---------------------------------------------------------------------------
+-- Где найти вещь (Data/Sources.lua): находки игроков у торговцев, в добыче и в
+-- наградах за задания. Записи «язык;вид:предмет:откуда:зона:x:y:…» из журнала
+-- модератора (без имён игроков) складываются с прошлой сводкой; на предмет —
+-- до трёх самых частых источников. Имена проверяются тем же фильтром, что и названия.
+---------------------------------------------------------------------------
+local SRC_PER_ITEM, SRC_MAX_ITEMS = 3, 40000
+local sourcesCount = 0
+if sourcesPath and sourcesPath ~= "" then
+	local items = {} -- [itemID] = { [вид:id] = запись }
+	local function Entry(itemID, kind, id)
+		items[itemID] = items[itemID] or {}
+		local key = kind .. ":" .. id
+		local e = items[itemID][key]
+		if not e then
+			e = { kind = kind, id = id, n = 0, names = {} }
+			items[itemID][key] = e
+		end
+		return e
+	end
+	local function Num(v) return tonumber(v) end
+	local function Add(text)
+		local lang, rest = text:match("^(%a%a%a%a);(.*)$")
+		if not lang then return end
+		for record in rest:gmatch("[^;]+") do
+			local kind, item, id, map, x, y, a, b, c = record:match("^(%a):(%d+):(%d+):(%d*):(%d*):(%d*):?([^:]*):?([^:]*):?([^:]*)$")
+			if kind and (kind == "v" or kind == "d" or kind == "o" or kind == "q") then
+				local e = Entry(tonumber(item), kind, tonumber(id))
+				e.n = e.n + 1
+				e.map, e.x, e.y = Num(map) or e.map, Num(x) or e.x, Num(y) or e.y
+				local name
+				if kind == "v" then
+					e.price = Num(a) or e.price
+					if b:match("^[ci]%d+x%d+$") then e.cost = b end
+					name = c
+				else
+					name = a
+				end
+				if name and name ~= "" and #name <= 60 and TH:IsTextAllowed(name) then e.names[lang] = name end
+			end
+		end
+	end
+	for _, line in ipairs(db.modSources or {}) do
+		local text = line:match("^1|%d+|(.*)$")
+		if text then Add(text) end
+	end
+	-- из прошлой сводки — то, чего в журнале уже нет (журнал ограничен); остальное
+	-- пересчитано по журналу, иначе находки считались бы каждый день заново
+	for itemID, list in pairs(prevSrc) do
+		for _, p in ipairs(list) do
+			if not (items[itemID] and items[itemID][p[1] .. ":" .. p[2]]) then
+				local e = Entry(itemID, p[1], p[2])
+				e.map, e.x, e.y, e.price, e.cost = p[3], p[4], p[5], p[7], p[8]
+				for lang, name in pairs(type(p[6]) == "table" and p[6] or {}) do e.names[lang] = name end
+				e.n = p.n or 1
+			end
+		end
+	end
+	local ids = {}
+	for itemID in pairs(items) do ids[#ids + 1] = itemID end
+	table.sort(ids)
+	while #ids > SRC_MAX_ITEMS do table.remove(ids) end
+	local out = {
+		"-- Где взять вещи с обликами: сводка находок игроков. Собирает tools/charts/build.lua, не правьте руками.",
+		"-- items[itemID] = { { вид, id, зона, x, y, имя, медь, цена, n = находок }, … }",
+		"-- вид: v — торговец, d — добыча с существа, o — сундук или объект, q — награда за задание.",
+		"-- x, y — в тысячных долях карты; имя — { [язык] = текст }.",
+		"TransmogHub_Sources = {",
+		"\tschema = 1,",
+		string.format("\tgenerated = %d,", now),
+		"\titems = {",
+	}
+	local function V(v) return v and tostring(v) or "nil" end
+	for _, itemID in ipairs(ids) do
+		local list = {}
+		for _, e in pairs(items[itemID]) do list[#list + 1] = e end
+		table.sort(list, function(a, b)
+			if a.n ~= b.n then return a.n > b.n end
+			if a.kind ~= b.kind then return a.kind < b.kind end
+			return a.id < b.id
+		end)
+		local parts = {}
+		for i = 1, math.min(#list, SRC_PER_ITEM) do
+			local e = list[i]
+			local names = {}
+			for _, lang in ipairs(SortedKeys(e.names)) do names[#names + 1] = lang .. " = " .. Q(e.names[lang]) end
+			parts[#parts + 1] = string.format("{ %q, %d, %s, %s, %s, { %s }, %s, %s, n = %d }", e.kind, e.id, V(e.map), V(e.x), V(e.y),
+				table.concat(names, ", "), V(e.price), e.cost and Q(e.cost) or "nil", e.n)
+		end
+		out[#out + 1] = string.format("\t\t[%d] = { %s },", itemID, table.concat(parts, ", "))
+	end
+	out[#out + 1] = "\t},"
+	out[#out + 1] = "}"
+	local sf = assert(io.open(sourcesPath, "w"))
+	sf:write(table.concat(out, "\n"), "\n")
+	sf:close()
+	sourcesCount = #ids
+end
+
 print(string.format("Порог чарта: %d оценок (игроков с оценками в день: %d)", minVotes, activeVoters))
 print(string.format("Чарт %s: в чарте %d образов, тегов %d, игроков %d, первооткрывателей %d, награждённых %d",
 	os.date("!%Y-%m-%d", now), #top, #SortedKeys(byTag), #entries, #SortedKeys(firsts), #SortedKeys(awards)))
 if bundledPath and bundledPath ~= "" then print(string.format("Каталог: %d образов", bundledCount)) end
+if sourcesPath and sourcesPath ~= "" then print(string.format("Где найти: %d предметов", sourcesCount)) end

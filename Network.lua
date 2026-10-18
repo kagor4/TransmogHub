@@ -671,19 +671,22 @@ end
 -- Предложения разработчику: идея, ошибка или другое; e — автоматический отчёт об ошибке Lua в аддоне
 -- r — пояснение к жалобе «Другое»: «[id образа] текст»
 -- u — статистика нажатий на кнопки (раз в неделю, хранится отдельно от писем)
-local IDEA_KINDS = { i = true, b = true, o = true, e = true, r = true, u = true }
+-- s — места вещей с обликами (торговец, добыча, задание; раз в день, хранится как статистика)
+local IDEA_KINDS = { i = true, b = true, o = true, e = true, r = true, u = true, s = true }
 local USAGE_TTL, MAX_USAGE = 14 * 86400, 2000
 local MAX_IDEAS = 500
 function Net:StoreIdea(name, t, kind, text)
 	if not (name and t and IDEA_KINDS[kind] and text) or text == "" or TH:IsBanned(name) then return false end
-	local ideas = kind == "u" and DB().usage or DB().ideas
+	local stat = kind == "u" or kind == "s"
+	local ideas = stat and DB().usage or DB().ideas
 	local key = name .. "#" .. t
 	if ideas[key] then return false end
 	text = Clean(text, APPEAL_MAX)
-	if kind == "u" then
+	if stat then
 		if Now() - t > USAGE_TTL then return false end
 		ideas[key] = { name, t, kind, text }
-		if TH.LogUsage then TH:LogUsage(t, text) end
+		if kind == "u" and TH.LogUsage then TH:LogUsage(t, text) end
+		if kind == "s" and TH.LogSources then TH:LogSources(t, text) end
 		return true
 	end
 	ideas[key] = { name, t, kind, text }
