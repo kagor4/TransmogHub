@@ -403,6 +403,10 @@ local ACH_LOCALE = {
 		hid_translate = { hint = "Учёный, начертатель и руны: один стример перевёл уже больше трёхсот аддонов — прочитает и ваш образ." },
 	},
 }
+ACH_LOCALE.esES = {
+	hid_lore = { hint = "Erudito, titanes y estrellas: hay quien narra la historia de Azeroth libro a libro, con voces, ilustraciones y m\195\186sica." }, -- ú кодом: в коде только знаки из проверки шрифтов
+}
+ACH_LOCALE.esMX = ACH_LOCALE.esES
 ACH_LOCALE.enGB = ACH_LOCALE.enUS
 TH.ACH_LOCALE = ACH_LOCALE
 
