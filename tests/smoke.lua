@@ -2488,4 +2488,69 @@ end)()
 	ns.ClientLocale = real
 end)()
 
+-- Знакомые: память между сессиями, обмен знакомыми, стук к собеседникам, приглашённые
+;(function()
+	local Net0 = TH.Net
+	local savedPeers = Net0.whisperPeers
+	Net0.whisperPeers = {}
+	TH.db.knocks, TH.db.knownPeers, TH.db.chatContacts, TH.db.invited = {}, {}, {}, {}
+	local function Whispers(prefix)
+		local out = {}
+		for _, m in ipairs(lastGroup) do
+			local who, body = m:match("^WHISPER:(.-):S?(.*)$")
+			if who and body:sub(1, #prefix) == prefix then out[#out + 1] = who end
+		end
+		return out
+	end
+	-- знакомый через шёпот запоминается и получает «k» со списком и «w» с датой установки
+	Net0:OnMessage("TMHUB", "SH1", "WHISPER", "Знакомый-Ревущийфьорд")
+	assert(TH.db.knownPeers["Знакомый-Ревущийфьорд"], "whisper peer remembered between sessions")
+	flush()
+	-- вторая сессия: знакомый не в сети с нами, стучимся к нему и к собеседнику
+	Net0.whisperPeers = {}
+	Net0:NoteContact("Собеседник-Гордунни")
+	Net0:KnockAcquaintances()
+	flush()
+	local knockedTo = table.concat(Whispers("H"), ",")
+	assert(knockedTo:find("Знакомый-Ревущийфьорд", 1, true) and knockedTo:find("Собеседник-Гордунни", 1, true),
+		"known peer and chat contact knocked: " .. knockedTo)
+	Net0:KnockAcquaintances()
+	flush()
+	assert(#Whispers("H") == 0, "each knocked at most once a day")
+	-- обмен знакомыми: присланные имена получают стук
+	Net0:OnMessage("TMHUB", "SkДруг-Гордунни,Тест-Гордунни,Чужой-Свежеватель Душ", "WHISPER", "Знакомый-Ревущийфьорд")
+	flush()
+	knockedTo = table.concat(Whispers("H"), ",")
+	assert(knockedTo:find("Друг-Гордунни", 1, true) and not knockedTo:find("Тест-Гордунни", 1, true),
+		"shared peers knocked, not self: " .. knockedTo)
+	-- новичок, с которым переписывались, засчитывается приглашённым; давний игрок — нет
+	local now = GetServerTime()
+	Net0:OnMessage("TMHUB", "Sw" .. TH.Net.Enc(now - 3600), "WHISPER", "Собеседник-Гордунни")
+	assert(TH.db.invited["Собеседник-Гордунни"], "new user from chat contact counted as invited")
+	Net0:OnMessage("TMHUB", "Sw" .. TH.Net.Enc(now - 3600), "WHISPER", "Незнакомец-Гордунни")
+	assert(not TH.db.invited["Незнакомец-Гордунни"], "stranger not counted")
+	TH.db.chatContacts["Ветеран-Гордунни"] = now
+	Net0:OnMessage("TMHUB", "Sw" .. TH.Net.Enc(now - 90 * 86400), "WHISPER", "Ветеран-Гордунни")
+	assert(not TH.db.invited["Ветеран-Гордунни"], "long-time user not counted")
+	-- рассылка — не больше 8 знакомых через шёпот
+	Net0.whisperPeers = {}
+	for i = 1, 12 do Net0.whisperPeers["Пир" .. string.char(96 + i) .. "-Гордунни"] = now - i end
+	flush()
+	Net0:Send("Xcap")
+	flush()
+	local n = 0
+	for _, m in ipairs(lastGroup) do if m:find("^WHISPER:.-:S?Xcap") then n = n + 1 end end
+	assert(n == 8, "broadcast to 8 most recent whisper peers: " .. n)
+	-- «Поделиться в чате»: текст в строку чата и счётчик достижения
+	local opened
+	_G.ChatFrameUtil = _G.ChatFrameUtil or {}
+	local realOpen = ChatFrameUtil.OpenChat
+	ChatFrameUtil.OpenChat = function(text) opened = text end
+	TH:ShareSet({ id = "nshare", name = "Пират", author = "Автор-Гордунни" })
+	ChatFrameUtil.OpenChat = realOpen
+	assert(opened and opened:find("Transmog Hub", 1, true) and opened:find("Автор", 1, true), "share text: " .. tostring(opened))
+	Net0.whisperPeers = savedPeers
+	TH.db.knocks, TH.db.knownPeers, TH.db.chatContacts, TH.db.invited = {}, {}, {}, {}
+end)()
+
 print("ALL OK")

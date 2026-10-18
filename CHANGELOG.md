@@ -1,5 +1,11 @@
 # Transmog Hub — Changelog
 
+## 1.8.0
+- **Faster connections.** The addon remembers players you met who have it and reconnects to them right after you log in. Players you meet pass a few of their contacts to each other, so the network links up much faster.
+- It also quietly gets in touch with players you whispered or grouped with. Players without the addon see nothing.
+- **Share in chat.** Right-click an outfit to put a ready-made line about it into your chat box. You send it yourself.
+- New achievements: "Word of Mouth" for sharing an outfit in chat, plus "The Grapevine" and "Runway Ambassador" for players you talked to who installed Transmog Hub.
+
 ## 1.7.0
 - Outfit names written in Cyrillic are shown in Latin letters on non-Russian game clients ("Ядовитый" → "Yadovityy"), so everyone can read them. The original name is kept.
 - Search finds outfits by both the original and the Latin spelling.

@@ -1497,6 +1497,7 @@ function UI:OpenSetMenu(owner, setId)
 		root:CreateButton(TH.db.favorites[set.id] and L["Убрать из избранного"] or L["В избранное"],
 			function() TH:ToggleFavorite(set.id) end)
 		root:CreateButton(L["Открыть в Wowhead"], function() TH:ShowWowheadLink(set) end)
+		root:CreateButton(L["Поделиться в чате"], function() TH:ShareSet(set) end)
 		if set.author then
 			root:CreateButton(L["Профиль автора"], function() self:OpenProfile(set.author) end)
 			if not TH.db.myChars[set.author] then
