@@ -158,12 +158,21 @@ local function SkinCloseButton(b)
 		local tex = b[getter] and b[getter](b)
 		if type(tex) == "table" and tex.SetAlpha then tex:SetAlpha(0) end
 	end
-	-- меньше стандартного: центр оставляем на месте, иначе квадрат уезжает за край окна
-	local SIZE = 22
+	-- главное окно: крестик в ряд с иконками заголовка — тот же размер, высота и шаг 5;
+	-- другие окна: меньше стандартного, центр на месте (иначе квадрат уезжает за край)
+	local parent = b.GetParent and b:GetParent()
+	local row = parent and type(parent.helpBtn) == "table" and parent.helpBtn
+	local SIZE = row and 14 or 22
 	local w, h = b:GetSize()
 	local point, rel, relPoint, x, y = b:GetPoint(1)
 	b:SetSize(SIZE, SIZE)
-	if point and type(w) == "number" and type(h) == "number" then
+	if row then
+		-- ряд сдвигаем вправо: от крестика до края окна столько же, сколько сверху (3)
+		row:ClearAllPoints()
+		row:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -(3 + SIZE + 5), -3)
+		b:ClearAllPoints()
+		b:SetPoint("LEFT", row, "RIGHT", 5, 0)
+	elseif point and type(w) == "number" and type(h) == "number" then
 		x, y = x or 0, y or 0
 		if point:find("RIGHT") then x = x - (w - SIZE) / 2 elseif point:find("LEFT") then x = x + (w - SIZE) / 2 end
 		if point:find("TOP") then y = y - (h - SIZE) / 2 elseif point:find("BOTTOM") then y = y + (h - SIZE) / 2 end
@@ -179,7 +188,7 @@ local function SkinCloseButton(b)
 	for i, angle in ipairs({ 45, -45 }) do
 		local l = b:CreateTexture(nil, "OVERLAY")
 		l:SetColorTexture(CLOSE_RED[1], CLOSE_RED[2], CLOSE_RED[3], 1)
-		l:SetSize(12, 1.5)
+		l:SetSize(SIZE <= 14 and 11 or 12, 1.5)
 		l:SetPoint("CENTER")
 		if l.SetRotation then l:SetRotation(math.rad(angle)) end
 		lines[i] = l
