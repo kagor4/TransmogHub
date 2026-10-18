@@ -1694,7 +1694,9 @@ end
 SLASH_TRANSMOGHUB1 = "/thub"
 SLASH_TRANSMOGHUB2 = "/transmoghub"
 SlashCmdList.TRANSMOGHUB = function(msg)
-	msg = strtrim(msg or ""):lower()
+	msg = strtrim(msg or "")
+	local raw = msg
+	msg = msg:lower()
 	if msg == "help" or msg == "справка" then
 		TH:OpenHelp(1)
 	elseif msg == "idea" or msg == "идея" then
@@ -1724,6 +1726,14 @@ SlashCmdList.TRANSMOGHUB = function(msg)
 		local friends = {}
 		for _, peer in pairs(Net.bnPeers) do friends[#friends + 1] = peer.name end
 		TH:Print(L["Друзья Battle.net с аддоном: "] .. (#friends > 0 and table.concat(friends, ", ") or L["никого"]))
+		local whisper = {}
+		for name in pairs(Net.whisperPeers) do whisper[#whisper + 1] = name end
+		TH:Print(L["Знакомые через каталог: "] .. (#whisper > 0 and table.concat(whisper, ", ") or L["никого"]))
+	elseif msg == "knock" or msg:match("^knock%s") then
+		-- проверка знакомства через каталог: /thub knock — постучаться к авторам сейчас,
+		-- /thub knock Имя-Сервер — к конкретному игроку
+		local names = TH.Net:KnockCatalog(true, strtrim(raw:sub(6)))
+		TH:Print(L["Стучимся: "] .. (#names > 0 and table.concat(names, ", ") or L["никого"]))
 	elseif msg:match("^scale") then
 		local pct = tonumber(msg:match("^scale%s+(%d+)"))
 		if pct then TH:SetScale(pct / 100) end

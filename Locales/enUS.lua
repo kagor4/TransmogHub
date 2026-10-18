@@ -1718,4 +1718,6 @@ ns.LOCALES.enUS = {
 	["Согильдийцы с аддоном"] = "Guildmates with the addon",
 	["Согильдийцы, которые сейчас в игре с аддоном. При входе аддон знакомится с ними и забирает новые образы."] = "Guildmates who are in the game with the addon right now. On login the addon greets them and picks up new outfits.",
 	["Если в гильдии есть игроки другой фракции или с других серверов, образы ходят и через гильдию."] = "If your guild has players from the other faction or other realms, outfits travel through the guild too.",
+	["Знакомые через каталог: "] = "Met via the catalogue: ",
+	["Стучимся: "] = "Knocking: ",
 }

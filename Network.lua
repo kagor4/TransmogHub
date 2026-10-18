@@ -1447,22 +1447,28 @@ function Net:KnockCandidates()
 	return list
 end
 
-function Net:KnockCatalog()
-	if knockRounds >= KNOCK_MAX or not self:IsIsolated() then return end
-	knockRounds = knockRounds + 1
+-- force — проверка вручную (/thub knock): без условия «одиночка» и лимита раундов;
+-- target — постучаться к конкретному игроку
+function Net:KnockCatalog(force, target)
+	local names = {}
+	if not force and (knockRounds >= KNOCK_MAX or not self:IsIsolated()) then return names end
+	if not force then knockRounds = knockRounds + 1 end
 	TH.db.knocks = TH.db.knocks or {}
-	local now, sent = Now(), 0
-	for _, c in ipairs(self:KnockCandidates()) do
-		if sent >= KNOCK_BATCH then break end
+	local now = Now()
+	local list = self:KnockCandidates()
+	if target and target ~= "" then list = { { Net.FullName(target) } } end
+	for _, c in ipairs(list) do
+		if #names >= KNOCK_BATCH then break end
 		knocked[c[1]] = now
 		TH.db.knocks[c[1]] = now
 		self:Send("H" .. PROTOCOL, WHISPER(c[1]))
-		sent = sent + 1
+		names[#names + 1] = c[1]
 	end
 	-- старые отметки о стуке не копим
 	for name, t in pairs(TH.db.knocks) do
 		if now - t > KNOCK_REPEAT then TH.db.knocks[name] = nil end
 	end
+	return names
 end
 
 -- «Игрок не найден» после нашего стука — не показываем в чате
