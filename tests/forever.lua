@@ -78,7 +78,7 @@ assert(TH.ACHIEVEMENT_BY_ID.pct_board_01.name == "Главнокомандующ
 -- тайны: у тех, чьи условия в основной игре используют скрытые теги и расы, есть вариант Forever,
 -- и он подменяет основной
 assert(type(TransmogHub_SecretsForever) == "table")
-for _, id in ipairs({ "hid_bloodtank", "hid_lunar", "hid_raidguide", "hid_rwf", "hid_illidan", "hid_chen", "hid_neighbours" }) do
+for _, id in ipairs({ "hid_bloodtank", "hid_lunar", "hid_raidguide", "hid_rwf", "hid_illidan", "hid_chen", "hid_neighbours", "hid_translate" }) do
 	assert(TransmogHub_SecretsForever[id], "нет тайны Forever: " .. id)
 	assert(TransmogHub_Secrets[id] == TransmogHub_SecretsForever[id], "тайна Forever не подменила основную: " .. id)
 end

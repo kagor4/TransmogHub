@@ -1815,4 +1815,7 @@ ns.LOCALES.enUS = {
 	["Вестница Плети"] = "Herald of the Scourge",
 	["Предатель"] = "the Betrayer",
 	["Предательница"] = "the Betrayer",
+	-- Achievements.lua: тайна про переводчика аддонов
+	["Учёный, начертатель и руны: кто-то переводит древние надписи, а кто-то — целые аддоны."] = "Scholar, scribe and runes: some translate ancient inscriptions, others translate whole addons.",
+	["Учёный, руны и Даларан: кто-то переводит древние надписи, а кто-то — целые аддоны."] = "Scholar, runes and Dalaran: some translate ancient inscriptions, others translate whole addons.",
 }
