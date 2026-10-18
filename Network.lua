@@ -173,6 +173,7 @@ Net.channelId = 0
 Net.peers = {}
 Net.channelPeers = {} -- кого слышали в канале (чтобы понять, что гильдия — мост)
 Net.guildPeers = {}   -- [имя] = когда слышали через гильдию
+Net.whisperPeers = {} -- [имя] = когда слышали через скрытый шёпот (знакомство через каталог)
 Net.voteStamp = {} -- [setId] = счётчик изменений голосов (для пересчёта только изменённых)
 
 local function HideChannelFromChat()
@@ -225,6 +226,8 @@ end
 --             через гильдию слышно тех, кого нет в канале (другая фракция, а в Forever
 --             канал у каждого свой)
 --   BNET    — друг Battle.net в WoW (любой сервер и фракция), target = gameAccountID
+--   WHISPER — скрытый шёпот аддона игроку по имени (другой сервер своей фракции), target = имя:
+--             одиночка без связей стучится к авторам из каталога (Net:KnockCatalog)
 -- Пересылка между ними связывает серверы: игрок с друзьями на других
 -- серверах работает «мостом». Повторы отсекаются по id образа.
 ---------------------------------------------------------------------------
@@ -232,6 +235,7 @@ local CHANNEL = { kind = "CHANNEL" }
 local GROUP = { kind = "GROUP" }
 local GUILD = { kind = "GUILD" }
 local function BNET(id) return { kind = "BNET", target = id } end
+local function WHISPER(name) return { kind = "WHISPER", target = name } end
 
 local MAX_RELAY_QUEUE = 200 -- если очередь длиннее, пересылку пропускаем: догонит синхронизация
 
@@ -375,6 +379,8 @@ local function Deliver(entry)
 	elseif entry.kind == "GUILD" then
 		if not IsInGuild() then return true end -- из гильдии вышли
 		result = C_ChatInfo.SendAddonMessage(PREFIX, entry.text, "GUILD")
+	elseif entry.kind == "WHISPER" then
+		result = C_ChatInfo.SendAddonMessage(PREFIX, entry.text, "WHISPER", entry.target)
 	else
 		result = C_BattleNet.SendGameData(entry.target, PREFIX, entry.text)
 	end
@@ -448,6 +454,13 @@ function Net:Send(body, dest, except)
 	if not (except and except.kind == "CHANNEL") then SendTo(body, CHANNEL) end
 	if not (except and except.kind == "GROUP") and self:GroupHasOtherRealm() then SendTo(body, GROUP) end
 	if not (except and except.kind == "GUILD") and self.guildBridge and IsInGuild() then SendTo(body, GUILD) end
+	-- знакомые через шёпот (одиночка и тот, кто ему ответил): им тоже всё новое
+	local now = Now()
+	for name, t in pairs(self.whisperPeers) do
+		if now - t < PEER_TIMEOUT and not (except and except.kind == "WHISPER" and except.target == name) then
+			SendTo(body, WHISPER(name))
+		end
+	end
 	for id in pairs(self.bnPeers) do
 		if not (except and except.kind == "BNET" and except.target == id) then SendTo(body, BNET(id)) end
 	end
@@ -929,14 +942,36 @@ function Net:Prune()
 	for setId in pairs(db.tagFlags) do
 		if not db.sets[setId] then db.tagFlags[setId] = nil end
 	end
+	local all = 0
+	for _ in pairs(db.sets) do all = all + 1 end
+	if all <= MAX_SETS then return end
+	-- Вытесняем только старые образы, которые никому не нужны: образы из чарта и Зала
+	-- славы, свои, из избранного и от авторов из подписок остаются всегда
+	local keep = {}
+	local charts = TH.GetCharts and TH:GetCharts()
+	if type(charts) == "table" then
+		for _, key in ipairs({ "top", "trending" }) do
+			for _, id in ipairs(type(charts[key]) == "table" and charts[key] or {}) do keep[id] = true end
+		end
+		for _, ids in pairs(type(charts.tags) == "table" and charts.tags or {}) do
+			for _, id in ipairs(type(ids) == "table" and ids or {}) do keep[id] = true end
+		end
+		for id in pairs(type(charts.hof) == "table" and charts.hof or {}) do keep[id] = true end
+	end
+	for id in pairs(TH.db.favorites or {}) do keep[id] = true end
 	local list = {}
-	for _, set in pairs(db.sets) do list[#list + 1] = set end
-	if #list <= MAX_SETS then return end
+	for id, set in pairs(db.sets) do
+		local protected = keep[id] or (TH.IsMine and TH:IsMine(set))
+			or (set.author and TH.IsFollowing and TH:IsFollowing(set.author))
+		if not protected then list[#list + 1] = set end
+	end
 	table.sort(list, function(a, b) return (a.created or 0) > (b.created or 0) end)
-	for i = MAX_SETS + 1, #list do
-		db.sets[list[i].id] = nil
-		db.votes[list[i].id] = nil
-		db.voteRetracts[list[i].id] = nil
+	local excess = all - MAX_SETS
+	for i = #list, math.max(1, #list - excess + 1), -1 do
+		local id = list[i].id
+		db.sets[id] = nil
+		db.votes[id] = nil
+		db.voteRetracts[id] = nil
 	end
 end
 
@@ -1356,6 +1391,10 @@ handlers.H = function(self, _, sender, origin)
 		self:Send("I" .. PROTOCOL, origin.kind == "GROUP" and GROUP or GUILD)
 		return
 	end
+	if origin.kind == "WHISPER" then
+		self:Send("I" .. PROTOCOL, origin)
+		return
+	end
 	self:ScheduleSync(5 + math.random() * 10)
 	local members = self:ChannelMemberCount()
 	if (members or self:PeerCount() + 1) <= SMALL_NETWORK then
@@ -1366,6 +1405,97 @@ end
 handlers.I = function(self, _, sender, origin)
 	if origin.kind == "BNET" then self:SyncWithPeer(origin, sender) end
 end
+
+local whisperSynced = {}
+function Net:SyncWithWhisper(dest, name)
+	if whisperSynced[name] then return end
+	whisperSynced[name] = true
+	C_Timer.After(2 + math.random() * 3, function() self:RequestSync(dest, name) end)
+end
+
+---------------------------------------------------------------------------
+-- Знакомство через каталог. Одиночка (ни канала с людьми, ни друзей Battle.net,
+-- ни согильдийцев, ни группы) стучится скрытым шёпотом к авторам образов из
+-- каталога и базы — тем, кто публиковал недавно. Кто в игре с аддоном, отвечает,
+-- и аддоны синхронизируются: одиночка подключён ко всей сети. Стучимся понемногу,
+-- к каждому не чаще раза в сутки; «такого игрока нет в игре» в чат не пишем.
+---------------------------------------------------------------------------
+local KNOCK_BATCH, KNOCK_EVERY, KNOCK_MAX, KNOCK_REPEAT = 3, 300, 8, 86400
+local knockRounds, knocked = 0, {} -- knocked[имя] = время стука в этой сессии
+-- расы Альянса и Орды: шёпот другой фракции игра не пропускает
+local ALLIANCE = { [1] = true, [3] = true, [4] = true, [7] = true, [11] = true, [22] = true, [25] = true, [29] = true,
+	[30] = true, [32] = true, [34] = true, [37] = true, [52] = true, [85] = true, [91] = true, [95] = true }
+local HORDE = { [2] = true, [5] = true, [6] = true, [8] = true, [9] = true, [10] = true, [26] = true, [27] = true,
+	[28] = true, [31] = true, [35] = true, [36] = true, [70] = true, [84] = true, [86] = true, [96] = true }
+
+-- «Имя-Сервер» (в Forever своя проверка: «Имя Фамилия»)
+local function IsCharName(name)
+	if rawget(TH, "IsCharName") then return TH:IsCharName(name) end
+	return type(name) == "string" and #name <= 64 and name:find("^[^%-,]+%-[^%-,]+$") ~= nil
+end
+
+function Net:IsIsolated()
+	return self:PeerCount() == 0 and self:BNetPeerCount() == 0 and self:GuildPeerCount() == 0
+		and not self:GroupHasOtherRealm() and not next(self.whisperPeers)
+end
+
+function Net:KnockCandidates()
+	local me, myChars = Net.Me(), TH.db.myChars or {}
+	local mine = UnitFactionGroup and UnitFactionGroup("player")
+	local last = TH.db.knocks or {}
+	local now, best = Now(), {}
+	local function Consider(set)
+		local name = set.author
+		if not IsCharName(name) or name == me or myChars[name] or knocked[name] then return end
+		if now - (last[name] or 0) < KNOCK_REPEAT then return end
+		local race = tonumber(set.race)
+		if race and mine == "Alliance" and HORDE[race] then return end
+		if race and mine == "Horde" and ALLIANCE[race] then return end
+		if not best[name] or (set.created or 0) > best[name] then best[name] = set.created or 0 end
+	end
+	for _, set in pairs(DB().sets) do Consider(set) end
+	for _, set in ipairs(TransmogHub_Bundled and TransmogHub_Bundled.sets or {}) do Consider(set) end
+	local list = {}
+	for name, t in pairs(best) do list[#list + 1] = { name, t } end
+	table.sort(list, function(a, b) if a[2] ~= b[2] then return a[2] > b[2] end return a[1] < b[1] end)
+	return list
+end
+
+-- force — проверка вручную (/thub knock): без условия «одиночка» и лимита раундов;
+-- target — постучаться к конкретному игроку
+function Net:KnockCatalog(force, target)
+	local names = {}
+	if not force and (knockRounds >= KNOCK_MAX or not self:IsIsolated()) then return names end
+	if not force then knockRounds = knockRounds + 1 end
+	TH.db.knocks = TH.db.knocks or {}
+	local now = Now()
+	local list = self:KnockCandidates()
+	if target and target ~= "" then list = { { Net.FullName(target) } } end
+	for _, c in ipairs(list) do
+		if #names >= KNOCK_BATCH then break end
+		knocked[c[1]] = now
+		TH.db.knocks[c[1]] = now
+		self:Send("H" .. PROTOCOL, WHISPER(c[1]))
+		names[#names + 1] = c[1]
+	end
+	-- старые отметки о стуке не копим
+	for name, t in pairs(TH.db.knocks) do
+		if now - t > KNOCK_REPEAT then TH.db.knocks[name] = nil end
+	end
+	return names
+end
+
+-- «Игрок не найден» после нашего стука — не показываем в чате
+local function HideKnockMiss(_, _, msg)
+	local fmt = ERR_CHAT_PLAYER_NOT_FOUND_S
+	if type(msg) ~= "string" or type(fmt) ~= "string" then return false end
+	local pre, post = fmt:match("^(.-)%%s(.*)$")
+	if not pre or #msg <= #pre + #post or msg:sub(1, #pre) ~= pre or msg:sub(#msg - #post + 1) ~= post then return false end
+	local name = msg:sub(#pre + 1, #msg - #post):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+	name = Net.FullName(name)
+	return knocked[name] ~= nil and Now() - knocked[name] < 60
+end
+Net.HideKnockMiss = HideKnockMiss
 
 function Net:SyncWithPeer(dest, name)
 	if bnSynced[dest.target] then return end
@@ -1380,10 +1510,10 @@ handlers.Q = function(self, body, _, origin)
 	local sets, votes, reports, batches = CollectSince(since)
 	if #sets == 0 and not next(votes) and not next(reports) and #batches == 0 then
 		-- другу отвечаем всегда: пустой ответ тоже значит «синхронизировано»
-		if origin.kind == "BNET" then self:Send("A" .. reqId, origin) end
+		if origin.kind == "BNET" or origin.kind == "WHISPER" then self:Send("A" .. reqId, origin) end
 		return
 	end
-	if origin.kind == "BNET" then
+	if origin.kind == "BNET" or origin.kind == "WHISPER" then
 		self:Answer(reqId, since, origin)
 		return
 	end
@@ -1428,6 +1558,8 @@ function Net:OnMessage(prefix, text, channel, sender)
 		origin = GROUP
 	elseif channel == "GUILD" then
 		origin = GUILD
+	elseif channel == "WHISPER" then
+		origin = WHISPER(Net.FullName(sender))
 	else
 		return
 	end
@@ -1437,6 +1569,12 @@ function Net:OnMessage(prefix, text, channel, sender)
 	if origin == GUILD and not self.guildBridge and not self.channelPeers[sender] then self.guildBridge = true end
 	if origin == CHANNEL then self.channelPeers[sender] = true end
 	if origin == GUILD then self.guildPeers[sender] = Now() end
+	if origin.kind == "WHISPER" then
+		local known = self.whisperPeers[origin.target]
+		self.whisperPeers[origin.target] = Now()
+		-- новый знакомый: забираем у него новое (один раз за сессию)
+		if not known then self:SyncWithWhisper(origin, origin.target) end
+	end
 	self.peers[sender] = Now()
 	Dispatch(self, Assemble(sender, text), sender, origin)
 end
@@ -1537,6 +1675,10 @@ function Net:Start()
 		self:OnGroupChanged()
 		self:GreetGuild()
 	end)
+	-- одиночка: через пару минут после входа и дальше раз в 5 минут стучимся к авторам каталога
+	if ChatFrame_AddMessageEventFilter then ChatFrame_AddMessageEventFilter("CHAT_MSG_SYSTEM", HideKnockMiss) end
+	C_Timer.After(120, function() self:KnockCatalog() end)
+	C_Timer.NewTicker(KNOCK_EVERY, function() self:KnockCatalog() end)
 	-- Раз в минуту: канал на месте? новые друзья в игре?
 	C_Timer.NewTicker(60, function()
 		CleanupPartial()
