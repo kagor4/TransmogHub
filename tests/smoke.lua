@@ -2443,6 +2443,9 @@ end)()
 	shoes.parent.text = "Комплект: облачение"
 	title, lines, _, pending = TH:GetWhereToFind(244268, 400)
 	assert(lines[1] == "К'ареш > Шад'анис > Комплект: облачение" and not pending, "zone, vendor, ensemble: " .. tostring(lines[1]))
+	-- без координат у ATT метку не предлагаем (каталог по этому предмету пуст)
+	_G.AllTheThings.AddTomTomWaypoint = function() end
+	assert(not TH:CanShowOnMap(244268, 400), "no map pin without coordinates")
 	-- координаты ATT по карте; метку ставит сам ATT
 	npc.coords = { [2371] = { { 41.5, 22.8 } } }
 	title, lines = TH:GetWhereToFind(244268, 400)

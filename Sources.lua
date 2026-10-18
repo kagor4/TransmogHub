@@ -410,25 +410,44 @@ local function CatalogPoint(itemID)
 	end
 end
 
+-- Есть ли у записи ATT координаты (у неё или у торговца, существа, зоны над ней)
+local function ATTHasCoords(obj)
+	local g, guard = obj, 0
+	while g and guard < 15 do
+		if FirstCoord(g.coords) then return true end
+		g = g.sourceParent or g.parent
+		guard = guard + 1
+	end
+	return false
+end
+
+local function ATTPlottable(itemID, sourceID)
+	local app = ATT()
+	if not (app and type(app.AddTomTomWaypoint) == "function") then return nil end
+	if attObject[sourceID] == nil then ATTLines(itemID, sourceID) end
+	local obj = attObject[sourceID]
+	if not obj then return nil end
+	local ok, has = pcall(ATTHasCoords, obj)
+	return ok and has and obj or nil, app
+end
+
+-- Метку можно поставить, только если координаты правда есть
 function TH:CanShowOnMap(itemID, sourceID)
 	if not itemID then return false end
-	local app = ATT()
-	if app and type(app.AddTomTomWaypoint) == "function" then
-		if attObject[sourceID] == nil then ATTLines(itemID, sourceID) end
-		if attObject[sourceID] then return true end
-	end
-	return CatalogPoint(itemID) ~= nil
+	return ATTPlottable(itemID, sourceID) ~= nil or CatalogPoint(itemID) ~= nil
 end
 
 function TH:ShowOnMap(itemID, sourceID, name)
-	local app = ATT()
-	local obj = attObject[sourceID]
-	if app and obj and type(app.AddTomTomWaypoint) == "function" and pcall(app.AddTomTomWaypoint, obj) then
-		self:Print(L["Метка на карте: "] .. (name or "") .. L[" (ставит AllTheThings)."])
+	local obj, app = ATTPlottable(itemID, sourceID)
+	if obj and pcall(app.AddTomTomWaypoint, obj) then
+		self:Print(L["Метка на карте: "] .. (name or "") .. L[" (по данным AllTheThings)."])
 		return
 	end
 	local map, x, y, title = CatalogPoint(itemID)
-	if not map then return end
+	if not map then
+		self:Print(L["Где находится, пока неизвестно: координат нет ни в AllTheThings, ни в находках игроков."])
+		return
+	end
 	if TomTom and TomTom.AddWaypoint then
 		TomTom:AddWaypoint(map, x, y, { title = title ~= "" and title or name, persistent = false })
 	elseif C_Map and C_Map.SetUserWaypoint and UiMapPoint and (not C_Map.CanSetUserWaypointOnMap or C_Map.CanSetUserWaypointOnMap(map)) then

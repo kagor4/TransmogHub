@@ -1740,5 +1740,6 @@ ns.LOCALES.enUS = {
 	["Показать на карте"] = "Show on map",
 	["ПКМ — метка на карте, ссылка на Wowhead"] = "Right-click: map pin, Wowhead link",
 	["Метка на карте: "] = "Map pin: ",
-	[" (ставит AllTheThings)."] = " (placed by AllTheThings).",
+	[" (по данным AllTheThings)."] = " (from AllTheThings data).",
+	["Где находится, пока неизвестно: координат нет ни в AllTheThings, ни в находках игроков."] = "Location unknown for now: neither AllTheThings nor player findings have coordinates.",
 }
