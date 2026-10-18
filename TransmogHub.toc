@@ -8,6 +8,7 @@
 ## IconTexture: Interface\Icons\INV_Chest_Cloth_17
 ## AddonCompartmentFunc: TransmogHub_OnAddonCompartmentClick
 ## X-Curse-Project-ID: 1747053
+## X-Wago-ID: 56nbw269
 
 # Переводы: основа и языки (русский — исходный)
 Locales\Locale.lua
