@@ -9,10 +9,14 @@ do
   for ch in up:gmatch("[\192-\255][\128-\191]*") do u[#u+1]=ch end
   for ch in lo:gmatch("[\192-\255][\128-\191]*") do l[#l+1]=ch end
   for i=1,#u do CYR[u[i]]=l[i] end
+  for code = 0xC0, 0xDE do
+    if code ~= 0xD7 then CYR["\195" .. string.char(code - 0x40)] = "\195" .. string.char(code - 0x20) end
+  end
 end
-TH.Lower = function(s) return (s:lower():gsub("[\208\209][\128-\191]", CYR)) end
+TH.Lower = function(s) return (s:lower():gsub("[\195\208\209][\128-\191]", CYR)) end
 assert(loadfile(arg[1] .. "/Moderation.lua"))("TransmogHub", ns)
-local bad = { "Хуй", "ХУЙ", "х.у.й", "х у й", "хууууй", "xуй", "ПИЗДАТЫЙ рыцарь", "Блядский пират", "бля", "Бля буду",
+local bad = { "Hijo de puta", "HIJOPUTA", "Puta madre", "Gilipollas", "Pendejo", "Maricón", "Cabrón", "CABRÓN", "Joder tío", "Mierda pura", "Coño", "Chingada", "Hijodeputa", "Follador",
+	"Хуй", "ХУЙ", "х.у.й", "х у й", "хууууй", "xуй", "ПИЗДАТЫЙ рыцарь", "Блядский пират", "бля", "Бля буду",
   "Ебанутый маг", "долбоёб", "Мудак", "пидор", "Сука", "fuck off", "Bitch please", "shitty set", "ж0па", "Жопа",
   "заебал", "сучка", "гандон", "www.mysite.ru", "http://x", "discord.gg/abc", "п и з д а", "ПиЗдЕц",
   "Www gold ru", "gold . com", "голд точка рф", "золото gold-shop ru", "пиши в дискорд", "Мой twitch", "w w w . g o l d . r u",
@@ -22,7 +26,8 @@ local bad = { "Хуй", "ХУЙ", "х.у.й", "х у й", "хууууй", "xуй
   "Пиз\194\160дюк", "Пиз\226\128\139дюк", "Х★уй", "Пиз1дюк", "Му|дак", "Е#бан",
   "Бля-дский", "Бля.дь", "Бля*тство", "Сбля-дский",
   "Пиз дача", "Пи зда", "Ху йня", "Бля дский", "Му дак", "Еба ный", "Пидо рас", "Залу па", "Шлю ха" }
-local good = { "Сабля дракона", "Абордажная сабля", "Корабля капитан", "Художник", "Розовый троль", "Пират Кровавых Парусов",
+local good = { "Disputa del rey", "Computadora", "Conocer", "Corazón de león", "Caballero de la Muerte", "Señor del Fuego", "Ñandú dorado", "Pollito",
+	"Сабля дракона", "Абордажная сабля", "Корабля капитан", "Художник", "Розовый троль", "Пират Кровавых Парусов",
   "Херувимский страж", "Хлебный пекарь", "Скорбящий рыцарь", "Тёмный некромант", "Shadow Hunter", "Dickens style",
   "Король Лич", "Употребляй с умом", "Сук-ко", "Великий страж Азерота", "Рубашка", "Мундир", "Жокей", "Скибидей",
   "Made by Dkag", "Русский богатырь", "Компания героев", "Netherlight", "Информатор", "Пират 12312",

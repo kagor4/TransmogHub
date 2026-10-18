@@ -1,6 +1,7 @@
 -- Проверка переводов: у каждого L["…"] в коде есть английский перевод; коды цвета и
 -- подстановки (%s, %d…) совпадают по числу и порядку; в переводах нет знаков, которых
--- нет в шрифтах игры. Другие языки (если есть) проверяются так же, но пропуски допустимы.
+-- нет в шрифтах игры. Испанский тоже должен быть полным; другие языки (если появятся)
+-- проверяются так же, но пропуски допустимы.
 --   lua5.1 tests/locales.lua .
 local dir = arg[1] or "."
 
@@ -39,9 +40,9 @@ for lang, t in pairs(ns.LOCALES) do
 	for _, key in ipairs(order) do
 		local v = t[key]
 		if v == nil then
-			if lang == "enUS" then
+			if lang == "enUS" or lang == "esES" then -- эти языки — полностью
 				missing = missing + 1
-				if missing <= 20 then print("NO enUS: " .. key:sub(1, 80) .. "  (" .. keys[key]:match("[^/]+$") .. ")") end
+				if missing <= 20 then print("NO " .. lang .. ": " .. key:sub(1, 80) .. "  (" .. keys[key]:match("[^/]+$") .. ")") end
 			end
 		else
 			if Codes(v) ~= Codes(key) then
@@ -58,6 +59,6 @@ for lang, t in pairs(ns.LOCALES) do
 	for k in pairs(t) do if not keys[k] then extra = extra + 1 end end
 	print(string.format("%s: %d keys, %d unused", lang, (function() local n = 0 for _ in pairs(t) do n = n + 1 end return n end)(), extra))
 end
-print(string.format("%d strings in code, %d without enUS", #order, missing))
+print(string.format("%d strings in code, %d without translation", #order, missing))
 assert(fails == 0 and missing == 0, "locale check failed")
 print("LOCALES OK")

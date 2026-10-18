@@ -13,6 +13,7 @@
 # Переводы: основа и языки (русский — исходный)
 Locales\Locale.lua
 Locales\enUS.lua
+Locales\esES.lua
 
 # Подборки образов, которые приходят с обновлением аддона
 Data\Bundled.lua
