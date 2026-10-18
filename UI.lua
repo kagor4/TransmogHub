@@ -208,10 +208,10 @@ function UI:Build()
 	self.netDot:SetPoint("BOTTOMLEFT", 14, 12)
 	self.netLabel = Label(self, "GameFontHighlightSmall")
 	self.netLabel:SetPoint("LEFT", self.netDot, "RIGHT", 4, 0)
-	self.netStats = {}
+	self.netStats, self.netIcons = {}, {}
 	local prev = self.netLabel
 	for i, icon in ipairs({ "Interface\\Icons\\INV_Misc_GroupLooking", "Interface\\Icons\\Achievement_GuildPerk_EverybodysFriend",
-		"Interface\\Icons\\INV_Chest_Cloth_17" }) do
+		"Interface\\Icons\\Achievement_GuildPerk_MrPopularity", "Interface\\Icons\\INV_Chest_Cloth_17" }) do
 		local tex = self:CreateTexture(nil, "ARTWORK")
 		tex:SetSize(16, 16)
 		tex:SetPoint("LEFT", prev, "RIGHT", 16, 0)
@@ -219,6 +219,7 @@ function UI:Build()
 		local num = Label(self, "GameFontHighlightSmall")
 		num:SetPoint("LEFT", tex, "RIGHT", 4, 0)
 		self.netStats[i] = num
+		self.netIcons[i] = tex
 		prev = num
 	end
 	self.status:ClearAllPoints()
@@ -343,30 +344,51 @@ function UI:AddTooltips()
 	Tip(self.raceBtn, L["Раса для примерки"], L["Свой персонаж, раса автора образа или любая другая. Пол модели игра менять не даёт — для другого пола используйте Wowhead."])
 	Tip(self.publishBtn, L["Опубликовать"], L["Отправить черновик другим игрокам."])
 	Tip(self.deleteBtn, L["Удалить"], L["Удалить образ. Опубликованный пропадёт и у других игроков."])
-	Tip(self.prevBtn, L["Назад по списку"])
-	Tip(self.nextBtn, L["Дальше по списку"])
 	Tip(self.modSetBtn, L["Нарушение"], L["Выберите, что не так: шуточное название (автора попросят переименовать, без наказания), оскорбление (14 дней без публикаций, второй раз — навсегда), реклама (бан автора) или другое. Образ пропадёт у игроков, до которых дойдёт решение, и попадёт в чёрный список при разборе."])
 	Tip(self.modAuthorBtn, L["Заблокировать автора"], L["Все образы автора пропадут; новые не будут приниматься."])
 	Tip(self.modSkipBtn, L["Без решения"], L["Убрать образ из списка модерации без последствий: ничего не блокируется, жалобы не признаются ложными, у пожаловавшихся ничего не меняется. Новые жалобы вернут его в список."])
 	Tip(self.modDismissBtn, L["Жалобы ложные / Оценки честные"], L["Жалобы: убрать образ из списка, жалобы необоснованны. Оценки: накрутки нет, образ возвращается в чарт (снова проверится, если оценок станет в полтора раза больше)."])
 
-	-- строка состояния сети: подсказка при наведении
-	local statusHover = CreateFrame("Frame", nil, self)
-	statusHover:SetPoint("BOTTOMLEFT", 10, 6)
-	statusHover:SetSize(560, 24)
-	statusHover:EnableMouse(true)
-	statusHover:SetScript("OnEnter", function(f)
-		GameTooltip:SetOwner(f, "ANCHOR_TOP")
-		GameTooltip:SetText(L["Сеть Transmog Hub"])
-		GameTooltip:AddLine(L["Сервера у аддона нет: игроки с аддоном обмениваются образами напрямую через скрытый канал игры, а с других серверов — через друзей Battle.net и группу."], 1, 1, 1, true)
-		GameTooltip:AddLine(" ")
-		GameTooltip:AddLine(L["Точка: зелёная — сеть подключена, серая — подключается."], 0.8, 0.8, 0.8, true)
-		GameTooltip:AddLine(L["Значки: игроков с аддоном на вашем сервере, друзей Battle.net с аддоном на других серверах, образов у вас в базе."], 0.8, 0.8, 0.8, true)
-		GameTooltip:AddLine(" ")
-		GameTooltip:AddLine(L["Подробнее: /thub net"], 0.6, 0.6, 0.6)
-		GameTooltip:Show()
+	-- строка состояния сети: у точки, каждого значка и строки отправки — своя подсказка
+	local function Hover(from, to, title, lines)
+		local h = CreateFrame("Frame", nil, self)
+		h:SetPoint("TOPLEFT", from, "TOPLEFT", -3, 4)
+		h:SetPoint("BOTTOMRIGHT", to, "BOTTOMRIGHT", 3, -4)
+		h:EnableMouse(true)
+		h:SetScript("OnEnter", function(f)
+			GameTooltip:SetOwner(f, "ANCHOR_TOP")
+			GameTooltip:SetText(title)
+			for _, line in ipairs(type(lines) == "function" and lines() or lines) do
+				GameTooltip:AddLine(line, 1, 1, 1, true)
+			end
+			GameTooltip:AddLine(" ")
+			GameTooltip:AddLine(L["Подробнее: /thub net"], 0.6, 0.6, 0.6)
+			GameTooltip:Show()
+		end)
+		h:SetScript("OnLeave", GameTooltip_Hide)
+		return h
+	end
+	Hover(self.netDot, self.netLabel, L["Подключение"], function()
+		return { TH.Net:IsConnected()
+			and L["|cff40ff40Зелёная точка|r — аддон подключён к своему скрытому каналу и обменивается образами с другими игроками."]
+			or L["|cff999999Серая точка|r — аддон ещё подключается: так бывает первые секунды после входа или перезагрузки."],
+			L["Сервера у аддона нет: игроки обмениваются образами напрямую."] }
 	end)
-	statusHover:SetScript("OnLeave", GameTooltip_Hide)
+	Hover(self.netIcons[1], self.netStats[1], L["Игроки с аддоном на вашем сервере"], {
+		L["Сколько игроков с аддоном сейчас в сети на вашем сервере (и связанных с ним). От них приходят образы, оценки и рейтинг."],
+		L["Игроков с других серверов аддон слышит через группу, гильдию и друзей Battle.net."] })
+	Hover(self.netIcons[2], self.netStats[2], L["Друзья Battle.net с аддоном"], {
+		L["Друзья Battle.net, которые сейчас в игре с аддоном, — на любом сервере и за любую фракцию."],
+		L["Через них образы ходят между серверами: чем больше таких друзей, тем больше образов вы увидите."] })
+	Hover(self.netIcons[3], self.netStats[3], L["Согильдийцы с аддоном"], {
+		L["Согильдийцы, которые сейчас в игре с аддоном. При входе аддон знакомится с ними и забирает новые образы."],
+		L["Если в гильдии есть игроки другой фракции или с других серверов, образы ходят и через гильдию."] })
+	Hover(self.netIcons[4], self.netStats[4], L["Образов в базе"], {
+		L["Сколько образов вы получили от других игроков. Хранится до 3000, старые и неоценённые уходят первыми."],
+		L["Ещё сотни лучших и свежих образов приходят с каждым обновлением аддона — они в ленте, но в этом числе не считаются."] })
+	Hover(self.status, self.status, L["Отправка"], {
+		L["Сколько сообщений ждёт отправки. Игра ограничивает скорость, поэтому большой обмен идёт постепенно."],
+		L["В бою и в подземельях отправка на паузе и продолжится сама."] })
 end
 
 -- Уголок справа внизу: тянем — окно увеличивается или уменьшается целиком
@@ -906,12 +928,7 @@ function UI:BuildList(list)
 	end)
 	Tip(self.modsBtn, L["Управление"], L["Админ назначает и снимает модераторов. Модераторы разбирают жалобы и могут снять наказание за занижение оценок, если оно ошибочное."])
 
-	self.prevBtn = Button(list, "<", 30)
-	self.prevBtn:SetPoint("BOTTOMLEFT", 8, 8)
-	self.prevBtn:SetScript("OnClick", function() self:Scroll(-ROWS) end)
-	self.nextBtn = Button(list, ">", 30)
-	self.nextBtn:SetPoint("BOTTOMRIGHT", -8, 8)
-	self.nextBtn:SetScript("OnClick", function() self:Scroll(ROWS) end)
+	-- список листается колесом мыши и ползунком; внизу — какие образы сейчас видны
 	self.pageText = Label(list, "GameFontHighlightSmall")
 	self.pageText:SetPoint("BOTTOM", 0, 14)
 
@@ -1823,8 +1840,6 @@ function UI:RefreshList()
 		page = L["Образы "] .. (self.authorFilter or "?"):gsub("%-.*", "") .. (page ~= "" and (": " .. page) or "")
 	end
 	self.pageText:SetText(page)
-	self.prevBtn:SetEnabled(self.offset > 0)
-	self.nextBtn:SetEnabled(self.offset + ROWS < n)
 	local filtered = (self.filter.text or "") ~= "" or next(self.filter.tags) ~= nil
 	self.emptyText:SetText(filtered and L["По вашему запросу ничего нет.\n\nПопробуйте другие слова или сбросьте теги."]
 		or (self.view == "guild" and not TH:GetGuildNames() and L["Вы не состоите в гильдии."])
@@ -1945,8 +1960,13 @@ function UI:RefreshDetail()
 		-- официальное место (проверенный ежедневный чарт)
 		local place, pool = TH:GetOfficialRank("top", chartSet.id)
 		if place then
-			note = note .. string.format(L["  |cff40ff40место %d|r"], place)
+			note = note .. string.format(L["  |cff40ff40№%d в «Лучших»|r"], place)
 			hint[#hint + 1] = string.format(L["|cff40ff40Официально: %d из %d в «Лучших» (на %s).|r"], place, pool, TH:FormatChartsDate())
+		end
+		local tplace, tpool = TH:GetOfficialRank("trending", chartSet.id)
+		if tplace then
+			note = note .. string.format(L["  |cff40c0ff№%d «В тренде»|r"], tplace)
+			hint[#hint + 1] = string.format(L["|cff40c0ffОфициально: %d из %d «В тренде» (на %s).|r"], tplace, tpool, TH:FormatChartsDate())
 		end
 		self.dRatingHint = hint
 		self.dRating:SetText(string.format(L["Рейтинг: |cffffd100%.1f|r из 5, голосов: %d"], r.avg, r.n) .. note)
@@ -2119,7 +2139,8 @@ function UI:RefreshStatus()
 	self.netLabel:SetText(on and L["Сеть"] or L["|cff999999Подключение...|r"])
 	self.netStats[1]:SetText(Net:PeerCount())
 	self.netStats[2]:SetText(Net:BNetPeerCount())
-	self.netStats[3]:SetText(Net:SetCount())
+	self.netStats[3]:SetText(Net:GuildPeerCount())
+	self.netStats[4]:SetText(Net:SetCount())
 	local note = ""
 	if Net:IsLocked() and Net:QueueLength() > 0 then
 		note = L["|cffffd100отправка на паузе (бой или подземелье)|r"]

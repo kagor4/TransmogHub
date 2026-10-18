@@ -167,6 +167,15 @@ local function Build()
 	local scroll = CreateFrame("ScrollFrame", nil, help, "UIPanelScrollFrameTemplate")
 	scroll:SetPoint("TOPLEFT", 196, -32)
 	scroll:SetPoint("BOTTOMRIGHT", -32, 42)
+	-- без стрелок у полосы прокрутки: колесо мыши и ползунок (шаблон сам их показывает — прячем навсегда)
+	local sb = scroll.ScrollBar
+	for _, key in ipairs({ "ScrollUpButton", "ScrollDownButton" }) do
+		local arrow = type(sb) == "table" and sb[key]
+		if type(arrow) == "table" then
+			arrow:SetAlpha(0)
+			arrow:EnableMouse(false)
+		end
+	end
 	local child = CreateFrame("Frame", nil, scroll)
 	child:SetSize(480, 10)
 	scroll:SetScrollChild(child)

@@ -148,6 +148,64 @@ local function Tint(button, color)
 	end
 end
 
+-- Крестик закрытия как в EllesmereUI: тёмный квадрат без рамки и тонкий крест линиями.
+-- Цвет свой (красный), форма — как у кнопок EllesmereUI.
+local CLOSE_RED = { 0.95, 0.3, 0.27 }
+local function SkinCloseButton(b)
+	if not b or b.thCloseSkinned then return end
+	b.thCloseSkinned = true
+	for _, getter in ipairs({ "GetNormalTexture", "GetPushedTexture", "GetDisabledTexture", "GetHighlightTexture" }) do
+		local tex = b[getter] and b[getter](b)
+		if type(tex) == "table" and tex.SetAlpha then tex:SetAlpha(0) end
+	end
+	-- главное окно: крестик в ряд с иконками заголовка — тот же размер, высота и шаг 5;
+	-- другие окна: меньше стандартного, центр на месте (иначе квадрат уезжает за край)
+	local parent = b.GetParent and b:GetParent()
+	local row = parent and type(parent.helpBtn) == "table" and parent.helpBtn
+	local SIZE = row and 14 or 22
+	local w, h = b:GetSize()
+	local point, rel, relPoint, x, y = b:GetPoint(1)
+	b:SetSize(SIZE, SIZE)
+	if row then
+		-- ряд сдвигаем вправо: от крестика до края окна столько же, сколько сверху (3)
+		row:ClearAllPoints()
+		row:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -(3 + SIZE + 5), -3)
+		b:ClearAllPoints()
+		b:SetPoint("LEFT", row, "RIGHT", 5, 0)
+	elseif point and type(w) == "number" and type(h) == "number" then
+		x, y = x or 0, y or 0
+		if point:find("RIGHT") then x = x - (w - SIZE) / 2 elseif point:find("LEFT") then x = x + (w - SIZE) / 2 end
+		if point:find("TOP") then y = y - (h - SIZE) / 2 elseif point:find("BOTTOM") then y = y + (h - SIZE) / 2 end
+		b:ClearAllPoints()
+		b:SetPoint(point, rel, relPoint, x, y)
+	end
+	-- без рамки: тёмный квадрат и тонкий крест
+	local fill = b:CreateTexture(nil, "BACKGROUND", nil, -7)
+	fill:SetAllPoints()
+	fill:SetColorTexture(0.08, 0.08, 0.09, 1)
+	b.thFlat = fill
+	local lines = {}
+	for i, angle in ipairs({ 45, -45 }) do
+		local l = b:CreateTexture(nil, "OVERLAY")
+		l:SetColorTexture(CLOSE_RED[1], CLOSE_RED[2], CLOSE_RED[3], 1)
+		l:SetSize(SIZE <= 14 and 11 or 12, 1.5)
+		l:SetPoint("CENTER")
+		if l.SetRotation then l:SetRotation(math.rad(angle)) end
+		lines[i] = l
+	end
+	b.thCloseLines = lines
+	if b.HookScript then
+		b:HookScript("OnEnter", function(self)
+			if self.thFlat then self.thFlat:SetColorTexture(0.16, 0.08, 0.08, 0.95) end
+			for _, l in ipairs(self.thCloseLines) do l:SetColorTexture(1, 0.45, 0.42, 1) end
+		end)
+		b:HookScript("OnLeave", function(self)
+			if self.thFlat then self.thFlat:SetColorTexture(0.08, 0.08, 0.09, 1) end
+			for _, l in ipairs(self.thCloseLines) do l:SetColorTexture(CLOSE_RED[1], CLOSE_RED[2], CLOSE_RED[3], 1) end
+		end)
+	end
+end
+
 local function SkinFrame(frame, accent, top)
 	if not frame or frame.thSkinWalked then return end
 	frame.thSkinWalked = true
@@ -159,8 +217,8 @@ local function SkinFrame(frame, accent, top)
 		if T(frame.Bg) and frame.Bg.SetAlpha then frame.Bg:SetAlpha(0) end
 		Flat(frame, PANEL)
 	end
-	-- крестик закрытия — красным, как привычно в игре
-	if T(frame.CloseButton) then Tint(frame.CloseButton, { 0.95, 0.25, 0.22 }) end
+	-- крестик закрытия — в форме кнопок EllesmereUI, красным
+	if T(frame.CloseButton) then SkinCloseButton(frame.CloseButton) end
 	if T(frame.TitleText) and frame.TitleText.SetTextColor then frame.TitleText:SetTextColor(1, 1, 1) end
 	if frame.SetBackdropColor and frame.GetBackdrop and frame:GetBackdrop() then
 		frame:SetBackdropColor(unpack(BG))
