@@ -909,7 +909,13 @@ local function ApplyVotes(set, votes, now)
 		dist[v[1]] = (dist[v[1]] or 0) + 1
 		if now - v[2] < TREND_WINDOW then trend = trend + v[1] end
 	end
-	set.rating = { avg = sum / n, n = n, dist = dist }
+	-- образ из каталога: пока своих голосов меньше, чем в официальном итоге, верим итогу
+	local base = set.baseRating
+	if base and (base.n or 0) > n then
+		set.rating = base
+	else
+		set.rating = { avg = sum / n, n = n, dist = dist }
+	end
 	set.trend = trend
 end
 
@@ -949,7 +955,11 @@ function TH:LoadFeed()
 		end
 		add(set)
 	end
-	for _, set in ipairs(TransmogHub_Bundled and TransmogHub_Bundled.sets or {}) do add(set) end
+	-- каталог из обновления: оценка в нём — итог чарта, свои голоса из сети его дополняют
+	for _, set in ipairs(TransmogHub_Bundled and TransmogHub_Bundled.sets or {}) do
+		if set.rating and not set.baseRating then set.baseRating = set.rating end
+		add(set)
+	end
 	self.feed = { sets = sets }
 
 	for _, set in ipairs(self.db.testSets) do

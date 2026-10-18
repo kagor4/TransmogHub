@@ -2209,4 +2209,27 @@ end)()
 		end
 	end
 end)()
+-- Каталог из обновления (Data/Bundled.lua): образ виден без сети, итог оценки держится,
+-- пока своих голосов меньше; заблокированный образ из каталога не показывается
+;(function()
+	TransmogHub_Bundled = { schema = 1, generated = 0, sets = {
+		{ id = "ncat1", name = "Каталожный", author = "Издалека-Ревущийфьорд", created = 1700000000,
+			tags = { "pirate" }, items = { [5] = { 1001 } }, rating = { avg = 4.5, n = 10, dist = { 0, 0, 1, 3, 6 } } },
+		{ id = "ncat2", name = "Заблокированный", author = "Издалека-Ревущийфьорд", created = 1700000000,
+			tags = {}, items = { [5] = { 1002 } } },
+	} }
+	TransmogHub_Blocklist.sets.ncat2 = "реклама"
+	TH:LoadFeed()
+	local set = assert(TH.byId.ncat1, "catalog set in feed")
+	assert(not TH.byId.ncat2, "blocked catalog set hidden")
+	assert(set.rating.n == 10, "catalog rating kept")
+	TH.Net:StoreVote("ncat1", "Сосед-Гордунни", 1, 1700000100)
+	TH:LoadFeed()
+	assert(TH.byId.ncat1.rating.n == 10 and TH.byId.ncat1.rating.avg == 4.5, "one network vote does not replace catalog summary")
+	assert(not TH.db.net.sets.ncat1, "catalog is not the network base (not relayed, not counted)")
+	TransmogHub_Blocklist.sets.ncat2 = nil
+	TransmogHub_Bundled = nil
+	TH:LoadFeed()
+end)()
+
 print("ALL OK")
