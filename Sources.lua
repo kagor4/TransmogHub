@@ -306,17 +306,25 @@ local function ATTPath(obj)
 	while chain[first] and Generic(chain[first]) do first = first + 1 end
 	-- раздел верхнего уровня («Игровые зоны», «Подземелья и рейды») — если есть что-то точнее
 	if #chain > first then chain[#chain] = nil end
-	local parts = {}
-	for i = math.min(#chain, first + 2), first, -1 do
+	-- до трёх ближайших названий; имена, которые ATT ещё загружает, пропускаем
+	-- (подсказка обновится, когда они придут)
+	local parts, pending = {}, false
+	for i = first, #chain do
 		local text = chain[i].sourceText or chain[i].text
-		if type(text) == "string" and text ~= "" and not Secret(text) then parts[#parts + 1] = text end
+		if type(text) ~= "string" or text == "" or Secret(text)
+			or (RETRIEVING_DATA and text:find(RETRIEVING_DATA, 1, true)) then
+			pending = true
+		else
+			table.insert(parts, 1, text)
+			if #parts >= 3 then break end
+		end
 	end
-	if #parts == 0 then return nil end
+	if #parts == 0 then return nil, pending end
 	local text = table.concat(parts, " > ")
 	if coords and tonumber(coords[1]) and tonumber(coords[2]) then
 		text = text .. string.format(" (%.1f, %.1f)", coords[1], coords[2])
 	end
-	return text
+	return text, pending
 end
 
 local function ATTLines(itemID, sourceID)
@@ -327,23 +335,25 @@ local function ATTLines(itemID, sourceID)
 		ok, list = pcall(app.SearchForObject, "itemID", itemID, "field", true)
 	end
 	if not ok or type(list) ~= "table" then return {} end
-	local out, seen = {}, {}
+	local out, seen, pending = {}, {}, false
 	for _, obj in ipairs(list) do
-		local ok2, text = pcall(ATTPath, obj)
+		local ok2, text, wait = pcall(ATTPath, obj)
+		if ok2 and wait then pending = true end
 		if ok2 and text and not seen[text] then
 			seen[text] = true
 			out[#out + 1] = text
 			if #out >= MAX_LINES then break end
 		end
 	end
-	return out
+	return out, pending
 end
 
--- Возвращает заголовок и строки «где найти» или nil
+-- Возвращает заголовок и строки «где найти» (или nil), не установлен ли ATT
+-- и ждём ли ещё имена от ATT (тогда подсказку стоит перерисовать)
 function TH:GetWhereToFind(itemID, sourceID)
 	if not itemID then return nil end
-	local att = ATTLines(itemID, sourceID)
-	if att and #att > 0 then return L["Где найти (AllTheThings):"], att end
+	local att, pending = ATTLines(itemID, sourceID)
+	if att and #att > 0 then return L["Где найти (AllTheThings):"], att, false, pending end
 	local lines = {}
 	local catalog = TransmogHub_Sources and TransmogHub_Sources.items and TransmogHub_Sources.items[itemID]
 	for _, e in ipairs(catalog or {}) do
@@ -351,6 +361,6 @@ function TH:GetWhereToFind(itemID, sourceID)
 		if #lines >= MAX_LINES then break end
 	end
 	if #lines == 0 then lines = OwnLines(itemID) end
-	if #lines > 0 then return L["Где найти (по данным игроков):"], lines end
-	return nil, nil, att == nil -- третье значение: AllTheThings не установлен
+	if #lines > 0 then return L["Где найти (по данным игроков):"], lines, false, pending end
+	return nil, nil, att == nil, pending
 end

@@ -1680,8 +1680,9 @@ function UI:OpenItemMenu(row)
 	end)
 end
 
-function UI:ShowSlotTooltip(row)
+function UI:ShowSlotTooltip(row, refresh)
 	if not row.sourceID then return end
+	if not refresh then row.whereTries = 0 end
 	local det = row.illusion and TH:GetIllusionDetails(row.sourceID) or TH:GetSourceDetails(row.sourceID)
 	if not det then return end
 	GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
@@ -1694,7 +1695,14 @@ function UI:ShowSlotTooltip(row)
 	GameTooltip:AddLine(L["Источник: "] .. (det.typeText or "?"), 1, 1, 1)
 	if det.where then GameTooltip:AddLine(det.where, 0.8, 0.8, 0.8, true) end
 	if not det.hidden and not det.illusion and TH.GetWhereToFind then
-		local title, lines, noATT = TH:GetWhereToFind(det.itemID, row.sourceID)
+		local title, lines, noATT, pending = TH:GetWhereToFind(det.itemID, row.sourceID)
+		-- ATT ещё загружает имена (торговцев, заданий): перерисуем, когда придут
+		if pending and (row.whereTries or 0) < 10 then
+			row.whereTries = (row.whereTries or 0) + 1
+			C_Timer.After(0.5, function()
+				if GameTooltip:IsOwned(row) then self:ShowSlotTooltip(row, true) end
+			end)
+		end
 		if title then
 			GameTooltip:AddLine(title, 1, 0.82, 0)
 			for _, line in ipairs(lines) do GameTooltip:AddLine(line, 0.8, 0.8, 0.8, true) end

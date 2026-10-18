@@ -2420,6 +2420,16 @@ end)()
 	_G.AllTheThings = { SearchForObject = function() return { pants } end }
 	title, lines = TH:GetWhereToFind(257005, 300)
 	assert(lines[1] == "Кель'Талас > Добыча локации", "filter groups dropped: " .. tostring(lines[1]))
+	-- имя торговца ATT ещё загружает: путь не обрывается, подсказка ждёт
+	_G.RETRIEVING_DATA = "Получение данных"
+	local kar = { text = "К'ареш", parent = { text = "Каз Алгар", parent = zones } }
+	local vend = { text = "Торговцы", parent = kar }
+	local npc = { text = "|cffffffffПолучение данных|r", parent = vend }
+	local shoes = { parent = { text = RETRIEVING_DATA, parent = npc } }
+	_G.AllTheThings = { SearchForObject = function() return { shoes } end }
+	local _, _, _, pending
+	title, lines, _, pending = TH:GetWhereToFind(244268, 400)
+	assert(lines[1] == "Каз Алгар > К'ареш > Торговцы" and pending, "loading names skipped, refresh asked: " .. tostring(lines[1]))
 	_G.AllTheThings = { SearchForObject = function() error("not ready") end }
 	title = TH:GetWhereToFind(244267, 200)
 	assert(title and not title:find("AllTheThings"), "ATT error falls back to catalog")
