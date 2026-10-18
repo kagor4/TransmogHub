@@ -672,25 +672,6 @@ function TH.Translit(s)
 	return out
 end
 
--- «Поделиться в чате»: готовый текст в строке чата, отправляет сам игрок
-function TH:ShareSet(set)
-	if not set then return end
-	local name = self:SetName(set) or "?"
-	local text
-	if self:IsMine(set) then
-		text = string.format(L["Мой образ «%s» в Transmog Hub — аддон с образами игроков на CurseForge."], name)
-	else
-		local author = (set.author or "?"):gsub("%-.*", "")
-		text = string.format(L["Образ «%s» от %s в Transmog Hub — аддон с образами игроков на CurseForge."], name, author)
-	end
-	if ChatFrameUtil and ChatFrameUtil.OpenChat then
-		ChatFrameUtil.OpenChat(text)
-	elseif ChatFrame_OpenChat then
-		ChatFrame_OpenChat(text)
-	end
-	self:TrackCount("shared")
-end
-
 -- Название образа для показа: на русском клиенте как есть, на остальных — транслитом
 function TH:SetName(set)
 	local name = set and set.name

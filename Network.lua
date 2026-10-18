@@ -1581,6 +1581,20 @@ function Net:KnockAcquaintances()
 	end
 end
 
+-- Попросить у игрока его образы: незнакомому — стук (ответ запустит синхронизацию),
+-- знакомому — сразу запрос синхронизации
+function Net:AskFor(name)
+	name = Net.FullName(name)
+	if not IsCharName(name) or name == Net.Me() then return end
+	local t = self.whisperPeers[name]
+	if t and Now() - t < PEER_TIMEOUT then
+		self:RequestSync(WHISPER(name), name)
+	else
+		knocked[name] = nil -- игрок сам прислал ссылку: стучимся, даже если сегодня уже стучались
+		self:Knock(name)
+	end
+end
+
 -- Передать знакомому до 5 своих контактов (кроме него самого)
 function Net:SharePeers(dest, except)
 	local now, names, seen = Now(), {}, {}

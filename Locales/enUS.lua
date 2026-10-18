@@ -1743,8 +1743,6 @@ ns.LOCALES.enUS = {
 	["На этой карте метку поставить нельзя."] = "Map pins can't be placed on this map.",
 	["Где находится, пока неизвестно: координат нет ни в AllTheThings, ни в находках игроков."] = "Location unknown for now: neither AllTheThings nor player findings have coordinates.",
 	["Поделиться в чате"] = "Share in chat",
-	["Мой образ «%s» в Transmog Hub — аддон с образами игроков на CurseForge."] = "My outfit «%s» in Transmog Hub, a player outfit catalogue addon on CurseForge.",
-	["Образ «%s» от %s в Transmog Hub — аддон с образами игроков на CurseForge."] = "Outfit «%s» by %s in Transmog Hub, a player outfit catalogue addon on CurseForge.",
 	["Слово за слово"] = "Word of Mouth",
 	["Поделитесь образом в чате."] = "Share an outfit in chat.",
 	["Глашатаи Штормграда берут с вас пример. Правда, кричат громче."] = "Stormwind's town criers are taking notes. They just shout louder.",
@@ -1754,4 +1752,8 @@ ns.LOCALES.enUS = {
 	["Посол подиума"] = "Runway Ambassador",
 	["Пятеро ваших собеседников поставили Transmog Hub."] = "Five players you talked to installed Transmog Hub.",
 	["Модный дом Азерота открывает новые филиалы. Ваше имя — на вывеске."] = "Azeroth's fashion house is opening new branches. Your name is on the sign.",
+	["Мой образ %s — аддон с образами игроков на CurseForge."] = "My outfit %s, from a player outfit catalogue addon on CurseForge.",
+	["Образ %s от %s — аддон с образами игроков на CurseForge."] = "Outfit %s by %s, from a player outfit catalogue addon on CurseForge.",
+	["Этого образа у вас ещё нет — попросили у %s. Окно откроется, когда образ придёт."] = "You don't have this outfit yet, so we asked %s for it. The window opens when it arrives.",
+	["Этого образа у вас ещё нет: он придёт по сети."] = "You don't have this outfit yet: it will arrive over the network.",
 }

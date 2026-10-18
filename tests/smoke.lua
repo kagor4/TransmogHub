@@ -166,7 +166,7 @@ local function flush()
 end
 local ns = {}
 local dir = arg[1]
-for _, f in ipairs({ "Locales/Locale.lua", "Locales/enUS.lua", "Data/Bundled.lua", "Data/Blocklist.lua", "Data/Charts.lua", "Data/Secrets.lua", "Data/TagIcons.lua", "Data/Sources.lua", "Core.lua", "Moderation.lua", "Network.lua", "Appearance.lua", "Preview.lua", "TagPicker.lua", "UI.lua", "SaveDialog.lua", "IconPicker.lua", "Secret.lua", "Achievements.lua", "Charts.lua", "Profile.lua", "Help.lua", "Tour.lua", "Standing.lua", "Ideas.lua", "Wowhead.lua", "Sources.lua", "Minimap.lua", "Skin.lua", "Usage.lua", "Toasts.lua", "Follow.lua", "Fonts.lua", "Settings.lua" }) do
+for _, f in ipairs({ "Locales/Locale.lua", "Locales/enUS.lua", "Data/Bundled.lua", "Data/Blocklist.lua", "Data/Charts.lua", "Data/Secrets.lua", "Data/TagIcons.lua", "Data/Sources.lua", "Core.lua", "Moderation.lua", "Network.lua", "Appearance.lua", "Preview.lua", "TagPicker.lua", "UI.lua", "SaveDialog.lua", "IconPicker.lua", "Secret.lua", "Achievements.lua", "Charts.lua", "Profile.lua", "Help.lua", "Tour.lua", "Standing.lua", "Ideas.lua", "Wowhead.lua", "Sources.lua", "Minimap.lua", "Skin.lua", "Usage.lua", "Toasts.lua", "Follow.lua", "Fonts.lua", "Settings.lua", "ChatLinks.lua" }) do
   assert(loadfile(dir .. "/" .. f))("TransmogHub", ns)
 end
 TransmogHub_Charts = nil -- тесты проверяют и расчёт мест без официального чарта
@@ -1856,7 +1856,7 @@ end)()
 	local files = { "Core.lua", "Moderation.lua", "Network.lua", "Appearance.lua", "Preview.lua", "TagPicker.lua", "UI.lua",
 		"SaveDialog.lua", "IconPicker.lua", "Achievements.lua", "Charts.lua", "Profile.lua", "Help.lua", "Tour.lua",
 		"Standing.lua", "Ideas.lua", "Wowhead.lua", "Minimap.lua", "Skin.lua", "Usage.lua", "Toasts.lua", "Follow.lua",
-		"Fonts.lua", "Settings.lua", "Secret.lua" }
+		"Fonts.lua", "Settings.lua", "Secret.lua", "ChatLinks.lua" }
 	local unknown = {}
 	for _, name in ipairs(files) do
 		local f = assert(io.open(dir .. "/" .. name))
@@ -2546,9 +2546,26 @@ end)()
 	_G.ChatFrameUtil = _G.ChatFrameUtil or {}
 	local realOpen = ChatFrameUtil.OpenChat
 	ChatFrameUtil.OpenChat = function(text) opened = text end
-	TH:ShareSet({ id = "nshare", name = "Пират", author = "Автор-Гордунни" })
+	TH:ShareSet({ id = "nab12", name = "Пират", author = "Автор-Гордунни" })
+	assert(opened and opened:find("[Transmog Hub: «Пират» #nab12]", 1, true) and opened:find("Автор", 1, true), "share text: " .. tostring(opened))
+	-- у кого аддон: метка в чате — ссылка; нажатие открывает образ или просит его у отправителя
+	local linked = TH.LinkifyChat(opened, "Друг-Ревущийфьорд")
+	assert(linked and linked:find("|Hgarrmission:transmoghub:nab12:Друг-Ревущийфьорд|h[Transmog Hub: «Пират»]|h", 1, true),
+		"token became a link: " .. tostring(linked))
+	assert(TH.LinkifyChat("просто текст", "X-Y") == nil, "plain chat untouched")
+	local asked
+	local realAsk = TH.Net.AskFor
+	TH.Net.AskFor = function(_, name) asked = name end
+	TH.OnChatLink("garrmission:transmoghub:nab12:Друг-Ревущийфьорд")
+	assert(asked == "Друг-Ревущийфьорд" and TH.pendingOpen == "nab12", "missing outfit asked from sender")
+	TH.Net.AskFor = realAsk
+	local opened2
+	local realOpenShared = TH.OpenSharedSet
+	TH.OpenSharedSet = function(_, id) opened2 = id end
+	TH:OnSetStored({ id = "nab12", author = "Автор-Гордунни", name = "Пират", items = {} })
+	TH.OpenSharedSet = realOpenShared
+	assert(TH.pendingOpen == nil and opened2 == "nab12", "outfit opened when it arrived")
 	ChatFrameUtil.OpenChat = realOpen
-	assert(opened and opened:find("Transmog Hub", 1, true) and opened:find("Автор", 1, true), "share text: " .. tostring(opened))
 	Net0.whisperPeers = savedPeers
 	TH.db.knocks, TH.db.knownPeers, TH.db.chatContacts, TH.db.invited = {}, {}, {}, {}
 end)()

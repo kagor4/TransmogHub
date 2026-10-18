@@ -1743,8 +1743,6 @@ ns.LOCALES.esES = {
 	["На этой карте метку поставить нельзя."] = "No se pueden poner marcadores en este mapa.",
 	["Где находится, пока неизвестно: координат нет ни в AllTheThings, ни в находках игроков."] = "Ubicación aún desconocida: ni AllTheThings ni los hallazgos de jugadores tienen coordenadas.",
 	["Поделиться в чате"] = "Compartir en el chat",
-	["Мой образ «%s» в Transmog Hub — аддон с образами игроков на CurseForge."] = "Mi atuendo «%s» en Transmog Hub, un addon de atuendos de jugadores en CurseForge.",
-	["Образ «%s» от %s в Transmog Hub — аддон с образами игроков на CurseForge."] = "Atuendo «%s» de %s en Transmog Hub, un addon de atuendos de jugadores en CurseForge.",
 	["Слово за слово"] = "De boca en boca",
 	["Поделитесь образом в чате."] = "Comparte un atuendo en el chat.",
 	["Глашатаи Штормграда берут с вас пример. Правда, кричат громче."] = "Los pregoneros de Ventormenta toman nota. Eso sí, gritan más fuerte.",
@@ -1754,4 +1752,8 @@ ns.LOCALES.esES = {
 	["Посол подиума"] = "Embajador de la pasarela",
 	["Пятеро ваших собеседников поставили Transmog Hub."] = "Cinco jugadores con quienes hablaste instalaron Transmog Hub.",
 	["Модный дом Азерота открывает новые филиалы. Ваше имя — на вывеске."] = "La casa de moda de Azeroth abre nuevas sucursales. Tu nombre está en el letrero.",
+	["Мой образ %s — аддон с образами игроков на CurseForge."] = "Mi atuendo %s, de un addon de atuendos de jugadores en CurseForge.",
+	["Образ %s от %s — аддон с образами игроков на CurseForge."] = "Atuendo %s de %s, de un addon de atuendos de jugadores en CurseForge.",
+	["Этого образа у вас ещё нет — попросили у %s. Окно откроется, когда образ придёт."] = "Aún no tienes este atuendo, así que se lo pedimos a %s. La ventana se abrirá cuando llegue.",
+	["Этого образа у вас ещё нет: он придёт по сети."] = "Aún no tienes este atuendo: llegará por la red.",
 }
