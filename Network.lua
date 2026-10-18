@@ -172,6 +172,7 @@ Net.Now = Now
 Net.channelId = 0
 Net.peers = {}
 Net.channelPeers = {} -- кого слышали в канале (чтобы понять, что гильдия — мост)
+Net.guildPeers = {}   -- [имя] = когда слышали через гильдию
 Net.voteStamp = {} -- [setId] = счётчик изменений голосов (для пересчёта только изменённых)
 
 local function HideChannelFromChat()
@@ -321,6 +322,16 @@ function Net:SendMyChars(dest)
 	for name in pairs(TH.db.myChars) do list[#list + 1] = name end
 	table.sort(list)
 	if #list > 0 then self:Send("h" .. table.concat(list, ","), dest) end
+end
+
+-- Согильдийцы с аддоном, которых слышали за последние 15 минут
+function Net:GuildPeerCount()
+	if not IsInGuild() then return 0 end
+	local now, n = Now(), 0
+	for _, t in pairs(self.guildPeers) do
+		if now - t < PEER_TIMEOUT then n = n + 1 end
+	end
+	return n
 end
 
 function Net:BNetPeerCount()
@@ -1425,6 +1436,7 @@ function Net:OnMessage(prefix, text, channel, sender)
 	-- согильдиец, которого не слышно в канале: гильдия — мост, рассылаем и через неё
 	if origin == GUILD and not self.guildBridge and not self.channelPeers[sender] then self.guildBridge = true end
 	if origin == CHANNEL then self.channelPeers[sender] = true end
+	if origin == GUILD then self.guildPeers[sender] = Now() end
 	self.peers[sender] = Now()
 	Dispatch(self, Assemble(sender, text), sender, origin)
 end
