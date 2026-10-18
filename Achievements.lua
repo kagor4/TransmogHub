@@ -403,6 +403,13 @@ local ACH_LOCALE = {
 		hid_translate = { hint = "Учёный, начертатель и руны: один стример перевёл уже больше трёхсот аддонов — прочитает и ваш образ." },
 	},
 }
+ACH_LOCALE.esES = {
+	-- буквы с диакритикой — кодами: в коде только знаки из проверки шрифтов
+	hid_shout = { hint = "Amenazante, de combate y rojo de rabia: as\195\173 defiende sus opiniones un streamer que se hizo grande en el WoW Classic. Se le oye hasta en Orgrimmar." },
+	hid_paladin_live = { hint = "Palad\195\173n, Luz y oro: un fiel de la Alianza transmite Azeroth durante horas para toda Latinoam\195\169rica." },
+	hid_lore = { hint = "Erudito, titanes y estrellas: hay quien narra la historia de Azeroth libro a libro, con voces, ilustraciones y m\195\186sica." },
+}
+ACH_LOCALE.esMX = ACH_LOCALE.esES
 ACH_LOCALE.enGB = ACH_LOCALE.enUS
 TH.ACH_LOCALE = ACH_LOCALE
 

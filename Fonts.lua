@@ -40,6 +40,13 @@ do
 	Add("АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя")
 	Add("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789")
 	Add(".,:;!?()[]-+/%'\"*#&=_<>«»—·№")
+	-- испанский клиент: буквы с диакритикой и перевёрнутые знаки
+	-- (кодами: в коде остальных языков этих знаков нет)
+	if ns.ClientLocale and ns.ClientLocale() == "esES" then
+		for _, cp in ipairs({ 0xC1, 0xC9, 0xCD, 0xD3, 0xDA, 0xDC, 0xD1, 0xE1, 0xE9, 0xED, 0xF3, 0xFA, 0xFC, 0xF1, 0xBF, 0xA1 }) do
+			REQUIRED[#REQUIRED + 1] = cp < 0xC0 and ("\194" .. string.char(cp)) or ("\195" .. string.char(cp - 0x40))
+		end
+	end
 end
 TH.FONT_REQUIRED = REQUIRED
 
