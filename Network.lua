@@ -1564,12 +1564,24 @@ function Net:NoteContact(name)
 	KeepRecent(TH.db.chatContacts, CONTACT_MAX)
 end
 
+-- Фракция одной буквой: A, H или nil (нейтральный пандарен)
+local function FactionLetter(unit)
+	local f = UnitFactionGroup and UnitFactionGroup(unit)
+	if Secret(f) then return nil end
+	return (f == "Alliance" and "A") or (f == "Horde" and "H") or nil
+end
+
 function Net:NoteGroup()
 	if not (IsInGroup and IsInGroup()) or not GetNumGroupMembers then return end
 	local raid = IsInRaid and IsInRaid()
+	local mine = FactionLetter("player")
 	for i = 1, GetNumGroupMembers() do
 		local unit = raid and ("raid" .. i) or ("party" .. i)
-		local name, realm = UnitFullName(unit)
+		-- из межфракционной группы — только своих: шёпот другой фракции не доходит
+		local theirs = FactionLetter(unit)
+		if mine and theirs and theirs ~= mine then unit = nil end
+		local name, realm
+		if unit then name, realm = UnitFullName(unit) end
 		if type(name) == "string" and not Secret(name) and name ~= "" then
 			self:NoteContact(Net.FullName((realm and realm ~= "" and not Secret(realm)) and (name .. "-" .. realm) or name))
 		end
@@ -1609,7 +1621,9 @@ function Net:AskFor(name)
 	end
 end
 
--- Передать знакомому до 5 своих контактов (кроме него самого)
+-- Передать знакомому до 5 своих контактов (кроме него самого). Все они — нашей фракции
+-- (шёпот ходит только внутри фракции), поэтому первым идёт «=A» или «=H»: получатель
+-- другой фракции их пропустит. Старые версии «=A» пропускают как не похожее на имя.
 function Net:SharePeers(dest, except)
 	local now, names, seen = Now(), {}, {}
 	local function Add(name)
@@ -1625,13 +1639,18 @@ function Net:SharePeers(dest, except)
 	end
 	table.sort(known, function(a, b) return a[2] > b[2] end)
 	for _, k in ipairs(known) do Add(k[1]) end
-	if #names > 0 then self:Send("k" .. table.concat(names, ","), dest) end
+	if #names == 0 then return end
+	local f = FactionLetter("player")
+	self:Send("k" .. (f and ("=" .. f .. ",") or "") .. table.concat(names, ","), dest)
 end
 
 handlers.k = function(self, body, _, origin)
 	if origin.kind ~= "WHISPER" then return end
+	local theirs = body:match("^=([AH]),")
+	local mine = FactionLetter("player")
+	if theirs and mine and theirs ~= mine then return end -- контакты другой фракции
 	local now, sent = Now(), 0
-	for name in body:gmatch("[^,]+") do
+	for name in body:gsub("^=[AH],", ""):gmatch("[^,]+") do
 		if sent >= KNOCK_BATCH or sessionKnocks >= KNOCK_SESSION_MAX then break end
 		name = Net.FullName(name)
 		if #name <= 64 and CanKnock(self, name, now) then
