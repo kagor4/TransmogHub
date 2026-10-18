@@ -2401,12 +2401,25 @@ end)()
 	assert(not t2 and noATT, "hint to install AllTheThings")
 	-- AllTheThings: путь от корня до торговца
 	local root = { text = "ATT" }
-	local zone = { text = "Остров Дорн", parent = root }
-	local vendor = { text = "Торговка Ала", parent = zone, coords = { { 45.2, 60.1, 2248 } } }
+	local zone = { text = "Остров Дорн", parent = { text = "Игровые зоны", parent = root } }
+	local vendors = { text = "Торговцы", parent = zone }
+	local vendor = { text = "Торговка Ала", parent = vendors, coords = { { 45.2, 60.1, 2248 } } }
 	local item = { parent = vendor }
 	_G.AllTheThings = { SearchForObject = function(field, id) if field == "sourceID" and id == 200 then return { item } end end }
 	title, lines = TH:GetWhereToFind(244267, 200)
-	assert(title:find("AllTheThings") and lines[1] == "Остров Дорн > Торговка Ала (45.2, 60.1)", "ATT path: " .. tostring(lines and lines[1]))
+	assert(title:find("AllTheThings") and lines[1] == "Остров Дорн > Торговцы > Торговка Ала (45.2, 60.1)", "ATT path: " .. tostring(lines and lines[1]))
+	-- добыча локации: группы «Броня > Тканевые» и верхние разделы не показываем
+	local zones = { text = "Игровые зоны", parent = root }
+	local kt = { text = "Кель'Талас", parent = zones }
+	local drops = { text = "Добыча локации", parent = kt }
+	local armor = { text = "Броня", parent = drops, key = "headerID" }
+	local cloth = { text = "Тканевые", parent = armor, key = "filterID" }
+	armor.g = { cloth }
+	drops.g = { armor }
+	local pants = { parent = cloth }
+	_G.AllTheThings = { SearchForObject = function() return { pants } end }
+	title, lines = TH:GetWhereToFind(257005, 300)
+	assert(lines[1] == "Кель'Талас > Добыча локации", "filter groups dropped: " .. tostring(lines[1]))
 	_G.AllTheThings = { SearchForObject = function() error("not ready") end }
 	title = TH:GetWhereToFind(244267, 200)
 	assert(title and not title:find("AllTheThings"), "ATT error falls back to catalog")

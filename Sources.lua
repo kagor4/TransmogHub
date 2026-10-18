@@ -281,20 +281,36 @@ local function ATT()
 	if type(app) == "table" and type(app.SearchForObject) == "function" then return app end
 end
 
+-- Группа-фильтр по типу вещи («Тканевые») или заголовок только из таких групп
+-- («Броня»): к месту отношения не имеют
+local function Generic(g)
+	if g.key == "filterID" then return true end
+	if type(g.g) ~= "table" or #g.g == 0 then return false end
+	for _, child in ipairs(g.g) do
+		if child.key ~= "filterID" then return false end
+	end
+	return true
+end
+
 local function ATTPath(obj)
-	local parts, coords = {}, nil
+	local chain, coords = {}, nil
 	local g, guard = obj, 0
 	while g and guard < 15 do
-		if g ~= obj then
-			local text = g.sourceText or g.text
-			if type(text) == "string" and text ~= "" and not Secret(text) then table.insert(parts, 1, text) end
-		end
+		if g ~= obj then chain[#chain + 1] = g end
 		if not coords and type(g.coords) == "table" and type(g.coords[1]) == "table" then coords = g.coords[1] end
 		g = g.sourceParent or g.parent
 		guard = guard + 1
 	end
-	if #parts > 1 then table.remove(parts, 1) end -- корень ATT
-	while #parts > 4 do table.remove(parts, 1) end
+	chain[#chain] = nil -- корень ATT
+	local first = 1
+	while chain[first] and Generic(chain[first]) do first = first + 1 end
+	-- раздел верхнего уровня («Игровые зоны», «Подземелья и рейды») — если есть что-то точнее
+	if #chain > first then chain[#chain] = nil end
+	local parts = {}
+	for i = math.min(#chain, first + 2), first, -1 do
+		local text = chain[i].sourceText or chain[i].text
+		if type(text) == "string" and text ~= "" and not Secret(text) then parts[#parts + 1] = text end
+	end
 	if #parts == 0 then return nil end
 	local text = table.concat(parts, " > ")
 	if coords and tonumber(coords[1]) and tonumber(coords[2]) then
