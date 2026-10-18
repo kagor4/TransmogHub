@@ -166,7 +166,7 @@ local function flush()
 end
 local ns = {}
 local dir = arg[1]
-for _, f in ipairs({ "Locales/Locale.lua", "Locales/enUS.lua", "Data/Bundled.lua", "Data/Blocklist.lua", "Data/Charts.lua", "Data/Secrets.lua", "Data/TagIcons.lua", "Data/Sources.lua", "Core.lua", "Moderation.lua", "Network.lua", "Appearance.lua", "Preview.lua", "TagPicker.lua", "UI.lua", "SaveDialog.lua", "IconPicker.lua", "Secret.lua", "Achievements.lua", "Charts.lua", "Profile.lua", "Help.lua", "Tour.lua", "Standing.lua", "Ideas.lua", "Wowhead.lua", "Sources.lua", "Minimap.lua", "Skin.lua", "Usage.lua", "Toasts.lua", "Follow.lua", "Fonts.lua", "Settings.lua" }) do
+for _, f in ipairs({ "Locales/Locale.lua", "Locales/enUS.lua", "Data/Bundled.lua", "Data/Blocklist.lua", "Data/Charts.lua", "Data/Secrets.lua", "Data/TagIcons.lua", "Data/Sources.lua", "Core.lua", "Moderation.lua", "Network.lua", "Appearance.lua", "Preview.lua", "TagPicker.lua", "UI.lua", "SaveDialog.lua", "IconPicker.lua", "Secret.lua", "Achievements.lua", "Charts.lua", "Profile.lua", "Help.lua", "Tour.lua", "Standing.lua", "Ideas.lua", "Wowhead.lua", "Sources.lua", "Minimap.lua", "Skin.lua", "Usage.lua", "Toasts.lua", "Follow.lua", "Fonts.lua", "Settings.lua", "ChatLinks.lua" }) do
   assert(loadfile(dir .. "/" .. f))("TransmogHub", ns)
 end
 TransmogHub_Charts = nil -- тесты проверяют и расчёт мест без официального чарта
@@ -1856,7 +1856,7 @@ end)()
 	local files = { "Core.lua", "Moderation.lua", "Network.lua", "Appearance.lua", "Preview.lua", "TagPicker.lua", "UI.lua",
 		"SaveDialog.lua", "IconPicker.lua", "Achievements.lua", "Charts.lua", "Profile.lua", "Help.lua", "Tour.lua",
 		"Standing.lua", "Ideas.lua", "Wowhead.lua", "Minimap.lua", "Skin.lua", "Usage.lua", "Toasts.lua", "Follow.lua",
-		"Fonts.lua", "Settings.lua", "Secret.lua" }
+		"Fonts.lua", "Settings.lua", "Secret.lua", "ChatLinks.lua" }
 	local unknown = {}
 	for _, name in ipairs(files) do
 		local f = assert(io.open(dir .. "/" .. name))
@@ -2486,6 +2486,88 @@ end)()
 	ns.ClientLocale = function() return "esES" end
 	assert(TH:SetName(set) == "Yadovityy" and set.name == "Ядовитый", "other clients see transliteration, data unchanged")
 	ns.ClientLocale = real
+end)()
+
+-- Знакомые: память между сессиями, обмен знакомыми, стук к собеседникам, приглашённые
+;(function()
+	local Net0 = TH.Net
+	local savedPeers = Net0.whisperPeers
+	Net0.whisperPeers = {}
+	TH.db.knocks, TH.db.knownPeers, TH.db.chatContacts, TH.db.invited = {}, {}, {}, {}
+	local function Whispers(prefix)
+		local out = {}
+		for _, m in ipairs(lastGroup) do
+			local who, body = m:match("^WHISPER:(.-):S?(.*)$")
+			if who and body:sub(1, #prefix) == prefix then out[#out + 1] = who end
+		end
+		return out
+	end
+	-- знакомый через шёпот запоминается и получает «k» со списком и «w» с датой установки
+	Net0:OnMessage("TMHUB", "SH1", "WHISPER", "Знакомый-Ревущийфьорд")
+	assert(TH.db.knownPeers["Знакомый-Ревущийфьорд"], "whisper peer remembered between sessions")
+	flush()
+	-- вторая сессия: знакомый не в сети с нами, стучимся к нему и к собеседнику
+	Net0.whisperPeers = {}
+	Net0:NoteContact("Собеседник-Гордунни")
+	Net0:KnockAcquaintances()
+	flush()
+	local knockedTo = table.concat(Whispers("H"), ",")
+	assert(knockedTo:find("Знакомый-Ревущийфьорд", 1, true) and knockedTo:find("Собеседник-Гордунни", 1, true),
+		"known peer and chat contact knocked: " .. knockedTo)
+	Net0:KnockAcquaintances()
+	flush()
+	assert(#Whispers("H") == 0, "each knocked at most once a day")
+	-- обмен знакомыми: присланные имена получают стук
+	Net0:OnMessage("TMHUB", "SkДруг-Гордунни,Тест-Гордунни,Чужой-Свежеватель Душ", "WHISPER", "Знакомый-Ревущийфьорд")
+	flush()
+	knockedTo = table.concat(Whispers("H"), ",")
+	assert(knockedTo:find("Друг-Гордунни", 1, true) and not knockedTo:find("Тест-Гордунни", 1, true),
+		"shared peers knocked, not self: " .. knockedTo)
+	-- новичок, с которым переписывались, засчитывается приглашённым; давний игрок — нет
+	local now = GetServerTime()
+	Net0:OnMessage("TMHUB", "Sw" .. TH.Net.Enc(now - 3600), "WHISPER", "Собеседник-Гордунни")
+	assert(TH.db.invited["Собеседник-Гордунни"], "new user from chat contact counted as invited")
+	Net0:OnMessage("TMHUB", "Sw" .. TH.Net.Enc(now - 3600), "WHISPER", "Незнакомец-Гордунни")
+	assert(not TH.db.invited["Незнакомец-Гордунни"], "stranger not counted")
+	TH.db.chatContacts["Ветеран-Гордунни"] = now
+	Net0:OnMessage("TMHUB", "Sw" .. TH.Net.Enc(now - 90 * 86400), "WHISPER", "Ветеран-Гордунни")
+	assert(not TH.db.invited["Ветеран-Гордунни"], "long-time user not counted")
+	-- рассылка — не больше 8 знакомых через шёпот
+	Net0.whisperPeers = {}
+	for i = 1, 12 do Net0.whisperPeers["Пир" .. string.char(96 + i) .. "-Гордунни"] = now - i end
+	flush()
+	Net0:Send("Xcap")
+	flush()
+	local n = 0
+	for _, m in ipairs(lastGroup) do if m:find("^WHISPER:.-:S?Xcap") then n = n + 1 end end
+	assert(n == 8, "broadcast to 8 most recent whisper peers: " .. n)
+	-- «Поделиться в чате»: текст в строку чата и счётчик достижения
+	local opened
+	_G.ChatFrameUtil = _G.ChatFrameUtil or {}
+	local realOpen = ChatFrameUtil.OpenChat
+	ChatFrameUtil.OpenChat = function(text) opened = text end
+	TH:ShareSet({ id = "nab12", name = "Пират", author = "Автор-Гордунни" })
+	assert(opened and opened:find("[Transmog Hub: «Пират» #nab12]", 1, true) and opened:find("Автор", 1, true), "share text: " .. tostring(opened))
+	-- у кого аддон: метка в чате — ссылка; нажатие открывает образ или просит его у отправителя
+	local linked = TH.LinkifyChat(opened, "Друг-Ревущийфьорд")
+	assert(linked and linked:find("|Hgarrmission:transmoghub:nab12:Друг-Ревущийфьорд|h[Transmog Hub: «Пират»]|h", 1, true),
+		"token became a link: " .. tostring(linked))
+	assert(TH.LinkifyChat("просто текст", "X-Y") == nil, "plain chat untouched")
+	local asked
+	local realAsk = TH.Net.AskFor
+	TH.Net.AskFor = function(_, name) asked = name end
+	TH.OnChatLink("garrmission:transmoghub:nab12:Друг-Ревущийфьорд")
+	assert(asked == "Друг-Ревущийфьорд" and TH.pendingOpen == "nab12", "missing outfit asked from sender")
+	TH.Net.AskFor = realAsk
+	local opened2
+	local realOpenShared = TH.OpenSharedSet
+	TH.OpenSharedSet = function(_, id) opened2 = id end
+	TH:OnSetStored({ id = "nab12", author = "Автор-Гордунни", name = "Пират", items = {} })
+	TH.OpenSharedSet = realOpenShared
+	assert(TH.pendingOpen == nil and opened2 == "nab12", "outfit opened when it arrived")
+	ChatFrameUtil.OpenChat = realOpen
+	Net0.whisperPeers = savedPeers
+	TH.db.knocks, TH.db.knownPeers, TH.db.chatContacts, TH.db.invited = {}, {}, {}, {}
 end)()
 
 print("ALL OK")

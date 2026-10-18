@@ -224,6 +224,7 @@ local GUILD = { kind = "GUILD" }
 local function BNET(id) return { kind = "BNET", target = id } end
 local function WHISPER(name) return { kind = "WHISPER", target = name } end
 
+local MAX_WHISPER_PEERS = 8 -- сколько знакомых через шёпот получают рассылку
 local MAX_RELAY_QUEUE = 200 -- если очередь длиннее, пересылку пропускаем: догонит синхронизация
 
 local function GroupChatType()
@@ -440,16 +441,26 @@ function Net:Send(body, dest, except)
 	if not (except and except.kind == "CHANNEL") then SendTo(body, CHANNEL) end
 	if not (except and except.kind == "GROUP") and self:GroupHasOtherRealm() then SendTo(body, GROUP) end
 	if not (except and except.kind == "GUILD") and self.guildBridge and IsInGuild() then SendTo(body, GUILD) end
-	-- знакомые через шёпот (одиночка и тот, кто ему ответил): им тоже всё новое
-	local now = Now()
-	for name, t in pairs(self.whisperPeers) do
-		if now - t < PEER_TIMEOUT and not (except and except.kind == "WHISPER" and except.target == name) then
-			SendTo(body, WHISPER(name))
-		end
+	-- знакомые через шёпот: им тоже всё новое, но не больше 8 самых недавних
+	-- (остальное дойдёт по цепочке, а очередь отправки не забьётся)
+	for _, name in ipairs(self:ActiveWhisperPeers(MAX_WHISPER_PEERS)) do
+		if not (except and except.kind == "WHISPER" and except.target == name) then SendTo(body, WHISPER(name)) end
 	end
 	for id in pairs(self.bnPeers) do
 		if not (except and except.kind == "BNET" and except.target == id) then SendTo(body, BNET(id)) end
 	end
+end
+
+-- Активные знакомые через шёпот, самые недавние первыми
+function Net:ActiveWhisperPeers(max)
+	local now, list = Now(), {}
+	for name, t in pairs(self.whisperPeers) do
+		if now - t < PEER_TIMEOUT then list[#list + 1] = { name, t } end
+	end
+	table.sort(list, function(a, b) if a[2] ~= b[2] then return a[2] > b[2] end return a[1] < b[1] end)
+	local out = {}
+	for i = 1, math.min(#list, max or #list) do out[i] = list[i][1] end
+	return out
 end
 
 -- Переслать полученное дальше, если очередь не перегружена
@@ -1399,7 +1410,12 @@ local whisperSynced = {}
 function Net:SyncWithWhisper(dest, name)
 	if whisperSynced[name] then return end
 	whisperSynced[name] = true
-	C_Timer.After(2 + math.random() * 3, function() self:RequestSync(dest, name) end)
+	C_Timer.After(2 + math.random() * 3, function()
+		self:RequestSync(dest, name)
+		self:SharePeers(dest, name)
+		-- когда поставлен аддон: новичок засчитывается тому, кто ему о нём рассказал
+		if (TH.db.installed or 0) > 0 then self:Send("w" .. Enc(TH.db.installed), dest) end
+	end)
 end
 
 ---------------------------------------------------------------------------
@@ -1486,6 +1502,143 @@ local function HideKnockMiss(_, _, msg)
 end
 Net.HideKnockMiss = HideKnockMiss
 
+---------------------------------------------------------------------------
+-- Знакомые. Кого слышали через шёпот, аддон помнит между сессиями (до 50, 30 дней) и
+-- после входа стучится к ним — сеть связывается сразу. Знакомые передают друг другу
+-- по 5 своих контактов («k»), так из одного знакомства вырастает сеть. Ещё аддон стучится
+-- к тем, с кем вы переписывались или были в группе (14 дней): у кого нет аддона, ничего
+-- не увидит. Не больше 3 стуков за раз и 20 за сессию, к каждому — раз в сутки.
+---------------------------------------------------------------------------
+local function Secret(v) return issecretvalue and issecretvalue(v) end
+local KNOWN_MAX, KNOWN_TTL = 50, 30 * 86400
+local CONTACT_MAX, CONTACT_TTL = 100, 14 * 86400
+local NEW_USER, INVITE_WINDOW = 7 * 86400, 30 * 86400
+local KNOCK_SESSION_MAX, SHARE_PEERS = 20, 5
+local sessionKnocks = 0
+
+-- Оставить в таблице [имя] = время не больше max самых свежих
+local function KeepRecent(t, max)
+	local list = {}
+	for k, v in pairs(t) do list[#list + 1] = { k, v } end
+	if #list <= max then return end
+	table.sort(list, function(a, b) return a[2] > b[2] end)
+	for i = max + 1, #list do t[list[i][1]] = nil end
+end
+
+local function CanKnock(self, name, now)
+	if not IsCharName(name) or name == Net.Me() or (TH.db.myChars or {})[name] or knocked[name] then return false end
+	local t = self.whisperPeers[name]
+	if t and now - t < PEER_TIMEOUT then return false end
+	local last = TH.db.knocks and TH.db.knocks[name]
+	return not last or now - last >= KNOCK_REPEAT
+end
+
+function Net:Knock(name)
+	local now = Now()
+	knocked[name] = now
+	TH.db.knocks = TH.db.knocks or {}
+	TH.db.knocks[name] = now
+	sessionKnocks = sessionKnocks + 1
+	self:Send("H" .. PROTOCOL, WHISPER(name))
+end
+
+-- Собеседник: шёпот в обе стороны и группа (имя — полное)
+function Net:NoteContact(name)
+	if not IsCharName(name) or name == Net.Me() then return end
+	TH.db.chatContacts = TH.db.chatContacts or {}
+	TH.db.chatContacts[name] = Now()
+	KeepRecent(TH.db.chatContacts, CONTACT_MAX)
+end
+
+function Net:NoteGroup()
+	if not (IsInGroup and IsInGroup()) or not GetNumGroupMembers then return end
+	local raid = IsInRaid and IsInRaid()
+	for i = 1, GetNumGroupMembers() do
+		local unit = raid and ("raid" .. i) or ("party" .. i)
+		local name, realm = UnitFullName(unit)
+		if type(name) == "string" and not Secret(name) and name ~= "" then
+			self:NoteContact(Net.FullName((realm and realm ~= "" and not Secret(realm)) and (name .. "-" .. realm) or name))
+		end
+	end
+end
+
+-- Сначала знакомые прошлых сессий, потом собеседники; по 3 за раз
+function Net:KnockAcquaintances()
+	local now, sent = Now(), 0
+	for _, source in ipairs({ { TH.db.knownPeers, KNOWN_TTL }, { TH.db.chatContacts, CONTACT_TTL } }) do
+		local list = {}
+		for name, t in pairs(source[1] or {}) do
+			if now - t < source[2] then list[#list + 1] = { name, t } end
+		end
+		table.sort(list, function(a, b) if a[2] ~= b[2] then return a[2] > b[2] end return a[1] < b[1] end)
+		for _, c in ipairs(list) do
+			if sent >= KNOCK_BATCH or sessionKnocks >= KNOCK_SESSION_MAX then return end
+			if CanKnock(self, c[1], now) then
+				self:Knock(c[1])
+				sent = sent + 1
+			end
+		end
+	end
+end
+
+-- Попросить у игрока его образы: незнакомому — стук (ответ запустит синхронизацию),
+-- знакомому — сразу запрос синхронизации
+function Net:AskFor(name)
+	name = Net.FullName(name)
+	if not IsCharName(name) or name == Net.Me() then return end
+	local t = self.whisperPeers[name]
+	if t and Now() - t < PEER_TIMEOUT then
+		self:RequestSync(WHISPER(name), name)
+	else
+		knocked[name] = nil -- игрок сам прислал ссылку: стучимся, даже если сегодня уже стучались
+		self:Knock(name)
+	end
+end
+
+-- Передать знакомому до 5 своих контактов (кроме него самого)
+function Net:SharePeers(dest, except)
+	local now, names, seen = Now(), {}, {}
+	local function Add(name)
+		if #names < SHARE_PEERS and name ~= except and not seen[name] and IsCharName(name) then
+			seen[name] = true
+			names[#names + 1] = name
+		end
+	end
+	for _, name in ipairs(self:ActiveWhisperPeers()) do Add(name) end
+	local known = {}
+	for name, t in pairs(TH.db.knownPeers or {}) do
+		if now - t < KNOWN_TTL then known[#known + 1] = { name, t } end
+	end
+	table.sort(known, function(a, b) return a[2] > b[2] end)
+	for _, k in ipairs(known) do Add(k[1]) end
+	if #names > 0 then self:Send("k" .. table.concat(names, ","), dest) end
+end
+
+handlers.k = function(self, body, _, origin)
+	if origin.kind ~= "WHISPER" then return end
+	local now, sent = Now(), 0
+	for name in body:gmatch("[^,]+") do
+		if sent >= KNOCK_BATCH or sessionKnocks >= KNOCK_SESSION_MAX then break end
+		name = Net.FullName(name)
+		if #name <= 64 and CanKnock(self, name, now) then
+			self:Knock(name)
+			sent = sent + 1
+		end
+	end
+end
+
+-- «Я поставил аддон тогда-то». Новичок (до 7 дней), с которым вы переписывались или были
+-- в группе, засчитывается вам как приглашённый (достижения «Сарафанное радио»)
+handlers.w = function(self, body, sender, origin)
+	if origin.kind ~= "WHISPER" then return end
+	local t, now = Dec(body), Now()
+	if not t or t > now + 86400 or now - t > NEW_USER then return end
+	local contact = TH.db.chatContacts and TH.db.chatContacts[sender]
+	if not contact or now - contact > INVITE_WINDOW then return end
+	TH.db.invited = TH.db.invited or {}
+	if not TH.db.invited[sender] then TH.db.invited[sender] = now end
+end
+
 function Net:SyncWithPeer(dest, name)
 	if bnSynced[dest.target] then return end
 	bnSynced[dest.target] = true
@@ -1561,6 +1714,9 @@ function Net:OnMessage(prefix, text, channel, sender)
 	if origin.kind == "WHISPER" then
 		local known = self.whisperPeers[origin.target]
 		self.whisperPeers[origin.target] = Now()
+		TH.db.knownPeers = TH.db.knownPeers or {}
+		TH.db.knownPeers[origin.target] = Now()
+		KeepRecent(TH.db.knownPeers, KNOWN_MAX)
 		-- новый знакомый: забираем у него новое (один раз за сессию)
 		if not known then self:SyncWithWhisper(origin, origin.target) end
 	end
@@ -1645,13 +1801,19 @@ function Net:Start()
 	frame:RegisterEvent("CHAT_MSG_ADDON")
 	frame:RegisterEvent("BN_CHAT_MSG_ADDON")
 	frame:RegisterEvent("GROUP_ROSTER_UPDATE")
+	frame:RegisterEvent("CHAT_MSG_WHISPER")
+	frame:RegisterEvent("CHAT_MSG_WHISPER_INFORM")
 	frame:SetScript("OnEvent", function(_, event, ...)
 		if event == "CHAT_MSG_ADDON" then
 			Net:OnMessage(...)
 		elseif event == "BN_CHAT_MSG_ADDON" then
 			Net:OnBNetMessage(...)
+		elseif event == "CHAT_MSG_WHISPER" or event == "CHAT_MSG_WHISPER_INFORM" then
+			local who = select(2, ...)
+			if type(who) == "string" and not Secret(who) then pcall(Net.NoteContact, Net, Net.FullName(who)) end
 		else
 			Net:OnGroupChanged()
+			pcall(Net.NoteGroup, Net)
 		end
 	end)
 
@@ -1667,7 +1829,12 @@ function Net:Start()
 	-- одиночка: через пару минут после входа и дальше раз в 5 минут стучимся к авторам каталога
 	if ChatFrame_AddMessageEventFilter then ChatFrame_AddMessageEventFilter("CHAT_MSG_SYSTEM", HideKnockMiss) end
 	C_Timer.After(120, function() self:KnockCatalog() end)
-	C_Timer.NewTicker(KNOCK_EVERY, function() self:KnockCatalog() end)
+	C_Timer.NewTicker(KNOCK_EVERY, function()
+		self:KnockCatalog()
+		self:KnockAcquaintances()
+	end)
+	-- знакомые прошлых сессий и собеседники: вскоре после входа
+	C_Timer.After(45, function() self:KnockAcquaintances() end)
 	-- Раз в минуту: канал на месте? новые друзья в игре?
 	C_Timer.NewTicker(60, function()
 		CleanupPartial()

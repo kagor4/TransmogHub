@@ -94,6 +94,15 @@ TH.ACHIEVEMENTS = {
 	{ id = "tags_10", num = 10, rarity = 1, stat = "tagsUsed", goal = 10, icon = "INV_Misc_Gear_01",
 		name = L["Ярлык на всё"], desc = L["Используйте 10 разных тегов в своих образах."],
 		flavor = L["Гномы-механики подписывают даже гайки. Вы на верном пути."] },
+	{ id = "share_1", num = 105, rarity = 0, stat = "shared", goal = 1, icon = "Ability_Warrior_RallyingCry",
+		name = L["Слово за слово"], desc = L["Поделитесь образом в чате."],
+		flavor = L["Глашатаи Штормграда берут с вас пример. Правда, кричат громче."] },
+	{ id = "invite_1", num = 106, rarity = 2, stat = "invited", goal = 1, icon = "Achievement_GuildPerk_EverybodysFriend",
+		name = L["Сарафанное радио"], desc = L["Игрок, с которым вы переписывались или были в группе, поставил Transmog Hub."],
+		flavor = L["Мурлоки передают новости быстрее любого почтальона. Вы — почти так же быстро."] },
+	{ id = "invite_5", num = 107, rarity = 4, stat = "invited", goal = 5, icon = "Achievement_GuildPerk_MrPopularity",
+		name = L["Посол подиума"], desc = L["Пятеро ваших собеседников поставили Transmog Hub."],
+		flavor = L["Модный дом Азерота открывает новые филиалы. Ваше имя — на вывеске."] },
 	{ id = "bnet_1", num = 11, rarity = 1, stat = "bnet", goal = 1, icon = "Spell_Arcane_PortalDalaran",
 		name = L["Дальняя связь"], desc = L["Найдите друга Battle.net с аддоном."],
 		flavor = L["Камень встреч не нужен: мода путешествует между мирами сама."] },
@@ -618,6 +627,7 @@ local STAT_CATEGORY = {
 	ratingsReceived = "fame", fiveStars = "fame", favsReceived = "fame",
 	viewed = "viewer", votesCast = "viewer", favorites = "viewer", races = "viewer", wowhead = "viewer",
 	network = "viewer", bnet = "viewer", letters = "viewer", confirmedReports = "viewer",
+	shared = "viewer", invited = "viewer",
 	gotFromHub = "collect", setsCompleted = "collect",
 	hallOfFame = "rank", topRank = "rank", trendRank = "rank", tagRank = "rank", tagFirsts = "rank", raidTagRank = "rank",
 	topPct = "rank", boardPct = "rank", boardRank = "rank",
@@ -915,7 +925,9 @@ function TH:GetAchievementStat(stat, a)
 			if not confirmed[setId] and self:IsBlocked({ id = setId }) then confirmed[setId] = true end
 		end
 		return CountKeys(confirmed)
-	elseif stat == "wowhead" or stat == "suggested" or stat == "letters" then
+	elseif stat == "invited" then
+		return CountKeys(self.db.invited or {})
+	elseif stat == "wowhead" or stat == "suggested" or stat == "letters" or stat == "shared" then
 		return s.counts[stat] or 0
 	elseif stat == "tagsUsed" then
 		return CountKeys(s.tags)

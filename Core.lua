@@ -786,6 +786,10 @@ local DEFAULTS = {
 	warnedTags = {},   -- ["образ:тег"] = время — автору уже сказали, что тег оспорен
 	secretKeys = {},   -- [id скрытого] = ключ — открытые тайны (тексты полученных скрытых достижений)
 	myChars = {},    -- [Имя-Сервер] = true — все свои персонажи (для «свой образ»)
+	knownPeers = {},   -- [Имя-Сервер] = время — знакомые через шёпот (к ним стучимся после входа)
+	chatContacts = {}, -- [Имя-Сервер] = время — с кем переписывались или были в группе
+	invited = {},      -- [Имя-Сервер] = время — новички, которым вы рассказали об аддоне
+	installed = 0,     -- когда аддон впервые запущен на аккаунте
 	charClass = {},  -- [Имя-Сервер] = CLASS — классы своих персонажей (для рекомендаций)
 	hidden = {},     -- [setId] = true — образы, скрытые игроком
 	myVotes = {},    -- [setId] = 1..5 (локальная копия для интерфейса)
@@ -1621,6 +1625,14 @@ function TH:ADDON_LOADED(name)
 	TransmogHubDB = TransmogHubDB or {}
 	ApplyDefaults(TransmogHubDB, DEFAULTS)
 	self.db = TransmogHubDB
+	-- когда поставлен аддон: у давних игроков — по самому раннему достижению
+	if (self.db.installed or 0) == 0 then
+		local first = time()
+		for _, t in pairs(self.db.achievements) do
+			if type(t) == "number" and t > 0 and t < first then first = t end
+		end
+		self.db.installed = first
+	end
 	-- Версии до сети отправляли образы через компаньон: очередь больше не нужна,
 	-- а «отправляющиеся» образы становятся черновиками — их можно опубликовать в сеть.
 	if self.db.outbox then
