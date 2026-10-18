@@ -118,7 +118,7 @@ C_ChatInfo = {
       assert(target == "5", "channel target")
       sent[#sent + 1] = msg
     else
-      groupSent[#groupSent + 1] = chatType .. ":" .. msg
+      groupSent[#groupSent + 1] = chatType .. ":" .. (chatType == "WHISPER" and target .. ":" or "") .. msg
     end
     return 0
   end,
@@ -2282,6 +2282,68 @@ end)()
 	TransmogHub_Blocklist.sets.ncat2 = nil
 	TransmogHub_Bundled = nil
 	TH:LoadFeed()
+end)()
+
+-- Знакомство через каталог: одиночка стучится скрытым шёпотом к недавним авторам своей фракции,
+-- те отвечают «я тут» и синхронизируются; дальше всё новое идёт и им
+;(function()
+	local Net0 = TH.Net
+	local saved = { Net0.PeerCount, Net0.BNetPeerCount, Net0.GuildPeerCount, Net0.GroupHasOtherRealm }
+	Net0.PeerCount = function() return 0 end
+	Net0.BNetPeerCount = function() return 0 end
+	Net0.GuildPeerCount = function() return 0 end
+	Net0.GroupHasOtherRealm = function() return false end
+	_G.UnitFactionGroup = function() return "Alliance" end
+	TransmogHub_Bundled = { schema = 1, generated = 0, sets = {
+		{ id = "nk1", name = "А", author = "Свежий-Ревущийфьорд", created = 1700000300, race = 1, items = {} },
+		{ id = "nk2", name = "Б", author = "Ордынец-Ревущийфьорд", created = 1700000400, race = 2, items = {} },
+		{ id = "nk3", name = "В", author = Net0.Me(), created = 1700000500, items = {} },
+		{ id = "nk4", name = "Г", author = "Старый-Ревущийфьорд", created = 1600000000, items = {} },
+		{ id = "nk5", name = "Д", author = "Вчерашний-Ревущийфьорд", created = 1700000200, items = {} },
+		{ id = "nk6", name = "Е", author = "Давний-Ревущийфьорд", created = 1500000000, items = {} },
+	} }
+	TH.db.knocks = { ["Вчерашний-Ревущийфьорд"] = GetServerTime() - 3600 }
+	local savedPeers, savedSets = Net0.whisperPeers, TH.db.net.sets
+	Net0.whisperPeers, TH.db.net.sets = {}, {}
+	assert(Net0:IsIsolated(), "no connections: isolated")
+	flush()
+	Net0:KnockCatalog()
+	flush()
+	local knockedTo = {}
+	for _, m in ipairs(lastGroup) do
+		local who = m:match("^WHISPER:(.-):S?H")
+		if who then knockedTo[#knockedTo + 1] = who end
+	end
+	assert(#knockedTo == 3, "knock batch of three: " .. #knockedTo)
+	local set = {}
+	for _, who in ipairs(knockedTo) do set[who] = true end
+	assert(set["Свежий-Ревущийфьорд"] and set["Старый-Ревущийфьорд"] and set["Давний-Ревущийфьорд"],
+		"recent authors of own faction, not self, not knocked yesterday: " .. table.concat(knockedTo, ","))
+	assert(TH.db.knocks["Свежий-Ревущийфьорд"], "knock remembered for a day")
+	-- «игрок не найден» после стука скрыт, чужой — нет
+	_G.ERR_CHAT_PLAYER_NOT_FOUND_S = "Персонаж по имени \"%s\" в игре не найден."
+	assert(Net0.HideKnockMiss(nil, nil, "Персонаж по имени \"Старый-Ревущийфьорд\" в игре не найден."), "knock miss hidden")
+	assert(not Net0.HideKnockMiss(nil, nil, "Персонаж по имени \"Кто-то-Гордунни\" в игре не найден."), "other miss shown")
+	-- ответ на стук: «я тут» шёпотом и синхронизация
+	Net0:OnMessage("TMHUB", "SH1", "WHISPER", "Свежий-Ревущийфьорд")
+	flush()
+	local replied, synced = false, false
+	for _, m in ipairs(lastGroup) do
+		if m:find("^WHISPER:Свежий%-Ревущийфьорд:S?I") then replied = true end
+		if m:find("^WHISPER:Свежий%-Ревущийфьорд:S?Q") then synced = true end
+	end
+	assert(replied and synced, "knock answered by whisper and synced")
+	assert(not Net0:IsIsolated(), "whisper peer: not isolated")
+	Net0:Send("Xtest")
+	flush()
+	local relayed = false
+	for _, m in ipairs(lastGroup) do if m:find("^WHISPER:Свежий%-Ревущийфьорд:S?Xtest") then relayed = true end end
+	assert(relayed, "broadcast reaches whisper peers")
+	Net0.whisperPeers, TH.db.net.sets = savedPeers, savedSets
+	Net0.PeerCount, Net0.BNetPeerCount, Net0.GuildPeerCount, Net0.GroupHasOtherRealm = saved[1], saved[2], saved[3], saved[4]
+	_G.UnitFactionGroup = nil
+	TH.db.knocks = nil
+	TransmogHub_Bundled = nil
 end)()
 
 print("ALL OK")
