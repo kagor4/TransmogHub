@@ -158,7 +158,18 @@ local function SkinCloseButton(b)
 		local tex = b[getter] and b[getter](b)
 		if type(tex) == "table" and tex.SetAlpha then tex:SetAlpha(0) end
 	end
-	if b.SetSize then b:SetSize(22, 22) end
+	-- меньше стандартного: центр оставляем на месте, иначе квадрат уезжает за край окна
+	local SIZE = 22
+	local w, h = b:GetSize()
+	local point, rel, relPoint, x, y = b:GetPoint(1)
+	b:SetSize(SIZE, SIZE)
+	if point and type(w) == "number" and type(h) == "number" then
+		x, y = x or 0, y or 0
+		if point:find("RIGHT") then x = x - (w - SIZE) / 2 elseif point:find("LEFT") then x = x + (w - SIZE) / 2 end
+		if point:find("TOP") then y = y - (h - SIZE) / 2 elseif point:find("BOTTOM") then y = y + (h - SIZE) / 2 end
+		b:ClearAllPoints()
+		b:SetPoint(point, rel, relPoint, x, y)
+	end
 	Flat(b, { 0.08, 0.08, 0.09, 0.95 }, CLOSE_EDGE)
 	local lines = {}
 	for i, angle in ipairs({ 45, -45 }) do
