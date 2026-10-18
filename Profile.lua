@@ -335,7 +335,7 @@ function TH:OpenAvatarPicker()
 		end
 	end
 	for _, c in ipairs(ClassIcons()) do Add(c[1], c[2]) end
-	for _, set in pairs(self.db.mySets) do Add(self:GetSetIcon(set), L["Иконка образа"], set.name) end
+	for _, set in pairs(self.db.mySets) do Add(self:GetSetIcon(set), L["Иконка образа"], self:SetName(set)) end
 	for _, a in ipairs(self.ACHIEVEMENTS) do
 		if self.db.achievements[a.id] and not a.shame then Add(a.texture, a.name, L["Полученное достижение"]) end
 	end
@@ -718,7 +718,7 @@ function TH:ProfileSelect(p, setId)
 	p.selectedId = set and set.id
 	if set then
 		local r = self:GetSetRating(set)
-		p.viewName:SetText(set.name or L["Без названия"])
+		p.viewName:SetText(TH:SetName(set) or L["Без названия"])
 		local info = r and (r.n or 0) > 0 and string.format(L["|cffffd100%.1f|r из 5, оценок: %d"], r.avg, r.n) or L["|cff999999нет оценок|r"]
 		local tags = self:FormatTags(set.tags)
 		if tags ~= "" then info = info .. "  —  " .. tags end
@@ -934,7 +934,7 @@ function TH:RefreshProfileSets(p)
 			row.name:SetPoint("LEFT", row.icon, "RIGHT", 6, 0)
 			local r = self:GetSetRating(set)
 			row.icon:SetTexture(self:GetSetIcon(set))
-			row.name:SetText(set.name or L["Без названия"])
+			row.name:SetText(TH:SetName(set) or L["Без названия"])
 			if p.own and set.status ~= "published" then
 				row.rating:SetText(L["|cff999999черновик|r"])
 			else

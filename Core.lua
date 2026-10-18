@@ -645,6 +645,40 @@ function TH.Lower(s)
 	return (s:lower():gsub("[\195\208\209][\128-\191]", CYR_LOWER))
 end
 
+-- Транслит кириллицы латиницей. У игроков с нерусским клиентом кириллические названия
+-- образов показываются так («Ядовитый» -> «Yadovityy»): буквы шрифт покажет, но прочитать
+-- их нельзя. В сети название остаётся как есть; поиск находит и по транслиту.
+local TRANSLIT = {}
+do
+	local lower = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя"
+	local latin = { "a", "b", "v", "g", "d", "e", "yo", "zh", "z", "i", "y", "k", "l", "m", "n", "o", "p", "r",
+		"s", "t", "u", "f", "kh", "ts", "ch", "sh", "shch", "", "y", "", "e", "yu", "ya" }
+	local i = 0
+	for ch in lower:gmatch("[\192-\255][\128-\191]*") do
+		i = i + 1
+		TRANSLIT[ch] = latin[i]
+		local up = CYR_UPPER[ch]
+		if up then TRANSLIT[up] = latin[i]:sub(1, 1):upper() .. latin[i]:sub(2) end
+	end
+end
+local translitCache, translitCount = {}, 0
+function TH.Translit(s)
+	if type(s) ~= "string" or not s:find("[\208\209]") then return s end
+	local out = translitCache[s]
+	if out then return out end
+	out = s:gsub("[\208\209][\128-\191]", TRANSLIT)
+	if translitCount > 5000 then translitCache, translitCount = {}, 0 end
+	translitCache[s], translitCount = out, translitCount + 1
+	return out
+end
+
+-- Название образа для показа: на русском клиенте как есть, на остальных — транслитом
+function TH:SetName(set)
+	local name = set and set.name
+	if not name or (ns.ClientLocale and ns.ClientLocale() == "ruRU") then return name end
+	return TH.Translit(name)
+end
+
 local function IsLetter(ch)
 	return ch:match("^%a$") or #ch > 1 -- латиница или любая не-ASCII буква
 end
@@ -1016,7 +1050,9 @@ end
 
 local function MatchesFilter(set, filter)
 	if filter.text and filter.text ~= "" then
-		local hay = TH.Lower((set.name or "") .. " " .. (set.author or "") .. " " .. TH:FormatTags(set.tags))
+		local name = set.name or ""
+		-- и по транслиту: «yadov» находит «Ядовитый»
+		local hay = TH.Lower(name .. " " .. TH.Translit(name) .. " " .. (set.author or "") .. " " .. TH:FormatTags(set.tags))
 		-- не нашли в названии, авторе и тегах — ищем по названиям вещей (от 3 букв)
 		if not hay:find(filter.text, 1, true)
 			and not (#filter.text >= 3 and ItemsText(set):find(filter.text, 1, true)) then

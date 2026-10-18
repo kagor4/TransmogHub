@@ -1,5 +1,9 @@
 # Transmog Hub — Changelog
 
+## 1.7.0
+- Outfit names written in Cyrillic are shown in Latin letters on non-Russian game clients ("Ядовитый" → "Yadovityy"), so everyone can read them. The original name is kept.
+- Search finds outfits by both the original and the Latin spelling.
+
 ## 1.6.0
 - **Spanish language** for Spain and Latin America (esES and esMX): the whole interface, help, tour, achievements and tags.
 - Hidden achievements have Spanish texts, and some of them nod to Spanish-speaking WoW creators.

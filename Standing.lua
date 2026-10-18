@@ -192,7 +192,7 @@ function TH:PublishRestrictionText()
 end
 
 local function Quote(mine)
-	return "«" .. (mine.name or "?") .. "»"
+	return "«" .. (TH:SetName(mine) or "?") .. "»"
 end
 
 -- Письмо Стражей: шуточное название — переименуйте

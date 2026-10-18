@@ -36,7 +36,7 @@ function TH:ApplyServerSecrets()
 				for name in pairs(names) do
 					local setId = type(c.awardSets) == "table" and c.awardSets[name] and c.awardSets[name][a.id]
 					local set = setId and self:GetSet(setId)
-					if set then setName = set.name break end
+					if set then setName = self:SetName(set) break end
 				end
 				a.desc = setName and (L["Получено за образ «"] .. setName .. L["». Как именно — знают только Стражи подиума."])
 					or L["Как именно получено — знают только Стражи подиума."]
