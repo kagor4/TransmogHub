@@ -915,14 +915,36 @@ function Net:Prune()
 	for setId in pairs(db.tagFlags) do
 		if not db.sets[setId] then db.tagFlags[setId] = nil end
 	end
+	local all = 0
+	for _ in pairs(db.sets) do all = all + 1 end
+	if all <= MAX_SETS then return end
+	-- Вытесняем только старые образы, которые никому не нужны: образы из чарта и Зала
+	-- славы, свои, из избранного и от авторов из подписок остаются всегда
+	local keep = {}
+	local charts = TH.GetCharts and TH:GetCharts()
+	if type(charts) == "table" then
+		for _, key in ipairs({ "top", "trending" }) do
+			for _, id in ipairs(type(charts[key]) == "table" and charts[key] or {}) do keep[id] = true end
+		end
+		for _, ids in pairs(type(charts.tags) == "table" and charts.tags or {}) do
+			for _, id in ipairs(type(ids) == "table" and ids or {}) do keep[id] = true end
+		end
+		for id in pairs(type(charts.hof) == "table" and charts.hof or {}) do keep[id] = true end
+	end
+	for id in pairs(TH.db.favorites or {}) do keep[id] = true end
 	local list = {}
-	for _, set in pairs(db.sets) do list[#list + 1] = set end
-	if #list <= MAX_SETS then return end
+	for id, set in pairs(db.sets) do
+		local protected = keep[id] or (TH.IsMine and TH:IsMine(set))
+			or (set.author and TH.IsFollowing and TH:IsFollowing(set.author))
+		if not protected then list[#list + 1] = set end
+	end
 	table.sort(list, function(a, b) return (a.created or 0) > (b.created or 0) end)
-	for i = MAX_SETS + 1, #list do
-		db.sets[list[i].id] = nil
-		db.votes[list[i].id] = nil
-		db.voteRetracts[list[i].id] = nil
+	local excess = all - MAX_SETS
+	for i = #list, math.max(1, #list - excess + 1), -1 do
+		local id = list[i].id
+		db.sets[id] = nil
+		db.votes[id] = nil
+		db.voteRetracts[id] = nil
 	end
 end
 

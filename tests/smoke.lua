@@ -2210,6 +2210,35 @@ end)()
 		end
 	end
 end)()
+-- Вытеснение старых образов при переполнении: чарт, Зал славы, свои, избранное и
+-- подписки остаются, уходят самые старые из остальных
+;(function()
+	local net = TH.db.net
+	local saved = {}
+	for id, set in pairs(net.sets) do saved[id] = set end
+	for id in pairs(saved) do net.sets[id] = nil end
+	for i = 1, 3005 do
+		local id = "nfill" .. i
+		net.sets[id] = { id = id, name = "Образ " .. i, author = "Наполнитель-Гордунни", created = 1000 + i, items = {}, tags = {} }
+	end
+	-- пять самых старых: защищённые по разным причинам
+	net.sets.nfill1.author = "Любимый-Гордунни"
+	TH.db.following["Любимый-Гордунни"] = 1
+	TH.db.favorites.nfill2 = true
+	TransmogHub_Charts = { t = time(), awards = {}, top = { "nfill3" }, trending = {}, tags = {}, hof = { nfill4 = { 1, 0, 0, "2026-10-01" } } }
+	TH.Net:Prune()
+	local n = 0
+	for _ in pairs(net.sets) do n = n + 1 end
+	assert(n == 3000, "trimmed to the limit: " .. n)
+	assert(net.sets.nfill1 and net.sets.nfill2 and net.sets.nfill3 and net.sets.nfill4, "followed, favorite, charted and Hall of Fame outfits kept")
+	assert(not net.sets.nfill5 and not net.sets.nfill9 and net.sets.nfill10, "oldest of the rest evicted")
+	for id in pairs(net.sets) do net.sets[id] = nil end
+	for id, set in pairs(saved) do net.sets[id] = set end
+	TH.db.following["Любимый-Гордунни"] = nil
+	TH.db.favorites.nfill2 = nil
+	TransmogHub_Charts = nil
+end)()
+
 -- Гильдия: согильдиец, которого нет в канале (другая фракция; в Forever — свой канал),
 -- делает гильдию мостом — рассылка идёт и туда; пока такого нет, гильдия только для знакомства
 ;(function()
