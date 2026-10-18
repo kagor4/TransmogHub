@@ -309,7 +309,7 @@ function TH:OpenReportOther(set)
 		other.sendBtn = send
 	end
 	other.setId = set.id
-	other.info:SetText(L["Образ «"] .. (set.name or "?") .. L["». Коротко опишите, что не так (до "] .. REPORT_LETTERS
+	other.info:SetText(L["Образ «"] .. (TH:SetName(set) or "?") .. L["». Коротко опишите, что не так (до "] .. REPORT_LETTERS
 		.. L[" букв) — модератор прочитает. Для рекламы и оскорблений есть отдельные пункты."])
 	other.edit:SetText("")
 	other.error:SetText("")

@@ -246,6 +246,7 @@ assert(Net:SetCount() == before)
 -- search with Cyrillic case-insensitive
 assert(#TH:QuerySets("mine", { text = "ПИРАТ" }) == 1, "cyrillic search")
 assert(#TH:QuerySets("mine", { text = "рыцарь" }) == 0)
+assert(#TH:QuerySets("mine", { text = "PIRAT" }) == 1, "search by transliteration")
 assert(#TH:QuerySets("mine", { tags = { pirate = true } }) == 1)
 
 -- a peer publishes a set; it appears in the feed
@@ -2471,6 +2472,20 @@ end)()
 	TransmogHub_Sources = { schema = 1, items = {} }
 	C_TransmogCollection.GetItemInfo = realInfo
 	C_Map.GetBestMapForUnit, C_Map.GetPlayerMapPosition, C_Map.GetMapInfo = realBest, realPos, realMapInfo
+end)()
+
+-- Транслит: на нерусском клиенте кириллические названия образов — латиницей, в сети как есть
+;(function()
+	assert(TH.Translit("Ядовитый") == "Yadovityy", TH.Translit("Ядовитый"))
+	assert(TH.Translit("Щит Ёжика") == "Shchit Yozhika", TH.Translit("Щит Ёжика"))
+	assert(TH.Translit("Неон ган X") == "Neon gan X" and TH.Translit("Plain") == "Plain", "mixed and latin")
+	local real = ns.ClientLocale
+	local set = { name = "Ядовитый" }
+	ns.ClientLocale = function() return "ruRU" end
+	assert(TH:SetName(set) == "Ядовитый", "russian client sees the original")
+	ns.ClientLocale = function() return "esES" end
+	assert(TH:SetName(set) == "Yadovityy" and set.name == "Ядовитый", "other clients see transliteration, data unchanged")
+	ns.ClientLocale = real
 end)()
 
 print("ALL OK")

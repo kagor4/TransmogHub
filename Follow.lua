@@ -181,10 +181,10 @@ function TH:OnSetStored(set)
 	local s = self.db.notify
 	if not s.sets or (s.mutualOnly and not self:IsMutual(set.author)) then return end
 	if self.Net.Now() - (set.created or 0) > NOTIFY_WINDOW then return end
-	Push("s:" .. set.id, self.Net.Now(), L["Новый образ от "] .. Short(set.author) .. ": «" .. (set.name or "?") .. "»", {
+	Push("s:" .. set.id, self.Net.Now(), L["Новый образ от "] .. Short(set.author) .. ": «" .. (TH:SetName(set) or "?") .. "»", {
 		icon = self:GetSetIcon(set),
 		title = L["Новый образ от "] .. Short(set.author),
-		text = "«" .. (set.name or "?") .. "»",
+		text = "«" .. (TH:SetName(set) or "?") .. "»",
 		onClick = function() self.UI:Open(); self.UI:SetView("subs"); self.UI:Select(set.id) end,
 	})
 end
@@ -204,10 +204,10 @@ function TH:OnVoteStored(setId, voter, stars, t)
 		if n > s.voteLimit then return end
 	end
 	local starsText = string.rep(StarMarkup(255, 255, 255), stars) .. string.rep(StarMarkup(90, 90, 90), 5 - stars)
-	Push("v:" .. setId .. ":" .. voter, self.Net.Now(), Short(voter) .. L[" оценил ваш образ «"] .. (set.name or "?") .. "»: " .. stars .. L[" из 5"], {
+	Push("v:" .. setId .. ":" .. voter, self.Net.Now(), Short(voter) .. L[" оценил ваш образ «"] .. (TH:SetName(set) or "?") .. "»: " .. stars .. L[" из 5"], {
 		icon = self:GetSetIcon(set),
 		title = Short(voter) .. L[" оценил ваш образ"],
-		text = "«" .. (set.name or "?") .. "»  " .. starsText,
+		text = "«" .. (TH:SetName(set) or "?") .. "»  " .. starsText,
 		onClick = function() self.UI:Open(); self.UI:SetView("mine"); self.UI:Select(setId) end,
 	})
 end
@@ -221,10 +221,10 @@ function TH:OnFavStored(setId, who, t)
 	if not (set and set.author and self.db.myChars[set.author]) then return end
 	if self.Net.Now() - (t or 0) > NOTIFY_WINDOW then return end
 	if (s.mutualOnly and not self:IsMutual(who)) or self:IsFollowMuted(who) then return end
-	Push("a:" .. setId .. ":" .. who, self.Net.Now(), Short(who) .. L[" добавил ваш образ «"] .. (set.name or "?") .. L["» в избранное"], {
+	Push("a:" .. setId .. ":" .. who, self.Net.Now(), Short(who) .. L[" добавил ваш образ «"] .. (TH:SetName(set) or "?") .. L["» в избранное"], {
 		icon = self:GetSetIcon(set),
 		title = Short(who) .. L[" добавил в избранное"],
-		text = "«" .. (set.name or "?") .. "»",
+		text = "«" .. (TH:SetName(set) or "?") .. "»",
 		onClick = function() self.UI:Open(); self.UI:SetView("mine"); self.UI:Select(setId) end,
 	})
 end

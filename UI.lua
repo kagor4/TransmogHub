@@ -761,7 +761,7 @@ function UI:BuildList(list)
 			if not set then return end
 			local have, total = TH:GetCollectedStats(set)
 			GameTooltip:SetOwner(r, "ANCHOR_RIGHT")
-			GameTooltip:SetText(set.name or "")
+			GameTooltip:SetText(TH:SetName(set) or "")
 			if total > 0 then GameTooltip:AddLine(string.format(L["Собрано обликов: %d из %d"], have, total), 1, 1, 1) end
 			GameTooltip:AddLine(L["ЛКМ — показать, ПКМ — меню"], 0.6, 0.6, 0.6)
 			GameTooltip:Show()
@@ -1204,7 +1204,7 @@ function UI:BuildDetail(panel)
 		local set = TH:GetSet(self.selectedId)
 		if not set then return end
 		local extra = set.serverId and L["\n\nОбраз будет снят с публикации."] or ""
-		StaticPopup_Show("TRANSMOGHUB_DELETE", set.name, extra, set.id)
+		StaticPopup_Show("TRANSMOGHUB_DELETE", TH:SetName(set), extra, set.id)
 	end)
 
 	-- Кнопки модератора (вместо обычных на вкладке «Модерация»)
@@ -1492,7 +1492,7 @@ function UI:OpenSetMenu(owner, setId)
 	end
 	local own = mine ~= nil or TH:IsMine(set)
 	MenuUtil.CreateContextMenu(owner, function(_, root)
-		root:CreateTitle(set.name or L["Образ"])
+		root:CreateTitle(TH:SetName(set) or L["Образ"])
 
 		root:CreateButton(TH.db.favorites[set.id] and L["Убрать из избранного"] or L["В избранное"],
 			function() TH:ToggleFavorite(set.id) end)
@@ -1552,7 +1552,7 @@ function UI:OpenSetMenu(owner, setId)
 				end
 			end
 			root:CreateButton(L["Скрыть образ"], function()
-				StaticPopup_Show("TRANSMOGHUB_REPORT", set.name, nil, set.id)
+				StaticPopup_Show("TRANSMOGHUB_REPORT", TH:SetName(set), nil, set.id)
 			end)
 		end
 	end)
@@ -1808,7 +1808,7 @@ function UI:RefreshList()
 		local set = results[self.offset + i]
 		if set then
 			row.setId = set.id
-			row.name:SetText(set.name or L["Без названия"])
+			row.name:SetText(TH:SetName(set) or L["Без названия"])
 			row.author:SetText(set.author or "")
 
 			row.icon:SetTexture(TH:GetSetIcon(set))
@@ -1906,7 +1906,7 @@ function UI:RefreshDetail()
 		return
 	end
 
-	self.dName:SetText(set.name or L["Без названия"])
+	self.dName:SetText(TH:SetName(set) or L["Без названия"])
 	local who = set.author or "?"
 	if set.race then who = who .. ", " .. TH:GetRaceName(set.race) end
 	if set.sex then who = who .. ", " .. TH:SexLabel(set.sex) end
