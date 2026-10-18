@@ -91,8 +91,9 @@ sf:write('return { hid_lichking = { probe = "tags", conds = { "c_red,raid_midnig
 sf:close()
 sf = assert(io.open(secretsDir .. "/master.txt", "w")); sf:write("0123456789abcdef0123\n"); sf:close()
 
+local bundledPath = tmp .. "_bundled.lua"
 local function Build(t)
-	arg = { dir, svPath, outPath, tostring(t), secretsDir }
+	arg = { dir, svPath, outPath, tostring(t), secretsDir, bundledPath }
 	dofile(dir .. "/tools/charts/build.lua")
 end
 Build(NOW)
@@ -100,6 +101,21 @@ Build(NOW)
 TransmogHub_Charts = nil
 dofile(outPath)
 local c = assert(TransmogHub_Charts, "chart written")
+-- каталог: образы чарта есть, накрученного нет, у образов итог оценки без имён голосовавших
+TransmogHub_Bundled = nil
+dofile(bundledPath)
+local b = assert(TransmogHub_Bundled, "catalog written")
+local inCatalog = {}
+for _, set in ipairs(b.sets) do
+	inCatalog[set.id] = set
+	assert(set.items and set.author and set.created, "catalog set complete: " .. set.id)
+	assert(not set.votes, "no per-voter votes in catalog")
+end
+for _, id in ipairs(c.top) do assert(inCatalog[id], "charted set in catalog: " .. id) end
+assert(not inCatalog.nboost, "boosted set not in catalog")
+assert(inCatalog[c.top[1]].rating and inCatalog[c.top[1]].rating.n > 0, "catalog keeps rating summary")
+local src = io.open(bundledPath):read("*a")
+assert(not src:find("votes", 1, true), "no vote lists in catalog file")
 assert(c.t == NOW and c.date)
 assert(#c.top == 40, "40 honest sets charted, boosted one excluded: " .. #c.top)
 for _, id in ipairs(c.top) do assert(id ~= "nboost", "boosted set not in chart") end

@@ -1,6 +1,6 @@
 -- Официальный чарт Transmog Hub.
 --
---   lua5.1 tools/charts/build.lua <папка аддона> <TransmogHub.lua модератора> <выход Data/Charts.lua> [время] [папка secrets]
+--   lua5.1 tools/charts/build.lua <папка аддона> <TransmogHub.lua модератора> <выход Data/Charts.lua> [время] [папка secrets] [выход Data/Bundled.lua]
 --
 -- Папка secrets — из закрытого репозитория (hidden.lua и master.txt): по ней чарт
 -- выдаёт скрытые достижения за теги и слово в названии. Условия в чарт не попадают.
@@ -15,7 +15,9 @@
 --   * первооткрыватели (закрепляются навсегда при первом расчёте);
 --   * рейтинг очков стиля: достижения за места — только по наградам чарта.
 -- Награды копятся: из прошлого Data/Charts.lua берётся лучшее.
-local dir, svPath, outPath, nowArg, secretsDir = arg[1], arg[2], arg[3], arg[4], arg[5]
+-- С выходом Data/Bundled.lua ещё и каталог: образы из снимка, которые придут всем
+-- с обновлением аддона (видны и там, где рядом никого с аддоном).
+local dir, svPath, outPath, nowArg, secretsDir, bundledPath = arg[1], arg[2], arg[3], arg[4], arg[5], arg[6]
 assert(dir and svPath and outPath, "usage: build.lua <addon dir> <SavedVariables> <out> [unix time] [secrets dir]")
 if nowArg == "" then nowArg = nil end
 if secretsDir == "" then secretsDir = nil end
@@ -433,6 +435,87 @@ lines[#lines + 1] = "}"
 local f = assert(io.open(outPath, "w"))
 f:write(table.concat(lines, "\n"), "\n")
 f:close()
+
+---------------------------------------------------------------------------
+-- Каталог образов (Data/Bundled.lua): чарт, Зал славы и свежие образы из снимка.
+-- Только опубликованные, без блокировок, жалоб, подозрений на накрутку и изгнанных
+-- авторов (лента их уже отсеяла). Голоса по именам не переносятся: только итог оценки.
+---------------------------------------------------------------------------
+local BUNDLE_MAX, BUNDLE_FRESH = 400, 60 * DAY
+local bundledCount = 0
+if bundledPath and bundledPath ~= "" then
+	local pick, picked = {}, {}
+	local function Want(set)
+		if not set or picked[set.id] or not set.id:match("^n") or not set.author or not set.items then return end
+		if TH:GetSuspicion(set) or TH:IsBanned(set.author) then return end
+		picked[set.id] = true
+		pick[#pick + 1] = set
+	end
+	for _, id in ipairs(top) do Want(TH.byId[id]) end
+	for _, id in ipairs(SortedKeys(hof)) do Want(TH.byId[id]) end
+	local fresh = {}
+	for _, set in ipairs(TH.feed.sets) do
+		if (set.created or 0) >= now - BUNDLE_FRESH then fresh[#fresh + 1] = set end
+	end
+	table.sort(fresh, function(a, b)
+		if (a.created or 0) ~= (b.created or 0) then return (a.created or 0) > (b.created or 0) end
+		return a.id < b.id
+	end)
+	for _, set in ipairs(fresh) do Want(set) end
+	while #pick > BUNDLE_MAX do table.remove(pick) end
+	table.sort(pick, function(a, b) return a.id < b.id end)
+
+	local function Str(v) return string.format("%q", v) end
+	local function Items(items)
+		local parts = {}
+		for slot = 1, 19 do
+			local it = items[slot]
+			if it then
+				local vals = {}
+				for i = 1, 3 do vals[i] = it[i] and tostring(it[i]) or "nil" end
+				while vals[#vals] == "nil" do vals[#vals] = nil end
+				parts[#parts + 1] = string.format("[%d] = { %s }", slot, table.concat(vals, ", "))
+			end
+		end
+		return "{ " .. table.concat(parts, ", ") .. " }"
+	end
+	local out = {
+		"-- Каталог образов, который приходит вместе с обновлением аддона.",
+		"-- Файл собирает tools/charts/build.lua из снимка базы модератора, не правьте руками.",
+		"TransmogHub_Bundled = {",
+		"\tschema = 1,",
+		string.format("\tgenerated = %d,", now),
+		"\tsets = {",
+	}
+	for _, set in ipairs(pick) do
+		local tags = {}
+		for _, t in ipairs(set.tags or {}) do tags[#tags + 1] = Str(t) end
+		local fields = {
+			"id = " .. Str(set.id), "name = " .. Str(set.name or ""), "author = " .. Str(set.author),
+			"created = " .. tostring(math.floor(set.created or 0)), "tags = { " .. table.concat(tags, ", ") .. " }",
+			"items = " .. Items(set.items),
+		}
+		if set.desc and set.desc ~= "" then fields[#fields + 1] = "desc = " .. Str(set.desc) end
+		if set.race then fields[#fields + 1] = "race = " .. tostring(set.race) end
+		if set.sex then fields[#fields + 1] = "sex = " .. tostring(set.sex) end
+		if set.class then fields[#fields + 1] = "class = " .. Str(set.class) end
+		local r = set.rating
+		if r and (r.n or 0) > 0 then
+			local d = r.dist or {}
+			fields[#fields + 1] = string.format("rating = { avg = %.3f, n = %d, dist = { %d, %d, %d, %d, %d } }",
+				r.avg or 0, r.n, d[1] or 0, d[2] or 0, d[3] or 0, d[4] or 0, d[5] or 0)
+		end
+		out[#out + 1] = "\t\t{ " .. table.concat(fields, ", ") .. " },"
+	end
+	out[#out + 1] = "\t},"
+	out[#out + 1] = "}"
+	local bf = assert(io.open(bundledPath, "w"))
+	bf:write(table.concat(out, "\n"), "\n")
+	bf:close()
+	bundledCount = #pick
+end
+
 print(string.format("Порог чарта: %d оценок (игроков с оценками в день: %d)", minVotes, activeVoters))
 print(string.format("Чарт %s: в чарте %d образов, тегов %d, игроков %d, первооткрывателей %d, награждённых %d",
 	os.date("!%Y-%m-%d", now), #top, #SortedKeys(byTag), #entries, #SortedKeys(firsts), #SortedKeys(awards)))
+if bundledPath and bundledPath ~= "" then print(string.format("Каталог: %d образов", bundledCount)) end

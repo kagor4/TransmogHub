@@ -146,6 +146,7 @@ C_BattleNet = {
 local inGroup, groupOtherRealm = false, false
 LE_PARTY_CATEGORY_HOME, LE_PARTY_CATEGORY_INSTANCE = 1, 2
 IsInGroup = function(category) if category == LE_PARTY_CATEGORY_INSTANCE then return false end return inGroup end
+IsInGuild = function() return false end
 IsInRaid = function() return false end
 GetNumGroupMembers = function() return inGroup and 2 or 0 end
 UnitName = function(unit)
@@ -2209,4 +2210,48 @@ end)()
 		end
 	end
 end)()
+-- Гильдия: согильдиец, которого нет в канале (другая фракция; в Forever — свой канал),
+-- делает гильдию мостом — рассылка идёт и туда; пока такого нет, гильдия только для знакомства
+;(function()
+	local Net0 = TH.Net
+	_G.IsInGuild = function() return true end
+	Net0.guildBridge = nil
+	Net0.channelPeers["Канальный-Гордунни"] = true
+	Net0:OnMessage("TMHUB", "SI1", "GUILD", "Канальный-Гордунни")
+	assert(not Net0.guildBridge, "guildmate heard in channel: no bridge")
+	Net0:OnMessage("TMHUB", "SI1", "GUILD", "Ордынец-Гордунни")
+	assert(Net0.guildBridge, "guildmate not in channel: guild becomes a bridge")
+	flush()
+	Net0:Send("Xtest")
+	flush()
+	local viaGuild = false
+	for _, m in ipairs(lastGroup) do if m:find("^GUILD:") then viaGuild = true end end
+	assert(viaGuild, "broadcast goes through guild bridge")
+	Net0.guildBridge = nil
+	_G.IsInGuild = function() return false end
+end)()
+
+-- Каталог из обновления (Data/Bundled.lua): образ виден без сети, итог оценки держится,
+-- пока своих голосов меньше; заблокированный образ из каталога не показывается
+;(function()
+	TransmogHub_Bundled = { schema = 1, generated = 0, sets = {
+		{ id = "ncat1", name = "Каталожный", author = "Издалека-Ревущийфьорд", created = 1700000000,
+			tags = { "pirate" }, items = { [5] = { 1001 } }, rating = { avg = 4.5, n = 10, dist = { 0, 0, 1, 3, 6 } } },
+		{ id = "ncat2", name = "Заблокированный", author = "Издалека-Ревущийфьорд", created = 1700000000,
+			tags = {}, items = { [5] = { 1002 } } },
+	} }
+	TransmogHub_Blocklist.sets.ncat2 = "реклама"
+	TH:LoadFeed()
+	local set = assert(TH.byId.ncat1, "catalog set in feed")
+	assert(not TH.byId.ncat2, "blocked catalog set hidden")
+	assert(set.rating.n == 10, "catalog rating kept")
+	TH.Net:StoreVote("ncat1", "Сосед-Гордунни", 1, 1700000100)
+	TH:LoadFeed()
+	assert(TH.byId.ncat1.rating.n == 10 and TH.byId.ncat1.rating.avg == 4.5, "one network vote does not replace catalog summary")
+	assert(not TH.db.net.sets.ncat1, "catalog is not the network base (not relayed, not counted)")
+	TransmogHub_Blocklist.sets.ncat2 = nil
+	TransmogHub_Bundled = nil
+	TH:LoadFeed()
+end)()
+
 print("ALL OK")

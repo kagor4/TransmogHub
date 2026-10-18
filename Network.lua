@@ -171,6 +171,7 @@ Net.Now = Now
 ---------------------------------------------------------------------------
 Net.channelId = 0
 Net.peers = {}
+Net.channelPeers = {} -- кого слышали в канале (чтобы понять, что гильдия — мост)
 Net.voteStamp = {} -- [setId] = счётчик изменений голосов (для пересчёта только изменённых)
 
 local function HideChannelFromChat()
@@ -219,12 +220,16 @@ end
 -- Адресаты
 --   CHANNEL — скрытый канал своего сервера
 --   GROUP   — группа/рейд, если в ней есть игроки с других серверов
+--   GUILD   — гильдия: при входе — знакомство и синхронизация; рассылка — только если
+--             через гильдию слышно тех, кого нет в канале (другая фракция, а в Forever
+--             канал у каждого свой)
 --   BNET    — друг Battle.net в WoW (любой сервер и фракция), target = gameAccountID
 -- Пересылка между ними связывает серверы: игрок с друзьями на других
 -- серверах работает «мостом». Повторы отсекаются по id образа.
 ---------------------------------------------------------------------------
 local CHANNEL = { kind = "CHANNEL" }
 local GROUP = { kind = "GROUP" }
+local GUILD = { kind = "GUILD" }
 local function BNET(id) return { kind = "BNET", target = id } end
 
 local MAX_RELAY_QUEUE = 200 -- если очередь длиннее, пересылку пропускаем: догонит синхронизация
@@ -356,6 +361,9 @@ local function Deliver(entry)
 		local chatType = GroupChatType()
 		if not chatType then return true end -- группы уже нет
 		result = C_ChatInfo.SendAddonMessage(PREFIX, entry.text, chatType)
+	elseif entry.kind == "GUILD" then
+		if not IsInGuild() then return true end -- из гильдии вышли
+		result = C_ChatInfo.SendAddonMessage(PREFIX, entry.text, "GUILD")
 	else
 		result = C_BattleNet.SendGameData(entry.target, PREFIX, entry.text)
 	end
@@ -428,6 +436,7 @@ function Net:Send(body, dest, except)
 	if dest then return SendTo(body, dest) end
 	if not (except and except.kind == "CHANNEL") then SendTo(body, CHANNEL) end
 	if not (except and except.kind == "GROUP") and self:GroupHasOtherRealm() then SendTo(body, GROUP) end
+	if not (except and except.kind == "GUILD") and self.guildBridge and IsInGuild() then SendTo(body, GUILD) end
 	for id in pairs(self.bnPeers) do
 		if not (except and except.kind == "BNET" and except.target == id) then SendTo(body, BNET(id)) end
 	end
@@ -1332,8 +1341,8 @@ handlers.H = function(self, _, sender, origin)
 		self:SyncWithPeer(origin, sender)
 		return
 	end
-	if origin.kind == "GROUP" then
-		self:Send("I" .. PROTOCOL, GROUP)
+	if origin.kind == "GROUP" or origin.kind == "GUILD" then
+		self:Send("I" .. PROTOCOL, origin.kind == "GROUP" and GROUP or GUILD)
 		return
 	end
 	self:ScheduleSync(5 + math.random() * 10)
@@ -1369,7 +1378,7 @@ handlers.Q = function(self, body, _, origin)
 	end
 	-- В канале и группе отвечает тот, чья случайная задержка кончится первой
 	pendingAnswers[reqId] = true
-	local dest = origin.kind == "GROUP" and GROUP or CHANNEL
+	local dest = origin.kind == "GROUP" and GROUP or origin.kind == "GUILD" and GUILD or CHANNEL
 	C_Timer.After(1 + math.random() * 5, function()
 		if pendingAnswers[reqId] then self:Answer(reqId, since, dest) end
 	end)
@@ -1406,11 +1415,16 @@ function Net:OnMessage(prefix, text, channel, sender)
 		origin = CHANNEL
 	elseif channel == "PARTY" or channel == "RAID" or channel == "INSTANCE_CHAT" then
 		origin = GROUP
+	elseif channel == "GUILD" then
+		origin = GUILD
 	else
 		return
 	end
 	sender = Net.FullName(sender)
 	if sender == Net.Me() then return end
+	-- согильдиец, которого не слышно в канале: гильдия — мост, рассылаем и через неё
+	if origin == GUILD and not self.guildBridge and not self.channelPeers[sender] then self.guildBridge = true end
+	if origin == CHANNEL then self.channelPeers[sender] = true end
 	self.peers[sender] = Now()
 	Dispatch(self, Assemble(sender, text), sender, origin)
 end
@@ -1477,6 +1491,15 @@ function Net:OnGroupChanged()
 	C_Timer.After(5, function() self:RequestSync(GROUP, "group") end)
 end
 
+-- Гильдия: один раз за сессию знакомимся и спрашиваем новое у согильдийцев
+local guildGreeted = false
+function Net:GreetGuild()
+	if guildGreeted or not IsInGuild() then return end
+	guildGreeted = true
+	self:Send("H" .. PROTOCOL, GUILD)
+	C_Timer.After(8, function() self:RequestSync(GUILD, "guild") end)
+end
+
 function Net:Start()
 	C_ChatInfo.RegisterAddonMessagePrefix(PREFIX)
 	local frame = CreateFrame("Frame")
@@ -1500,6 +1523,7 @@ function Net:Start()
 		if self:Join() then self:OnConnected() end
 		self:GreetFriends()
 		self:OnGroupChanged()
+		self:GreetGuild()
 	end)
 	-- Раз в минуту: канал на месте? новые друзья в игре?
 	C_Timer.NewTicker(60, function()
