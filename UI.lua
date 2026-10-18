@@ -1672,6 +1672,9 @@ function UI:OpenItemMenu(row)
 	GameTooltip:Hide()
 	MenuUtil.CreateContextMenu(row, function(_, root)
 		root:CreateTitle(det.name)
+		if TH.CanShowOnMap and TH:CanShowOnMap(det.itemID, row.sourceID) then
+			root:CreateButton(L["Показать на карте"], function() TH:ShowOnMap(det.itemID, row.sourceID, det.name) end)
+		end
 		root:CreateButton(L["Ссылка на Wowhead"], function() TH:ShowItemLink(det.itemID, det.name) end)
 		root:CreateButton(L["Вставить ссылку в чат"], function()
 			local _, link = C_Item.GetItemInfo(det.itemID)
@@ -1680,8 +1683,9 @@ function UI:OpenItemMenu(row)
 	end)
 end
 
-function UI:ShowSlotTooltip(row)
+function UI:ShowSlotTooltip(row, refresh)
 	if not row.sourceID then return end
+	if not refresh then row.whereTries = 0 end
 	local det = row.illusion and TH:GetIllusionDetails(row.sourceID) or TH:GetSourceDetails(row.sourceID)
 	if not det then return end
 	GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
@@ -1693,13 +1697,33 @@ function UI:ShowSlotTooltip(row)
 	GameTooltip:AddLine(" ")
 	GameTooltip:AddLine(L["Источник: "] .. (det.typeText or "?"), 1, 1, 1)
 	if det.where then GameTooltip:AddLine(det.where, 0.8, 0.8, 0.8, true) end
+	if not det.hidden and not det.illusion and TH.GetWhereToFind then
+		local title, lines, noATT, pending = TH:GetWhereToFind(det.itemID, row.sourceID)
+		-- ATT ещё загружает имена (торговцев, заданий): перерисуем, когда придут
+		if pending and (row.whereTries or 0) < 10 then
+			row.whereTries = (row.whereTries or 0) + 1
+			C_Timer.After(0.5, function()
+				if GameTooltip:IsOwned(row) then self:ShowSlotTooltip(row, true) end
+			end)
+		end
+		if title then
+			GameTooltip:AddLine(title, 1, 0.82, 0)
+			for _, line in ipairs(lines) do GameTooltip:AddLine(line, 0.8, 0.8, 0.8, true) end
+		elseif noATT and not (det.sourceType == 1 and det.where) then
+			GameTooltip:AddLine(L["Подробнее, где искать, покажет аддон AllTheThings, если его установить."], 0.6, 0.6, 0.6, true)
+		end
+	end
 	if not det.hidden then
 		if det.collected then
 			GameTooltip:AddLine(L["Облик собран"], 0.25, 1, 0.25)
 		else
 			GameTooltip:AddLine(L["Облик не собран"], 1, 0.25, 0.25)
 		end
-		GameTooltip:AddLine(L["ПКМ — ссылка на Wowhead"], 0.6, 0.6, 0.6)
+		if not det.illusion and TH.CanShowOnMap and TH:CanShowOnMap(det.itemID, row.sourceID) then
+			GameTooltip:AddLine(L["ПКМ — метка на карте, ссылка на Wowhead"], 0.6, 0.6, 0.6)
+		else
+			GameTooltip:AddLine(L["ПКМ — ссылка на Wowhead"], 0.6, 0.6, 0.6)
+		end
 	end
 	GameTooltip:Show()
 	-- Сравнение с надетой вещью здесь только мешает

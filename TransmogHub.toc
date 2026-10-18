@@ -20,6 +20,7 @@ Data\Blocklist.lua
 Data\Charts.lua
 Data\Secrets.lua
 Data\TagIcons.lua
+Data\Sources.lua
 
 Core.lua
 Moderation.lua
@@ -39,6 +40,7 @@ Tour.lua
 Standing.lua
 Ideas.lua
 Wowhead.lua
+Sources.lua
 Minimap.lua
 Skin.lua
 Usage.lua

@@ -166,7 +166,7 @@ local function flush()
 end
 local ns = {}
 local dir = arg[1]
-for _, f in ipairs({ "Locales/Locale.lua", "Locales/enUS.lua", "Data/Bundled.lua", "Data/Blocklist.lua", "Data/Charts.lua", "Data/Secrets.lua", "Data/TagIcons.lua", "Core.lua", "Moderation.lua", "Network.lua", "Appearance.lua", "Preview.lua", "TagPicker.lua", "UI.lua", "SaveDialog.lua", "IconPicker.lua", "Secret.lua", "Achievements.lua", "Charts.lua", "Profile.lua", "Help.lua", "Tour.lua", "Standing.lua", "Ideas.lua", "Wowhead.lua", "Minimap.lua", "Skin.lua", "Usage.lua", "Toasts.lua", "Follow.lua", "Fonts.lua", "Settings.lua" }) do
+for _, f in ipairs({ "Locales/Locale.lua", "Locales/enUS.lua", "Data/Bundled.lua", "Data/Blocklist.lua", "Data/Charts.lua", "Data/Secrets.lua", "Data/TagIcons.lua", "Data/Sources.lua", "Core.lua", "Moderation.lua", "Network.lua", "Appearance.lua", "Preview.lua", "TagPicker.lua", "UI.lua", "SaveDialog.lua", "IconPicker.lua", "Secret.lua", "Achievements.lua", "Charts.lua", "Profile.lua", "Help.lua", "Tour.lua", "Standing.lua", "Ideas.lua", "Wowhead.lua", "Sources.lua", "Minimap.lua", "Skin.lua", "Usage.lua", "Toasts.lua", "Follow.lua", "Fonts.lua", "Settings.lua" }) do
   assert(loadfile(dir .. "/" .. f))("TransmogHub", ns)
 end
 TransmogHub_Charts = nil -- тесты проверяют и расчёт мест без официального чарта
@@ -2344,6 +2344,131 @@ end)()
 	_G.UnitFactionGroup = nil
 	TH.db.knocks = nil
 	TransmogHub_Bundled = nil
+end)()
+
+-- Где найти вещь: наблюдения у торговца, отправка разработчику, каталог и AllTheThings
+;(function()
+	-- находим обработчик событий модуля: он зарегистрирован при входе, вызываем напрямую
+	TH.db.sendSources = true
+	wipe(TH.db.srcQueue); wipe(TH.db.srcSeen)
+	_G.UnitGUID = function(u) if u == "npc" then return "Creature-0-1-2-3-4567-0000" end end
+	_G.GetMerchantNumItems = function() return 2 end
+	_G.GetMerchantItemLink = function(i) return i == 1 and "|Hitem:244267::|h[x]|h" or "|Hitem:5::|h[y]|h" end
+	_G.GetMerchantItemInfo = function() return "x", 1, 748 end
+	_G.GetMerchantItemCostInfo = function() return 0 end
+	_G.C_MerchantFrame = nil
+	local realInfo = C_TransmogCollection.GetItemInfo
+	C_TransmogCollection.GetItemInfo = function(link) if link:find("244267") then return 100, 200 end end
+	_G.C_Map = _G.C_Map or {}
+	local realBest, realPos, realMapInfo = C_Map.GetBestMapForUnit, C_Map.GetPlayerMapPosition, C_Map.GetMapInfo
+	C_Map.GetBestMapForUnit = function() return 2248 end
+	C_Map.GetPlayerMapPosition = function() return { GetXY = function() return 0.4521, 0.6013 end } end
+	C_Map.GetMapInfo = function() return { name = "Остров Дорн" } end
+	_G.GetCoinTextureString = function(c) return c .. "м" end
+	_G.strsplit = _G.strsplit or function(sep, str)
+		local out = {}
+		for part in (str .. sep):gmatch("(.-)" .. sep:gsub("%p", "%%%0")) do out[#out + 1] = part end
+		return unpack(out)
+	end
+	assert(TH.SourcesTest, "test hook")
+	TH.SourcesTest.MERCHANT_SHOW()
+	assert(#TH.db.srcQueue == 1 and TH.db.srcQueue[1]:find("^v:244267:4567:2248:452:601:748::"),
+		"vendor item with appearance noted: " .. tostring(TH.db.srcQueue[1]))
+	TH.SourcesTest.MERCHANT_SHOW()
+	assert(#TH.db.srcQueue == 1, "same vendor item noted once")
+	local title, lines = TH:GetWhereToFind(244267, 200)
+	assert(title and lines[1]:find("Остров Дорн (45.2, 60.1)", 1, true), "own finding shown before catalog: " .. tostring(lines and lines[1]))
+	-- отправка: сообщение «s», у модератора — в журнал без имени
+	local sentIdeas = {}
+	local realSend = TH.Net.SendIdea
+	TH.Net.SendIdea = function(_, kind, text) sentIdeas[#sentIdeas + 1] = { kind, text } end
+	TH:SendSources(true)
+	TH.Net.SendIdea = realSend
+	assert(#sentIdeas == 1 and sentIdeas[1][1] == "s" and sentIdeas[1][2]:find("^%a%a%a%a;v:244267"), "findings sent")
+	assert(#TH.db.srcQueue == 0, "queue emptied after sending")
+	local realMod = TH.IsModeratorClient
+	TH.IsModeratorClient = function() return true end
+	wipe(TH.db.modSources)
+	assert(TH.Net:StoreIdea("Кто-то-Гордунни", GetServerTime(), "s", "ruRU;v:1:2:3:4:5:6::Имя"), "stored")
+	assert(#TH.db.modSources == 1 and not TH.db.modSources[1]:find("Кто-то", 1, true), "moderator log without player name")
+	TH.IsModeratorClient = realMod
+	-- каталог
+	TransmogHub_Sources = { schema = 1, items = { [244267] = { { "v", 4567, 2248, 452, 601, { ruRU = "Торговка Ала" }, 748 } } } }
+	title, lines = TH:GetWhereToFind(244267, 200)
+	assert(lines[1]:find("Торговка Ала", 1, true) and lines[1]:find("748м", 1, true), "catalog line: " .. tostring(lines[1]))
+	-- метка по находкам игроков: стандартная метка игры
+	local pin
+	_G.UiMapPoint = { CreateFromCoordinates = function(m, x, y) return { m, x, y } end }
+	C_Map.SetUserWaypoint = function(p) pin = p end
+	C_Map.CanSetUserWaypointOnMap = function() return true end
+	assert(TH:CanShowOnMap(244267, 999), "map pin available from catalog")
+	TH:ShowOnMap(244267, 999, "Одеяние")
+	assert(pin and pin[1] == 2248 and math.abs(pin[2] - 0.452) < 1e-9, "user waypoint set from catalog")
+	-- без данных и без ATT — подсказка поставить ATT
+	local t2, l2, noATT = TH:GetWhereToFind(99999, 1)
+	assert(not t2 and noATT, "hint to install AllTheThings")
+	-- AllTheThings: путь от корня до торговца
+	local root = { text = "ATT" }
+	local zone = { text = "Остров Дорн", mapID = 2248, parent = { text = "Игровые зоны", parent = root } }
+	local vendors = { text = "Торговцы", key = "headerID", parent = zone }
+	local vendor = { text = "Торговка Ала", npcID = 4567, parent = vendors, coords = { { 45.2, 60.1, 2248 } } }
+	local item = { parent = vendor }
+	_G.AllTheThings = { SearchForObject = function(field, id) if field == "sourceID" and id == 200 then return { item } end end }
+	title, lines = TH:GetWhereToFind(244267, 200)
+	assert(title:find("AllTheThings") and lines[1] == "Остров Дорн > Торговка Ала (45.2, 60.1)", "ATT path: " .. tostring(lines and lines[1]))
+	-- добыча локации: группы «Броня > Тканевые» и верхние разделы не показываем
+	local zones = { text = "Игровые зоны", parent = root }
+	local kt = { text = "Кель'Талас", mapID = 2393, parent = zones }
+	local drops = { text = "Добыча локации", parent = kt }
+	local armor = { text = "Броня", parent = drops, key = "headerID" }
+	local cloth = { text = "Тканевые", parent = armor, key = "filterID" }
+	armor.g = { cloth }
+	drops.g = { armor }
+	local pants = { parent = cloth }
+	_G.AllTheThings = { SearchForObject = function() return { pants } end }
+	title, lines = TH:GetWhereToFind(257005, 300)
+	assert(lines[1] == "Кель'Талас > Добыча локации", "filter groups dropped: " .. tostring(lines[1]))
+	-- имя торговца ATT ещё загружает: путь не обрывается, подсказка ждёт
+	_G.RETRIEVING_DATA = "Получение данных"
+	local kar = { text = "К'ареш", mapID = 2371, parent = { text = "Каз Алгар", parent = zones } }
+	local vend = { text = "Торговцы", key = "headerID", parent = kar }
+	local npc = { text = "|cffffffffПолучение данных|r", parent = vend }
+	local shoes = { parent = { text = RETRIEVING_DATA, parent = npc } }
+	_G.AllTheThings = { SearchForObject = function() return { shoes } end }
+	local _, _, _, pending
+	title, lines, _, pending = TH:GetWhereToFind(244268, 400)
+	assert(lines[1] == "К'ареш > Торговцы" and pending, "loading names skipped, refresh asked: " .. tostring(lines[1]))
+	-- имена пришли: зона, торговец, комплект; заголовок «Торговцы» лишний
+	npc.text, npc.npcID = "Шад'анис", 235000
+	shoes.parent.text = "Комплект: облачение"
+	title, lines, _, pending = TH:GetWhereToFind(244268, 400)
+	assert(lines[1] == "К'ареш > Шад'анис > Комплект: облачение" and not pending, "zone, vendor, ensemble: " .. tostring(lines[1]))
+	-- без координат у ATT метку не предлагаем (каталог по этому предмету пуст)
+	assert(not TH:CanShowOnMap(244268, 400), "no map pin without coordinates")
+	-- координаты ATT по карте: метку ставим сами, на торговца
+	npc.coords = { [2371] = { { 41.5, 22.8 } } }
+	title, lines = TH:GetWhereToFind(244268, 400)
+	assert(lines[1]:find("(41.5, 22.8)", 1, true), "ATT coords by map: " .. tostring(lines[1]))
+	assert(TH:CanShowOnMap(244268, 400), "map pin available via ATT coords")
+	local atPin
+	_G.UiMapPoint = { CreateFromCoordinates = function(m, x, y) return { m, x, y } end }
+	C_Map.SetUserWaypoint = function(p) atPin = p end
+	C_Map.CanSetUserWaypointOnMap = function() return true end
+	TH:ShowOnMap(244268, 400, "Туфли")
+	assert(atPin and atPin[1] == 2371 and math.abs(atPin[2] - 0.415) < 1e-9, "waypoint from ATT coords")
+	local printed = {}
+	local realPrint = TH.Print
+	TH.Print = function(_, text) printed[#printed + 1] = text end
+	TH:ShowOnMap(244268, 400, "Туфли")
+	TH.Print = realPrint
+	assert(printed[1]:find("|Hworldmap:2371:4150:2280|h[Шад'анис — ", 1, true), "clickable map link: " .. tostring(printed[1]))
+	_G.AllTheThings = { SearchForObject = function() error("not ready") end }
+	title = TH:GetWhereToFind(244267, 200)
+	assert(title and not title:find("AllTheThings"), "ATT error falls back to catalog")
+	_G.AllTheThings = nil
+	TransmogHub_Sources = { schema = 1, items = {} }
+	C_TransmogCollection.GetItemInfo = realInfo
+	C_Map.GetBestMapForUnit, C_Map.GetPlayerMapPosition, C_Map.GetMapInfo = realBest, realPos, realMapInfo
 end)()
 
 print("ALL OK")

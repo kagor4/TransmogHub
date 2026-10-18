@@ -15,6 +15,7 @@ on:
     paths:
       - Data/Charts.lua
       - Data/Bundled.lua
+      - Data/Sources.lua
   workflow_dispatch:
 
 concurrency:
