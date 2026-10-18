@@ -170,7 +170,25 @@ local function SkinCloseButton(b)
 		b:ClearAllPoints()
 		b:SetPoint(point, rel, relPoint, x, y)
 	end
-	Flat(b, { 0.08, 0.08, 0.09, 0.95 }, CLOSE_EDGE)
+	-- рамка ровно в 1 пиксель экрана со всех сторон: подложка цвета рамки, сверху фон
+	-- с отступом в пиксель (отдельные линии по 1 единице интерфейса при дробном масштабе
+	-- рисуются неровно — одни стороны пропадают, другие толстеют)
+	local edge = b:CreateTexture(nil, "BACKGROUND", nil, -8)
+	edge:SetAllPoints()
+	edge:SetColorTexture(unpack(CLOSE_EDGE))
+	local fill = b:CreateTexture(nil, "BACKGROUND", nil, -7)
+	fill:SetColorTexture(0.08, 0.08, 0.09, 1)
+	b.thFlat = fill
+	local function Inset()
+		local factor = PixelUtil and PixelUtil.GetPixelToUIUnitFactor and PixelUtil.GetPixelToUIUnitFactor()
+		local scale = b.GetEffectiveScale and b:GetEffectiveScale()
+		local px = (type(factor) == "number" and type(scale) == "number" and scale > 0) and factor / scale or 1
+		fill:ClearAllPoints()
+		fill:SetPoint("TOPLEFT", px, -px)
+		fill:SetPoint("BOTTOMRIGHT", -px, px)
+	end
+	Inset()
+	if b.HookScript then b:HookScript("OnShow", Inset) end
 	local lines = {}
 	for i, angle in ipairs({ 45, -45 }) do
 		local l = b:CreateTexture(nil, "OVERLAY")
@@ -187,7 +205,7 @@ local function SkinCloseButton(b)
 			for _, l in ipairs(self.thCloseLines) do l:SetColorTexture(1, 0.45, 0.42, 1) end
 		end)
 		b:HookScript("OnLeave", function(self)
-			if self.thFlat then self.thFlat:SetColorTexture(0.08, 0.08, 0.09, 0.95) end
+			if self.thFlat then self.thFlat:SetColorTexture(0.08, 0.08, 0.09, 1) end
 			for _, l in ipairs(self.thCloseLines) do l:SetColorTexture(CLOSE_RED[1], CLOSE_RED[2], CLOSE_RED[3], 1) end
 		end)
 	end
