@@ -1,7 +1,7 @@
 # Собирает аддон и выкладывает релиз.
-# Запуск: пуш тега вида v1.2.3; коммит в main с новым официальным чартом
-# (Data/Charts.lua) — тогда тег vВЕРСИЯ.ГГГГММДД ставится здесь же, потому что
-# облачные сессии Claude ставить теги не могут; или вручную (Run workflow).
+# Запуск: пуш тега вида v1.2.3; вручную (Run workflow) — тег vВЕРСИЯ.ГГГГММДД
+# ставится здесь же, потому что облачные сессии Claude ставить теги не могут;
+# коммит в main с новым чартом, каталогом или «где найти» запускает ручной выпуск.
 # CurseForge и Wago подключаются секретами CF_API_KEY и WAGO_API_TOKEN
 # и строками X-Curse-Project-ID / X-Wago-ID в TransmogHub.toc.
 name: Release
@@ -15,6 +15,7 @@ on:
     paths:
       - Data/Charts.lua
       - Data/Bundled.lua
+      - Data/Sources.lua
   workflow_dispatch:
 
 concurrency:
@@ -26,6 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: write
     env:
       CF_API_KEY: ${{ secrets.CF_API_KEY }}
       WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}
@@ -35,15 +37,31 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Тег, пушнутый с GITHUB_TOKEN, не запускает этот workflow второй раз
+      # Пуш в main (чарт, каталог, «где найти»): сборщик на пуше в ветку коммит с тегом
+      # не собирает («future tag»), поэтому выпуск передаётся ручному запуску.
+      # Тег, пушнутый с GITHUB_TOKEN, не запускает этот workflow второй раз.
       - name: Tag
         if: github.ref_type != 'tag'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TAG="v$(tr -d ' \n' < VERSION).$(date -u +%Y%m%d)"
-          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" > /dev/null; then
-            echo "Тег $TAG уже есть, сегодня уже выпускали"
+          if [ "${{ github.event_name }}" = "push" ]; then
+            gh workflow run release.yml --ref main
+            echo "Выпуск передан ручному запуску"
             echo "SKIP=1" >> "$GITHUB_ENV"
             exit 0
+          fi
+          TAG="v$(tr -d ' \n' < VERSION).$(date -u +%Y%m%d)"
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" > /dev/null; then
+            if gh release view "$TAG" > /dev/null 2>&1; then
+              echo "Тег $TAG уже есть, сегодня уже выпускали"
+              echo "SKIP=1" >> "$GITHUB_ENV"
+              exit 0
+            fi
+            # тег без выпуска (сборка не дошла до конца) — ставим заново на текущий коммит
+            echo "Тег $TAG без выпуска — переставляем"
+            git push origin ":refs/tags/$TAG"
+            git tag -d "$TAG" 2>/dev/null || true
           fi
           git tag "$TAG"
           git push origin "$TAG"

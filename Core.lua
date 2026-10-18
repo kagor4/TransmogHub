@@ -844,6 +844,7 @@ local DEFAULTS = {
 	modIdeas = {},     -- предложения для коннектора (только у модератора)
 	modUsage = {},     -- статистика нажатий для коннектора, без имён (только у модератора)
 	modUsageNames = {}, -- «1|код|Окно / Кнопка» — расшифровка кодов для коннектора (только у модератора)
+	modSources = {},   -- находки «где взять вещь» от игроков, без имён (только у модератора; читает выпуск каталога)
 	myIdeas = {},      -- времена своих предложений (не больше 3 в день)
 	leader = { char = nil, optOut = false, sent = {}, last = "" }, -- участие в рейтинге очков стиля
 	moderator = false, -- на аккаунте есть персонаж-модератор: копим журнал жалоб
@@ -873,6 +874,11 @@ local DEFAULTS = {
 	usageNoticed = false, -- о сборе статистики уже сказали
 	clicks = {},         -- [код кнопки] = нажатий с прошлой отправки
 	usageSent = 0,       -- когда статистику отправили в последний раз
+	sendSources = true,  -- отправлять раз в день, где встретились вещи с обликами (/thub sources)
+	sourcesNoticed = false, -- о сборе мест уже сказали
+	srcSeen = {},        -- [вид:предмет:откуда] = день — уже записано
+	srcQueue = {},       -- находки, ещё не отправленные (Sources.lua)
+	srcSent = 0,         -- когда находки отправили в последний раз
 	errorsSent = {},     -- [отпечаток ошибки] = версия — уже отправлено
 	seenAch = {},      -- [id] = true — полученное достижение уже посмотрели (рамка в профиле тусклее)
 	following = {},    -- [Имя-Сервер] = время — авторы, на которых подписан аккаунт
@@ -1719,6 +1725,7 @@ function TH:PLAYER_LOGIN()
 		self:CheckNameViolations(true) -- решения Стражей по названиям (и напоминание переименовать)
 	end)
 	if self.StartUsage then self:StartUsage() end
+	if self.StartSources then self:StartSources() end
 	if self.RegisterBlizzardSettings then pcall(self.RegisterBlizzardSettings, self) end
 	for _, set in pairs(self.db.mySets) do set.name = TH.FormatSetName(set.name) end
 	if self:IsModerator(self.Net.Me()) then
@@ -1859,6 +1866,11 @@ SlashCmdList.TRANSMOGHUB = function(msg)
 		if not TH.db.sendUsage then wipe(TH.db.clicks) end
 		TH:Print(L["Статистика нажатий на кнопки: "] .. (TH.db.sendUsage and L["|cff40ff40собирается|r"] or L["|cffff4040выключена|r"])
 			.. L[". Раз в неделю разработчику уходят только названия кнопок аддона и число нажатий. /thub usage on|off, /thub clicks — сводка"])
+	elseif msg == "sources" or msg == "sources on" or msg == "sources off" then
+		if msg ~= "sources" then TH.db.sendSources = msg == "sources on" end
+		if not TH.db.sendSources then wipe(TH.db.srcQueue) end
+		TH:Print(L["Места вещей с обликами: "] .. (TH.db.sendSources and L["|cff40ff40собираются|r"] or L["|cffff4040не собираются|r"])
+			.. L[". Раз в день разработчику уходят только предмет, торговец, существо или задание, зона, координаты и цена. /thub sources on|off"])
 	elseif msg == "settings" or msg == "config" or msg == "options" then
 		TH:OpenSettings()
 	elseif msg == "fonts" then
