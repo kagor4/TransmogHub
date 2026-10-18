@@ -6,3 +6,8 @@ ignore:
   - tools
   - README.md
   - VERSION
+
+# Список изменений для CurseForge, Wago и GitHub — по-английски, из файла (а не из коммитов)
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
