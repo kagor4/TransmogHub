@@ -1672,6 +1672,9 @@ function UI:OpenItemMenu(row)
 	GameTooltip:Hide()
 	MenuUtil.CreateContextMenu(row, function(_, root)
 		root:CreateTitle(det.name)
+		if TH.CanShowOnMap and TH:CanShowOnMap(det.itemID, row.sourceID) then
+			root:CreateButton(L["Показать на карте"], function() TH:ShowOnMap(det.itemID, row.sourceID, det.name) end)
+		end
 		root:CreateButton(L["Ссылка на Wowhead"], function() TH:ShowItemLink(det.itemID, det.name) end)
 		root:CreateButton(L["Вставить ссылку в чат"], function()
 			local _, link = C_Item.GetItemInfo(det.itemID)
@@ -1716,7 +1719,11 @@ function UI:ShowSlotTooltip(row, refresh)
 		else
 			GameTooltip:AddLine(L["Облик не собран"], 1, 0.25, 0.25)
 		end
-		GameTooltip:AddLine(L["ПКМ — ссылка на Wowhead"], 0.6, 0.6, 0.6)
+		if not det.illusion and TH.CanShowOnMap and TH:CanShowOnMap(det.itemID, row.sourceID) then
+			GameTooltip:AddLine(L["ПКМ — метка на карте, ссылка на Wowhead"], 0.6, 0.6, 0.6)
+		else
+			GameTooltip:AddLine(L["ПКМ — ссылка на Wowhead"], 0.6, 0.6, 0.6)
+		end
 	end
 	GameTooltip:Show()
 	-- Сравнение с надетой вещью здесь только мешает

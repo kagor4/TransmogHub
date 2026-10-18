@@ -2396,6 +2396,14 @@ end)()
 	TransmogHub_Sources = { schema = 1, items = { [244267] = { { "v", 4567, 2248, 452, 601, { ruRU = "Торговка Ала" }, 748 } } } }
 	title, lines = TH:GetWhereToFind(244267, 200)
 	assert(lines[1]:find("Торговка Ала", 1, true) and lines[1]:find("748м", 1, true), "catalog line: " .. tostring(lines[1]))
+	-- метка по находкам игроков: стандартная метка игры
+	local pin
+	_G.UiMapPoint = { CreateFromCoordinates = function(m, x, y) return { m, x, y } end }
+	C_Map.SetUserWaypoint = function(p) pin = p end
+	C_Map.CanSetUserWaypointOnMap = function() return true end
+	assert(TH:CanShowOnMap(244267, 999), "map pin available from catalog")
+	TH:ShowOnMap(244267, 999, "Одеяние")
+	assert(pin and pin[1] == 2248 and math.abs(pin[2] - 0.452) < 1e-9, "user waypoint set from catalog")
 	-- без данных и без ATT — подсказка поставить ATT
 	local t2, l2, noATT = TH:GetWhereToFind(99999, 1)
 	assert(not t2 and noATT, "hint to install AllTheThings")
@@ -2435,6 +2443,15 @@ end)()
 	shoes.parent.text = "Комплект: облачение"
 	title, lines, _, pending = TH:GetWhereToFind(244268, 400)
 	assert(lines[1] == "К'ареш > Шад'анис > Комплект: облачение" and not pending, "zone, vendor, ensemble: " .. tostring(lines[1]))
+	-- координаты ATT по карте; метку ставит сам ATT
+	npc.coords = { [2371] = { { 41.5, 22.8 } } }
+	title, lines = TH:GetWhereToFind(244268, 400)
+	assert(lines[1]:find("(41.5, 22.8)", 1, true), "ATT coords by map: " .. tostring(lines[1]))
+	local plotted
+	_G.AllTheThings.AddTomTomWaypoint = function(obj) plotted = obj end
+	assert(TH:CanShowOnMap(244268, 400), "map pin available via ATT")
+	TH:ShowOnMap(244268, 400, "Туфли")
+	assert(plotted == shoes, "ATT plots the waypoint")
 	_G.AllTheThings = { SearchForObject = function() error("not ready") end }
 	title = TH:GetWhereToFind(244267, 200)
 	assert(title and not title:find("AllTheThings"), "ATT error falls back to catalog")

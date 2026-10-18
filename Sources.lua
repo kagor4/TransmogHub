@@ -292,12 +292,21 @@ local function Generic(g)
 	return true
 end
 
+-- Координаты ATT: { [карта] = { { x, y }, … } } (в процентах); бывает и { { x, y, карта } }
+local function FirstCoord(coords)
+	if type(coords) ~= "table" then return nil end
+	if type(coords[1]) == "table" then return coords[1] end
+	for _, list in pairs(coords) do
+		if type(list) == "table" and type(list[1]) == "table" then return list[1] end
+	end
+end
+
 local function ATTPath(obj)
 	local chain, coords = {}, nil
 	local g, guard = obj, 0
 	while g and guard < 15 do
 		if g ~= obj then chain[#chain + 1] = g end
-		if not coords and type(g.coords) == "table" and type(g.coords[1]) == "table" then coords = g.coords[1] end
+		if not coords then coords = FirstCoord(g.coords) end
 		g = g.sourceParent or g.parent
 		guard = guard + 1
 	end
@@ -344,6 +353,7 @@ local function ATTPath(obj)
 	return text, pending
 end
 
+local attObject = {} -- [sourceID] = запись ATT (для метки на карте)
 local function ATTLines(itemID, sourceID)
 	local app = ATT()
 	if not app then return nil end
@@ -353,6 +363,7 @@ local function ATTLines(itemID, sourceID)
 	end
 	if not ok or type(list) ~= "table" then return {} end
 	local out, seen, pending = {}, {}, false
+	attObject[sourceID] = list[1]
 	for _, obj in ipairs(list) do
 		local ok2, text, wait = pcall(ATTPath, obj)
 		if ok2 and wait then pending = true end
@@ -380,4 +391,51 @@ function TH:GetWhereToFind(itemID, sourceID)
 	if #lines == 0 then lines = OwnLines(itemID) end
 	if #lines > 0 then return L["Где найти (по данным игроков):"], lines, false, pending end
 	return nil, nil, att == nil, pending
+end
+
+---------------------------------------------------------------------------
+-- Метка на карте: через AllTheThings (он сам находит координаты торговца или
+-- существа и ставит метку TomTom или игры), иначе по находкам игроков
+---------------------------------------------------------------------------
+local function CatalogPoint(itemID)
+	local list = TransmogHub_Sources and TransmogHub_Sources.items and TransmogHub_Sources.items[itemID]
+	for _, e in ipairs(list or {}) do
+		if e[3] and e[4] and e[5] then return e[3], e[4] / 1000, e[5] / 1000, LocalName(e[6]) end
+	end
+	for _, record in ipairs(TH.db.srcQueue or {}) do
+		local kind, item, _, map, x, y, a, _, c = strsplit(":", record)
+		if tonumber(item) == itemID and tonumber(x) and tonumber(y) and tonumber(map) then
+			return tonumber(map), tonumber(x) / 1000, tonumber(y) / 1000, kind == "v" and c or a
+		end
+	end
+end
+
+function TH:CanShowOnMap(itemID, sourceID)
+	if not itemID then return false end
+	local app = ATT()
+	if app and type(app.AddTomTomWaypoint) == "function" then
+		if attObject[sourceID] == nil then ATTLines(itemID, sourceID) end
+		if attObject[sourceID] then return true end
+	end
+	return CatalogPoint(itemID) ~= nil
+end
+
+function TH:ShowOnMap(itemID, sourceID, name)
+	local app = ATT()
+	local obj = attObject[sourceID]
+	if app and obj and type(app.AddTomTomWaypoint) == "function" and pcall(app.AddTomTomWaypoint, obj) then
+		self:Print(L["Метка на карте: "] .. (name or "") .. L[" (ставит AllTheThings)."])
+		return
+	end
+	local map, x, y, title = CatalogPoint(itemID)
+	if not map then return end
+	if TomTom and TomTom.AddWaypoint then
+		TomTom:AddWaypoint(map, x, y, { title = title ~= "" and title or name, persistent = false })
+	elseif C_Map and C_Map.SetUserWaypoint and UiMapPoint and (not C_Map.CanSetUserWaypointOnMap or C_Map.CanSetUserWaypointOnMap(map)) then
+		C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(map, x, y))
+		if C_SuperTrack and C_SuperTrack.SetSuperTrackedUserWaypoint then C_SuperTrack.SetSuperTrackedUserWaypoint(true) end
+	else
+		return
+	end
+	self:Print(L["Метка на карте: "] .. (name or "") .. " — " .. (ZoneName(map) or "?") .. Coords(x * 1000, y * 1000))
 end

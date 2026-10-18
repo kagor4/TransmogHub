@@ -1737,4 +1737,8 @@ ns.LOCALES.enUS = {
 	["Где найти (AllTheThings):"] = "Where to find (AllTheThings):",
 	["Где найти (по данным игроков):"] = "Where to find (from players):",
 	["Подробнее, где искать, покажет аддон AllTheThings, если его установить."] = "Install the AllTheThings addon to see exactly where to find it.",
+	["Показать на карте"] = "Show on map",
+	["ПКМ — метка на карте, ссылка на Wowhead"] = "Right-click: map pin, Wowhead link",
+	["Метка на карте: "] = "Map pin: ",
+	[" (ставит AllTheThings)."] = " (placed by AllTheThings).",
 }
