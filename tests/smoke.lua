@@ -430,6 +430,8 @@ assert(TH.db.outbox == nil and TH.db.mySets["local:x"].status == "draft", "migra
 local function name(input, expected)
   assert(TH.FormatSetName(input) == expected, input .. " -> " .. TH.FormatSetName(input) .. ", expected " .. expected)
 end
+name("ñandú DORADO", "Ñandú Dorado")
+name("CORAZÓN de León", "Corazón de León")
 name("король Лич", "Король Лич")
 name("король лич", "Король лич")
 name("КОРОЛЬ ЛИЧ", "Король Лич")

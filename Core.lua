@@ -623,7 +623,8 @@ end
 -- Утилиты
 ---------------------------------------------------------------------------
 
--- string.lower не трогает кириллицу в UTF-8, поэтому дополняем вручную.
+-- string.lower не трогает кириллицу и латиницу с диакритикой (Ñ, Á, Ü…) в UTF-8,
+-- поэтому дополняем вручную.
 local CYR_LOWER = {}
 do
 	local upper = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
@@ -632,12 +633,16 @@ do
 	for ch in upper:gmatch("[\192-\255][\128-\191]*") do ups[#ups + 1] = ch end
 	for ch in lower:gmatch("[\192-\255][\128-\191]*") do lows[#lows + 1] = ch end
 	for i = 1, #ups do CYR_LOWER[ups[i]] = lows[i] end
+	-- À…Þ -> à…þ (кроме знака ×)
+	for code = 0xC0, 0xDE do
+		if code ~= 0xD7 then CYR_LOWER["\195" .. string.char(code - 0x40)] = "\195" .. string.char(code - 0x20) end
+	end
 end
 local CYR_UPPER = {}
 for up, low in pairs(CYR_LOWER) do CYR_UPPER[low] = up end
 
 function TH.Lower(s)
-	return (s:lower():gsub("[\208\209][\128-\191]", CYR_LOWER))
+	return (s:lower():gsub("[\195\208\209][\128-\191]", CYR_LOWER))
 end
 
 local function IsLetter(ch)
