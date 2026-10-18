@@ -306,19 +306,36 @@ local function ATTPath(obj)
 	while chain[first] and Generic(chain[first]) do first = first + 1 end
 	-- раздел верхнего уровня («Игровые зоны», «Подземелья и рейды») — если есть что-то точнее
 	if #chain > first then chain[#chain] = nil end
-	-- до трёх ближайших названий; имена, которые ATT ещё загружает, пропускаем
+	-- названия от вещи вверх; имена, которые ATT ещё загружает, пропускаем
 	-- (подсказка обновится, когда они придут)
-	local parts, pending = {}, false
+	local named, pending, npc = {}, false, false
 	for i = first, #chain do
-		local text = chain[i].sourceText or chain[i].text
+		local g = chain[i]
+		local text = g.sourceText or g.text
 		if type(text) ~= "string" or text == "" or Secret(text)
 			or (RETRIEVING_DATA and text:find(RETRIEVING_DATA, 1, true)) then
 			pending = true
 		else
-			table.insert(parts, 1, text)
-			if #parts >= 3 then break end
+			named[#named + 1] = { text = text, g = g }
+			if g.npcID or g.creatureID then npc = true end
 		end
 	end
+	-- до трёх ближайших; при торговце или существе заголовки («Торговцы») не нужны;
+	-- зона — всегда первой
+	local parts, zone = {}, nil
+	for _, n in ipairs(named) do
+		if #parts < 3 and not (npc and n.g.key == "headerID") then table.insert(parts, 1, n) end
+		if n.g.mapID then zone = n break end -- выше зоны — материк и раздел, не нужны
+	end
+	if zone then
+		local has = false
+		for _, n in ipairs(parts) do if n == zone then has = true end end
+		if not has then
+			if #parts >= 3 then table.remove(parts, 1) end
+			table.insert(parts, 1, zone)
+		end
+	end
+	for i, n in ipairs(parts) do parts[i] = n.text end
 	if #parts == 0 then return nil, pending end
 	local text = table.concat(parts, " > ")
 	if coords and tonumber(coords[1]) and tonumber(coords[2]) then

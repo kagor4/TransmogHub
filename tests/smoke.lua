@@ -2401,16 +2401,16 @@ end)()
 	assert(not t2 and noATT, "hint to install AllTheThings")
 	-- AllTheThings: путь от корня до торговца
 	local root = { text = "ATT" }
-	local zone = { text = "Остров Дорн", parent = { text = "Игровые зоны", parent = root } }
-	local vendors = { text = "Торговцы", parent = zone }
-	local vendor = { text = "Торговка Ала", parent = vendors, coords = { { 45.2, 60.1, 2248 } } }
+	local zone = { text = "Остров Дорн", mapID = 2248, parent = { text = "Игровые зоны", parent = root } }
+	local vendors = { text = "Торговцы", key = "headerID", parent = zone }
+	local vendor = { text = "Торговка Ала", npcID = 4567, parent = vendors, coords = { { 45.2, 60.1, 2248 } } }
 	local item = { parent = vendor }
 	_G.AllTheThings = { SearchForObject = function(field, id) if field == "sourceID" and id == 200 then return { item } end end }
 	title, lines = TH:GetWhereToFind(244267, 200)
-	assert(title:find("AllTheThings") and lines[1] == "Остров Дорн > Торговцы > Торговка Ала (45.2, 60.1)", "ATT path: " .. tostring(lines and lines[1]))
+	assert(title:find("AllTheThings") and lines[1] == "Остров Дорн > Торговка Ала (45.2, 60.1)", "ATT path: " .. tostring(lines and lines[1]))
 	-- добыча локации: группы «Броня > Тканевые» и верхние разделы не показываем
 	local zones = { text = "Игровые зоны", parent = root }
-	local kt = { text = "Кель'Талас", parent = zones }
+	local kt = { text = "Кель'Талас", mapID = 2393, parent = zones }
 	local drops = { text = "Добыча локации", parent = kt }
 	local armor = { text = "Броня", parent = drops, key = "headerID" }
 	local cloth = { text = "Тканевые", parent = armor, key = "filterID" }
@@ -2422,14 +2422,19 @@ end)()
 	assert(lines[1] == "Кель'Талас > Добыча локации", "filter groups dropped: " .. tostring(lines[1]))
 	-- имя торговца ATT ещё загружает: путь не обрывается, подсказка ждёт
 	_G.RETRIEVING_DATA = "Получение данных"
-	local kar = { text = "К'ареш", parent = { text = "Каз Алгар", parent = zones } }
-	local vend = { text = "Торговцы", parent = kar }
+	local kar = { text = "К'ареш", mapID = 2371, parent = { text = "Каз Алгар", parent = zones } }
+	local vend = { text = "Торговцы", key = "headerID", parent = kar }
 	local npc = { text = "|cffffffffПолучение данных|r", parent = vend }
 	local shoes = { parent = { text = RETRIEVING_DATA, parent = npc } }
 	_G.AllTheThings = { SearchForObject = function() return { shoes } end }
 	local _, _, _, pending
 	title, lines, _, pending = TH:GetWhereToFind(244268, 400)
-	assert(lines[1] == "Каз Алгар > К'ареш > Торговцы" and pending, "loading names skipped, refresh asked: " .. tostring(lines[1]))
+	assert(lines[1] == "К'ареш > Торговцы" and pending, "loading names skipped, refresh asked: " .. tostring(lines[1]))
+	-- имена пришли: зона, торговец, комплект; заголовок «Торговцы» лишний
+	npc.text, npc.npcID = "Шад'анис", 235000
+	shoes.parent.text = "Комплект: облачение"
+	title, lines, _, pending = TH:GetWhereToFind(244268, 400)
+	assert(lines[1] == "К'ареш > Шад'анис > Комплект: облачение" and not pending, "zone, vendor, ensemble: " .. tostring(lines[1]))
 	_G.AllTheThings = { SearchForObject = function() error("not ready") end }
 	title = TH:GetWhereToFind(244267, 200)
 	assert(title and not title:find("AllTheThings"), "ATT error falls back to catalog")
