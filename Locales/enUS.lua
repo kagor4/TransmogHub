@@ -1699,4 +1699,6 @@ ns.LOCALES.enUS = {
 	["Копирование: щёлкните по полю и нажмите Ctrl+C.\nРасу и пол выберите на Wowhead — автор собирал образ на модели «%s, %s».\n|cff999999Эту же строку можно вставить в чат игры — откроется штатная примерочная.|r"] = "To copy: click the field and press Ctrl+C.\nPick race and gender on Wowhead — the author made the outfit on a \"%s, %s\" model.\n|cff999999You can also paste this string into game chat to open the standard Dressing Room.|r",
 	["Щёлкните по полю и нажмите Ctrl+C, затем вставьте в браузер."] = "Click the field and press Ctrl+C, then paste into your browser.",
 	["Предмет "] = "Item ",
+	-- Achievements.lua: тайна про переводчика аддонов
+	["Учёный, начертатель и руны: кто-то переводит древние надписи, а кто-то — целые аддоны."] = "Scholar, scribe and runes: some translate ancient inscriptions, others translate whole addons.",
 }
