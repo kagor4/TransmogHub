@@ -2444,17 +2444,18 @@ end)()
 	title, lines, _, pending = TH:GetWhereToFind(244268, 400)
 	assert(lines[1] == "К'ареш > Шад'анис > Комплект: облачение" and not pending, "zone, vendor, ensemble: " .. tostring(lines[1]))
 	-- без координат у ATT метку не предлагаем (каталог по этому предмету пуст)
-	_G.AllTheThings.AddTomTomWaypoint = function() end
 	assert(not TH:CanShowOnMap(244268, 400), "no map pin without coordinates")
-	-- координаты ATT по карте; метку ставит сам ATT
+	-- координаты ATT по карте: метку ставим сами, на торговца
 	npc.coords = { [2371] = { { 41.5, 22.8 } } }
 	title, lines = TH:GetWhereToFind(244268, 400)
 	assert(lines[1]:find("(41.5, 22.8)", 1, true), "ATT coords by map: " .. tostring(lines[1]))
-	local plotted
-	_G.AllTheThings.AddTomTomWaypoint = function(obj) plotted = obj end
-	assert(TH:CanShowOnMap(244268, 400), "map pin available via ATT")
+	assert(TH:CanShowOnMap(244268, 400), "map pin available via ATT coords")
+	local atPin
+	_G.UiMapPoint = { CreateFromCoordinates = function(m, x, y) return { m, x, y } end }
+	C_Map.SetUserWaypoint = function(p) atPin = p end
+	C_Map.CanSetUserWaypointOnMap = function() return true end
 	TH:ShowOnMap(244268, 400, "Туфли")
-	assert(plotted == shoes, "ATT plots the waypoint")
+	assert(atPin and atPin[1] == 2371 and math.abs(atPin[2] - 0.415) < 1e-9, "waypoint from ATT coords")
 	_G.AllTheThings = { SearchForObject = function() error("not ready") end }
 	title = TH:GetWhereToFind(244267, 200)
 	assert(title and not title:find("AllTheThings"), "ATT error falls back to catalog")

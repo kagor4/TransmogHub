@@ -293,11 +293,12 @@ local function Generic(g)
 end
 
 -- Координаты ATT: { [карта] = { { x, y }, … } } (в процентах); бывает и { { x, y, карта } }
+-- Возвращает { x, y } и номер карты
 local function FirstCoord(coords)
 	if type(coords) ~= "table" then return nil end
-	if type(coords[1]) == "table" then return coords[1] end
-	for _, list in pairs(coords) do
-		if type(list) == "table" and type(list[1]) == "table" then return list[1] end
+	if type(coords[1]) == "table" then return coords[1], tonumber(coords[1][3]) end
+	for map, list in pairs(coords) do
+		if type(list) == "table" and type(list[1]) == "table" then return list[1], tonumber(map) end
 	end
 end
 
@@ -306,7 +307,7 @@ local function ATTPath(obj)
 	local g, guard = obj, 0
 	while g and guard < 15 do
 		if g ~= obj then chain[#chain + 1] = g end
-		if not coords then coords = FirstCoord(g.coords) end
+		if not coords then coords = (FirstCoord(g.coords)) end
 		g = g.sourceParent or g.parent
 		guard = guard + 1
 	end
@@ -410,51 +411,54 @@ local function CatalogPoint(itemID)
 	end
 end
 
--- Есть ли у записи ATT координаты (у неё или у торговца, существа, зоны над ней)
-local function ATTHasCoords(obj)
+-- Координаты из ATT: у записи или у торговца, существа, зоны над ней
+local function ATTPoint(obj)
 	local g, guard = obj, 0
 	while g and guard < 15 do
-		if FirstCoord(g.coords) then return true end
+		local c, map = FirstCoord(g.coords)
+		if c and map and tonumber(c[1]) and tonumber(c[2]) then
+			local text = g.sourceText or g.text
+			return map, c[1] / 100, c[2] / 100, type(text) == "string" and not Secret(text) and text or nil
+		end
 		g = g.sourceParent or g.parent
 		guard = guard + 1
 	end
-	return false
 end
 
-local function ATTPlottable(itemID, sourceID)
-	local app = ATT()
-	if not (app and type(app.AddTomTomWaypoint) == "function") then return nil end
-	if attObject[sourceID] == nil then ATTLines(itemID, sourceID) end
-	local obj = attObject[sourceID]
-	if not obj then return nil end
-	local ok, has = pcall(ATTHasCoords, obj)
-	return ok and has and obj or nil, app
+local function MapPoint(itemID, sourceID)
+	if ATT() then
+		if attObject[sourceID] == nil then ATTLines(itemID, sourceID) end
+		local obj = attObject[sourceID]
+		if obj then
+			local ok, map, x, y, title = pcall(ATTPoint, obj)
+			if ok and map then return map, x, y, title end
+		end
+	end
+	return CatalogPoint(itemID)
 end
 
 -- Метку можно поставить, только если координаты правда есть
 function TH:CanShowOnMap(itemID, sourceID)
 	if not itemID then return false end
-	return ATTPlottable(itemID, sourceID) ~= nil or CatalogPoint(itemID) ~= nil
+	return MapPoint(itemID, sourceID) ~= nil
 end
 
+-- Метка игры (или TomTom, если он стоит)
 function TH:ShowOnMap(itemID, sourceID, name)
-	local obj, app = ATTPlottable(itemID, sourceID)
-	if obj and pcall(app.AddTomTomWaypoint, obj) then
-		self:Print(L["Метка на карте: "] .. (name or "") .. L[" (по данным AllTheThings)."])
-		return
-	end
-	local map, x, y, title = CatalogPoint(itemID)
+	local map, x, y, title = MapPoint(itemID, sourceID)
 	if not map then
 		self:Print(L["Где находится, пока неизвестно: координат нет ни в AllTheThings, ни в находках игроков."])
 		return
 	end
+	title = (title and title ~= "") and title or name
 	if TomTom and TomTom.AddWaypoint then
-		TomTom:AddWaypoint(map, x, y, { title = title ~= "" and title or name, persistent = false })
+		TomTom:AddWaypoint(map, x, y, { title = title, persistent = false })
 	elseif C_Map and C_Map.SetUserWaypoint and UiMapPoint and (not C_Map.CanSetUserWaypointOnMap or C_Map.CanSetUserWaypointOnMap(map)) then
 		C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(map, x, y))
 		if C_SuperTrack and C_SuperTrack.SetSuperTrackedUserWaypoint then C_SuperTrack.SetSuperTrackedUserWaypoint(true) end
 	else
+		self:Print(L["На этой карте метку поставить нельзя."])
 		return
 	end
-	self:Print(L["Метка на карте: "] .. (name or "") .. " — " .. (ZoneName(map) or "?") .. Coords(x * 1000, y * 1000))
+	self:Print(L["Метка на карте: "] .. (title or "") .. " — " .. (ZoneName(map) or "?") .. Coords(x * 1000, y * 1000))
 end
