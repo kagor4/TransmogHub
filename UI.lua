@@ -208,7 +208,7 @@ function UI:Build()
 	self.netDot:SetPoint("BOTTOMLEFT", 14, 12)
 	self.netLabel = Label(self, "GameFontHighlightSmall")
 	self.netLabel:SetPoint("LEFT", self.netDot, "RIGHT", 4, 0)
-	self.netStats = {}
+	self.netStats, self.netIcons = {}, {}
 	local prev = self.netLabel
 	for i, icon in ipairs({ "Interface\\Icons\\INV_Misc_GroupLooking", "Interface\\Icons\\Achievement_GuildPerk_EverybodysFriend",
 		"Interface\\Icons\\INV_Chest_Cloth_17" }) do
@@ -219,6 +219,7 @@ function UI:Build()
 		local num = Label(self, "GameFontHighlightSmall")
 		num:SetPoint("LEFT", tex, "RIGHT", 4, 0)
 		self.netStats[i] = num
+		self.netIcons[i] = tex
 		prev = num
 	end
 	self.status:ClearAllPoints()
@@ -350,23 +351,43 @@ function UI:AddTooltips()
 	Tip(self.modSkipBtn, L["Без решения"], L["Убрать образ из списка модерации без последствий: ничего не блокируется, жалобы не признаются ложными, у пожаловавшихся ничего не меняется. Новые жалобы вернут его в список."])
 	Tip(self.modDismissBtn, L["Жалобы ложные / Оценки честные"], L["Жалобы: убрать образ из списка, жалобы необоснованны. Оценки: накрутки нет, образ возвращается в чарт (снова проверится, если оценок станет в полтора раза больше)."])
 
-	-- строка состояния сети: подсказка при наведении
-	local statusHover = CreateFrame("Frame", nil, self)
-	statusHover:SetPoint("BOTTOMLEFT", 10, 6)
-	statusHover:SetSize(560, 24)
-	statusHover:EnableMouse(true)
-	statusHover:SetScript("OnEnter", function(f)
-		GameTooltip:SetOwner(f, "ANCHOR_TOP")
-		GameTooltip:SetText(L["Сеть Transmog Hub"])
-		GameTooltip:AddLine(L["Сервера у аддона нет: игроки с аддоном обмениваются образами напрямую через скрытый канал игры, а с других серверов — через друзей Battle.net и группу."], 1, 1, 1, true)
-		GameTooltip:AddLine(" ")
-		GameTooltip:AddLine(L["Точка: зелёная — сеть подключена, серая — подключается."], 0.8, 0.8, 0.8, true)
-		GameTooltip:AddLine(L["Значки: игроков с аддоном на вашем сервере, друзей Battle.net с аддоном на других серверах, образов у вас в базе."], 0.8, 0.8, 0.8, true)
-		GameTooltip:AddLine(" ")
-		GameTooltip:AddLine(L["Подробнее: /thub net"], 0.6, 0.6, 0.6)
-		GameTooltip:Show()
+	-- строка состояния сети: у точки, каждого значка и строки отправки — своя подсказка
+	local function Hover(from, to, title, lines)
+		local h = CreateFrame("Frame", nil, self)
+		h:SetPoint("TOPLEFT", from, "TOPLEFT", -3, 4)
+		h:SetPoint("BOTTOMRIGHT", to, "BOTTOMRIGHT", 3, -4)
+		h:EnableMouse(true)
+		h:SetScript("OnEnter", function(f)
+			GameTooltip:SetOwner(f, "ANCHOR_TOP")
+			GameTooltip:SetText(title)
+			for _, line in ipairs(type(lines) == "function" and lines() or lines) do
+				GameTooltip:AddLine(line, 1, 1, 1, true)
+			end
+			GameTooltip:AddLine(" ")
+			GameTooltip:AddLine(L["Подробнее: /thub net"], 0.6, 0.6, 0.6)
+			GameTooltip:Show()
+		end)
+		h:SetScript("OnLeave", GameTooltip_Hide)
+		return h
+	end
+	Hover(self.netDot, self.netLabel, L["Подключение"], function()
+		return { TH.Net:IsConnected()
+			and L["|cff40ff40Зелёная точка|r — аддон подключён к своему скрытому каналу и обменивается образами с другими игроками."]
+			or L["|cff999999Серая точка|r — аддон ещё подключается: так бывает первые секунды после входа или перезагрузки."],
+			L["Сервера у аддона нет: игроки обмениваются образами напрямую."] }
 	end)
-	statusHover:SetScript("OnLeave", GameTooltip_Hide)
+	Hover(self.netIcons[1], self.netStats[1], L["Игроки с аддоном на вашем сервере"], {
+		L["Сколько игроков с аддоном сейчас в сети на вашем сервере (и связанных с ним). От них приходят образы, оценки и рейтинг."],
+		L["Игроков с других серверов аддон слышит через группу, гильдию и друзей Battle.net."] })
+	Hover(self.netIcons[2], self.netStats[2], L["Друзья Battle.net с аддоном"], {
+		L["Друзья Battle.net, которые сейчас в игре с аддоном, — на любом сервере и за любую фракцию."],
+		L["Через них образы ходят между серверами: чем больше таких друзей, тем больше образов вы увидите."] })
+	Hover(self.netIcons[3], self.netStats[3], L["Образов в базе"], {
+		L["Сколько образов вы получили от других игроков. Хранится до 3000, старые и неоценённые уходят первыми."],
+		L["Ещё сотни лучших и свежих образов приходят с каждым обновлением аддона — они в ленте, но в этом числе не считаются."] })
+	Hover(self.status, self.status, L["Отправка"], {
+		L["Сколько сообщений ждёт отправки. Игра ограничивает скорость, поэтому большой обмен идёт постепенно."],
+		L["В бою и в подземельях отправка на паузе и продолжится сама."] })
 end
 
 -- Уголок справа внизу: тянем — окно увеличивается или уменьшается целиком
