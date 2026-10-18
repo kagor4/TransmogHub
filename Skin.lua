@@ -148,9 +148,9 @@ local function Tint(button, color)
 	end
 end
 
--- Крестик закрытия как в EllesmereUI: тёмный квадрат с тонкой рамкой и тонкий крест линиями.
+-- Крестик закрытия как в EllesmereUI: тёмный квадрат без рамки и тонкий крест линиями.
 -- Цвет свой (красный), форма — как у кнопок EllesmereUI.
-local CLOSE_RED, CLOSE_EDGE = { 0.95, 0.3, 0.27 }, { 0.3, 0.3, 0.33, 1 }
+local CLOSE_RED = { 0.95, 0.3, 0.27 }
 local function SkinCloseButton(b)
 	if not b or b.thCloseSkinned then return end
 	b.thCloseSkinned = true
@@ -170,25 +170,11 @@ local function SkinCloseButton(b)
 		b:ClearAllPoints()
 		b:SetPoint(point, rel, relPoint, x, y)
 	end
-	-- рамка ровно в 1 пиксель экрана со всех сторон: подложка цвета рамки, сверху фон
-	-- с отступом в пиксель (отдельные линии по 1 единице интерфейса при дробном масштабе
-	-- рисуются неровно — одни стороны пропадают, другие толстеют)
-	local edge = b:CreateTexture(nil, "BACKGROUND", nil, -8)
-	edge:SetAllPoints()
-	edge:SetColorTexture(unpack(CLOSE_EDGE))
+	-- без рамки: тёмный квадрат и тонкий крест
 	local fill = b:CreateTexture(nil, "BACKGROUND", nil, -7)
+	fill:SetAllPoints()
 	fill:SetColorTexture(0.08, 0.08, 0.09, 1)
 	b.thFlat = fill
-	local function Inset()
-		local factor = PixelUtil and PixelUtil.GetPixelToUIUnitFactor and PixelUtil.GetPixelToUIUnitFactor()
-		local scale = b.GetEffectiveScale and b:GetEffectiveScale()
-		local px = (type(factor) == "number" and type(scale) == "number" and scale > 0) and factor / scale or 1
-		fill:ClearAllPoints()
-		fill:SetPoint("TOPLEFT", px, -px)
-		fill:SetPoint("BOTTOMRIGHT", -px, px)
-	end
-	Inset()
-	if b.HookScript then b:HookScript("OnShow", Inset) end
 	local lines = {}
 	for i, angle in ipairs({ 45, -45 }) do
 		local l = b:CreateTexture(nil, "OVERLAY")
