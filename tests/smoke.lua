@@ -2456,6 +2456,12 @@ end)()
 	C_Map.CanSetUserWaypointOnMap = function() return true end
 	TH:ShowOnMap(244268, 400, "Туфли")
 	assert(atPin and atPin[1] == 2371 and math.abs(atPin[2] - 0.415) < 1e-9, "waypoint from ATT coords")
+	local printed = {}
+	local realPrint = TH.Print
+	TH.Print = function(_, text) printed[#printed + 1] = text end
+	TH:ShowOnMap(244268, 400, "Туфли")
+	TH.Print = realPrint
+	assert(printed[1]:find("|Hworldmap:2371:4150:2280|h[Шад'анис — ", 1, true), "clickable map link: " .. tostring(printed[1]))
 	_G.AllTheThings = { SearchForObject = function() error("not ready") end }
 	title = TH:GetWhereToFind(244267, 200)
 	assert(title and not title:find("AllTheThings"), "ATT error falls back to catalog")

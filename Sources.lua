@@ -460,5 +460,9 @@ function TH:ShowOnMap(itemID, sourceID, name)
 		self:Print(L["На этой карте метку поставить нельзя."])
 		return
 	end
-	self:Print(L["Метка на карте: "] .. (title or "") .. " — " .. (ZoneName(map) or "?") .. Coords(x * 1000, y * 1000))
+	-- ссылка игры на точку карты: нажатие открывает карту с этим местом
+	local place = (title or "") .. " — " .. (ZoneName(map) or "?") .. Coords(x * 1000, y * 1000)
+	local link = string.format("|cffffff00|Hworldmap:%d:%d:%d|h[%s]|h|r", map, math.floor(x * 10000 + 0.5),
+		math.floor(y * 10000 + 0.5), place)
+	self:Print(L["Метка на карте: "] .. link)
 end
