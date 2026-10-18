@@ -80,10 +80,9 @@ function TH.CreateScrollBar(parent, onChange)
 		local need = maxOffset > 0
 		if need then SnapScrollBar(self) end
 		self:SetShown(need)
-		self.up:SetShown(need)
-		self.down:SetShown(need)
-		self.up:SetEnabled(offset > 0)
-		self.down:SetEnabled(offset < maxOffset)
+		-- стрелок нет: прокрутка колесом мыши и ползунком (кнопки остаются для оформления)
+		self.up:Hide()
+		self.down:Hide()
 	end
 	bar:SetScript("OnShow", SnapScrollBar)
 	return bar

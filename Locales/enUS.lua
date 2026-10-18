@@ -1511,8 +1511,6 @@ ns.LOCALES.enUS = {
 	["Отправить черновик другим игрокам."] = "Send the draft to other players.",
 	["Удалить"] = "Delete",
 	["Удалить образ. Опубликованный пропадёт и у других игроков."] = "Delete the outfit. A published outfit will also disappear for other players.",
-	["Назад по списку"] = "Previous in list",
-	["Дальше по списку"] = "Next in list",
 	["Нарушение"] = "Violation",
 	["Выберите, что не так: шуточное название (автора попросят переименовать, без наказания), оскорбление (14 дней без публикаций, второй раз — навсегда), реклама (бан автора) или другое. Образ пропадёт у игроков, до которых дойдёт решение, и попадёт в чёрный список при разборе."] = "Choose what's wrong: joke name (the author is asked to rename, no penalty), insult (14 days without publishing, permanent on second offense), advertising (author ban) or other. The outfit disappears for players the decision reaches and is blacklisted during review.",
 	["Заблокировать автора"] = "Block Author",
@@ -1653,7 +1651,6 @@ ns.LOCALES.enUS = {
 	["  |cffe6cc80Зал славы|r"] = "  |cffe6cc80Hall of Fame|r",
 	["|cffe6cc80В Зале славы с "] = "|cffe6cc80In the Hall of Fame since ",
 	[": вне конкурса — в местах и наградах за места не участвует.|r"] = ": hors concours — excluded from placements and placement rewards.|r",
-	["  |cff40ff40место %d|r"] = "  |cff40ff40#%d|r",
 	["|cff40ff40Официально: %d из %d в «Лучших» (на %s).|r"] = "|cff40ff40Official: %d of %d in \"Best\" (as of %s).|r",
 	["Рейтинг: |cffffd100%.1f|r из 5, голосов: %d"] = "Rating: |cffffd100%.1f|r of 5, votes: %d",
 	["Оценок пока нет — будьте первым"] = "No ratings yet — be the first",
@@ -1714,4 +1711,8 @@ ns.LOCALES.enUS = {
 	["Отправка"] = "Sending",
 	["Сколько сообщений ждёт отправки. Игра ограничивает скорость, поэтому большой обмен идёт постепенно."] = "How many messages are waiting to be sent. The game limits the rate, so a large exchange goes out gradually.",
 	["В бою и в подземельях отправка на паузе и продолжится сама."] = "Sending pauses in combat and in dungeons and resumes on its own.",
+	-- UI.lua: места в карточке образа
+	["  |cff40ff40№%d в «Лучших»|r"] = "  |cff40ff40#%d in \"Best\"|r",
+	["  |cff40c0ff№%d «В тренде»|r"] = "  |cff40c0ff#%d in \"Trending\"|r",
+	["|cff40c0ffОфициально: %d из %d «В тренде» (на %s).|r"] = "|cff40c0ffOfficial: %d of %d in \"Trending\" (as of %s).|r",
 }

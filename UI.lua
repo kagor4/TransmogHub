@@ -344,8 +344,6 @@ function UI:AddTooltips()
 	Tip(self.raceBtn, L["Раса для примерки"], L["Свой персонаж, раса автора образа или любая другая. Пол модели игра менять не даёт — для другого пола используйте Wowhead."])
 	Tip(self.publishBtn, L["Опубликовать"], L["Отправить черновик другим игрокам."])
 	Tip(self.deleteBtn, L["Удалить"], L["Удалить образ. Опубликованный пропадёт и у других игроков."])
-	Tip(self.prevBtn, L["Назад по списку"])
-	Tip(self.nextBtn, L["Дальше по списку"])
 	Tip(self.modSetBtn, L["Нарушение"], L["Выберите, что не так: шуточное название (автора попросят переименовать, без наказания), оскорбление (14 дней без публикаций, второй раз — навсегда), реклама (бан автора) или другое. Образ пропадёт у игроков, до которых дойдёт решение, и попадёт в чёрный список при разборе."])
 	Tip(self.modAuthorBtn, L["Заблокировать автора"], L["Все образы автора пропадут; новые не будут приниматься."])
 	Tip(self.modSkipBtn, L["Без решения"], L["Убрать образ из списка модерации без последствий: ничего не блокируется, жалобы не признаются ложными, у пожаловавшихся ничего не меняется. Новые жалобы вернут его в список."])
@@ -927,12 +925,7 @@ function UI:BuildList(list)
 	end)
 	Tip(self.modsBtn, L["Управление"], L["Админ назначает и снимает модераторов. Модераторы разбирают жалобы и могут снять наказание за занижение оценок, если оно ошибочное."])
 
-	self.prevBtn = Button(list, "<", 30)
-	self.prevBtn:SetPoint("BOTTOMLEFT", 8, 8)
-	self.prevBtn:SetScript("OnClick", function() self:Scroll(-ROWS) end)
-	self.nextBtn = Button(list, ">", 30)
-	self.nextBtn:SetPoint("BOTTOMRIGHT", -8, 8)
-	self.nextBtn:SetScript("OnClick", function() self:Scroll(ROWS) end)
+	-- список листается колесом мыши и ползунком; внизу — какие образы сейчас видны
 	self.pageText = Label(list, "GameFontHighlightSmall")
 	self.pageText:SetPoint("BOTTOM", 0, 14)
 
@@ -1844,8 +1837,6 @@ function UI:RefreshList()
 		page = L["Образы "] .. (self.authorFilter or "?"):gsub("%-.*", "") .. (page ~= "" and (": " .. page) or "")
 	end
 	self.pageText:SetText(page)
-	self.prevBtn:SetEnabled(self.offset > 0)
-	self.nextBtn:SetEnabled(self.offset + ROWS < n)
 	local filtered = (self.filter.text or "") ~= "" or next(self.filter.tags) ~= nil
 	self.emptyText:SetText(filtered and L["По вашему запросу ничего нет.\n\nПопробуйте другие слова или сбросьте теги."]
 		or (self.view == "guild" and not TH:GetGuildNames() and L["Вы не состоите в гильдии."])
@@ -1966,8 +1957,13 @@ function UI:RefreshDetail()
 		-- официальное место (проверенный ежедневный чарт)
 		local place, pool = TH:GetOfficialRank("top", chartSet.id)
 		if place then
-			note = note .. string.format(L["  |cff40ff40место %d|r"], place)
+			note = note .. string.format(L["  |cff40ff40№%d в «Лучших»|r"], place)
 			hint[#hint + 1] = string.format(L["|cff40ff40Официально: %d из %d в «Лучших» (на %s).|r"], place, pool, TH:FormatChartsDate())
+		end
+		local tplace, tpool = TH:GetOfficialRank("trending", chartSet.id)
+		if tplace then
+			note = note .. string.format(L["  |cff40c0ff№%d «В тренде»|r"], tplace)
+			hint[#hint + 1] = string.format(L["|cff40c0ffОфициально: %d из %d «В тренде» (на %s).|r"], tplace, tpool, TH:FormatChartsDate())
 		end
 		self.dRatingHint = hint
 		self.dRating:SetText(string.format(L["Рейтинг: |cffffd100%.1f|r из 5, голосов: %d"], r.avg, r.n) .. note)
