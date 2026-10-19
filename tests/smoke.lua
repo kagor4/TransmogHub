@@ -2688,11 +2688,25 @@ end)()
 	TH:ClosePhotoMode()
 	assert(not TransmogHubPhoto:IsShown() and UIParent:IsShown(), "photo mode closed, game UI back")
 	-- фон-локация запоминается между открытиями
-	TH.db.photoBg = "loc:kalimdor"
+	TH.db.photoBg = "light"
 	TransmogHubPhoto.bgKey = nil
 	TH:OpenPhotoMode()
-	assert(TransmogHubPhoto.bgKey == "loc:kalimdor", "location background restored")
+	assert(TransmogHubPhoto.bgKey == "light", "chosen background restored")
 	TH:ClosePhotoMode()
+	-- фон «Локация персонажа»: персонаж спрятан, имена выключены; при выходе всё как было
+	local cmds, cv = {}, { UnitNameNPC = "1" }
+	_G.ConsoleExec = function(c) cmds[#cmds + 1] = c end
+	_G.C_CVar = { GetCVar = function(n) return cv[n] end, SetCVar = function(n, v) cv[n] = v end }
+	TH.db.photoBg = "world"
+	TransmogHubPhoto.bgKey = nil
+	TH:OpenPhotoMode()
+	assert(cmds[1] == "showPlayer" and cv.UnitNameNPC == "0" and TH.db.photoNames, "world mode hides player and names")
+	TH:ClosePhotoMode()
+	local shows = 0
+	for _, c in ipairs(cmds) do if c == "showPlayer" then shows = shows + 1 end end
+	assert(shows == 2 and cv.UnitNameNPC == "1" and not TH.db.photoNames, "world mode restored on close")
+	_G.ConsoleExec, _G.C_CVar = nil, nil
+	TH.db.photoBg = nil
 	-- классовое появление, потом обычная поза
 	local pv, kits = { scene = model.scene, intro = TH.CLASS_INTROS.MAGE }, {}
 	setmetatable(pv, getmetatable(model))

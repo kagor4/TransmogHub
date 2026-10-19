@@ -13,33 +13,7 @@ local BACKGROUNDS = {
 	{ key = "light", name = L["Светлый"], color = { 0.82, 0.82, 0.86 } },
 	{ key = "chroma", name = L["Хромакей"], color = { 0, 0.85, 0 } }, -- зелёный фон для монтажа
 	{ key = "race", name = L["Примерочная расы"] },
-	{ key = "world", name = L["Мир вокруг"], world = true }, -- без фона: за моделью — сама игра
-}
-
--- Локации: заставки загрузки игры (номера файлов из списка файлов клиента).
--- map — карта, чьё название берём из игры (на языке клиента); иначе — своё название
-local LOCATIONS = {
-	{ key = "loc:harandar", name = L["Харандар"], file = 7385003 },
-	{ key = "loc:voidstorm", name = L["Буря Бездны"], file = 7507883 },
-	{ key = "loc:zulaman", name = L["Зул'Аман"], file = 7488404 },
-	{ key = "loc:quelthalas", name = L["Кель'Талас"], file = 7266211 },
-	{ key = "loc:sunwell", map = 122, name = L["Остров Кель'Данас"], file = 7578182 },
-	{ key = "loc:hallowfall", map = 2215, name = L["Светлый лес"], file = 5932344 },
-	{ key = "loc:khazalgar", map = 2274, name = L["Каз Алгар"], file = 5899485 },
-	{ key = "loc:undermine", map = 2346, name = L["Нижняя Шахта"], file = 6392587 },
-	{ key = "loc:karesh", map = 2371, name = L["К'ареш"], file = 6918681 },
-	{ key = "loc:sirenisle", map = 2369, name = L["Остров Сирен"], file = 6225617 },
-	{ key = "loc:elwynn", map = 37, name = L["Элвиннский лес"], file = 7377860 },
-	{ key = "loc:dragonisles", map = 1978, name = L["Драконьи острова"], file = 4669853 },
-	{ key = "loc:emerald", map = 2200, name = L["Изумрудный Сон"], file = 5344997 },
-	{ key = "loc:shadowlands", map = 1550, name = L["Темные Земли"], file = 3807424 },
-	{ key = "loc:zereth", map = 1970, name = L["Зерет Мортис"], file = 4370748 },
-	{ key = "loc:kultiras", map = 876, name = L["Кул-Тирас"], file = 2143605 },
-	{ key = "loc:zandalar", map = 875, name = L["Зандалар"], file = 2143606 },
-	{ key = "loc:nazjatar", map = 1355, name = L["Назжатар"], file = 3008537 },
-	{ key = "loc:argus", map = 905, name = L["Аргус"], file = 1717118 },
-	{ key = "loc:easternkingdoms", map = 13, name = L["Восточные королевства"], file = 1498773 },
-	{ key = "loc:kalimdor", map = 12, name = L["Калимдор"], file = 1498775 },
+	{ key = "world", name = L["Локация персонажа"], world = true }, -- за моделью — то место, где стоит персонаж
 }
 
 -- Свет сцены: направление и цвета (как в Narcissus — пресеты вместо ручного круга)
@@ -52,38 +26,94 @@ local LIGHTS = {
 }
 
 local photo -- окно (создаётся при первом открытии)
+local EnterWorld, LeaveWorld
 local uiWasShown
+
+---------------------------------------------------------------------------
+-- Фон «Локация персонажа» (как фото-режим Narcissus): за моделью — мир, где стоит
+-- персонаж. Своего персонажа в мире прячем (консольная команда showPlayer
+-- переключает его видимость), камеру опускаем на уровень глаз и приближаем,
+-- имена над головами на время выключаем. При выходе всё возвращаем.
+---------------------------------------------------------------------------
+local NAME_CVARS = { "UnitNameOwn", "UnitNameNPC", "UnitNameFriendlyPlayerName", "UnitNameEnemyPlayerName",
+	"UnitNameFriendlyPetName", "UnitNameFriendlyGuardianName", "UnitNameFriendlyTotemName",
+	"UnitNameNonCombatCreatureName", "UnitNameFriendlySpecialNPCName", "UnitNameHostleNPC",
+	"UnitNameInteractiveNPC" }
+local WORLD_ZOOM = 4
+local world -- что поменяли в мире (nil — ничего)
+
+local function GetCV(name) return C_CVar and C_CVar.GetCVar and C_CVar.GetCVar(name) end
+local function SetCV(name, value) if C_CVar and C_CVar.SetCVar then pcall(C_CVar.SetCVar, name, value) end end
+
+local function ZoomTo(goal)
+	if not (GetCameraZoom and CameraZoomIn and CameraZoomOut) then return end
+	local cur = GetCameraZoom()
+	if not cur then return end
+	if cur > goal then CameraZoomIn(cur - goal) else CameraZoomOut(goal - cur) end
+end
+
+-- имена — вернуть как были (и после перезагрузки интерфейса, если выйти не успели)
+local function RestoreNames(saved)
+	for name, value in pairs(saved or {}) do SetCV(name, value) end
+end
+
+EnterWorld = function()
+	if world then return end
+	world = { zoom = GetCameraZoom and GetCameraZoom(), names = {} }
+	for _, name in ipairs(NAME_CVARS) do
+		local v = GetCV(name)
+		if v ~= nil then
+			world.names[name] = v
+			SetCV(name, "0")
+		end
+	end
+	TH.db.photoNames = world.names
+	if ConsoleExec then
+		pcall(ConsoleExec, "showPlayer") -- спрятать своего персонажа: на его месте — модель образа
+		world.hidPlayer = true
+		-- камера на уровень глаз: ненадолго ограничиваем наклон, потом возвращаем предел
+		pcall(ConsoleExec, "pitchlimit 1")
+		C_Timer.After(0.1, function() pcall(ConsoleExec, "pitchlimit 88") end)
+	end
+	ZoomTo(WORLD_ZOOM)
+end
+
+LeaveWorld = function()
+	if not world then return end
+	RestoreNames(world.names)
+	TH.db.photoNames = nil
+	if world.hidPlayer and ConsoleExec then pcall(ConsoleExec, "showPlayer") end
+	if world.zoom then ZoomTo(world.zoom) end
+	world = nil
+end
+
+do
+	local f = CreateFrame("Frame")
+	f:RegisterEvent("PLAYER_LOGIN")
+	f:RegisterEvent("PLAYER_LOGOUT")
+	f:SetScript("OnEvent", function(_, event)
+		if event == "PLAYER_LOGOUT" then
+			LeaveWorld()
+		elseif TH.db and TH.db.photoNames then
+			RestoreNames(TH.db.photoNames)
+			TH.db.photoNames = nil
+		end
+	end)
+end
 
 local function SetBackground(key)
 	local bg = photo.bg
 	local b
 	for _, x in ipairs(BACKGROUNDS) do if x.key == key then b = x end end
-	for _, x in ipairs(LOCATIONS) do if x.key == key then b = x end end
 	b = b or BACKGROUNDS[1]
 	photo.bgKey = b.key
 	TH.db.photoBg = b.key
 	bg:SetShown(not b.world)
-	bg:SetTexCoord(0, 1, 0, 1)
+	if b.world then EnterWorld() else LeaveWorld() end
 	if bg.SetGradient and CreateColor then bg:SetGradient("VERTICAL", CreateColor(1, 1, 1, 1), CreateColor(1, 1, 1, 1)) end
 	photo.title:SetTextColor(1, 0.82, 0)
 	photo.author:SetTextColor(0.9, 0.9, 0.9)
 	if b.world then return end
-	if b.file then
-		bg:SetTexture(b.file)
-		bg:SetVertexColor(1, 1, 1)
-		-- картинку не растягиваем: обрезаем по краям под пропорции экрана
-		local w, h = photo:GetWidth() or 16, photo:GetHeight() or 9
-		local img = b.aspect or (16 / 9)
-		local scr = (h > 0) and (w / h) or img
-		if scr > img then
-			local cut = (1 - img / scr) / 2
-			bg:SetTexCoord(0, 1, cut, 1 - cut)
-		elseif scr < img then
-			local cut = (1 - scr / img) / 2
-			bg:SetTexCoord(cut, 1 - cut, 0, 1)
-		end
-		return
-	end
 	if b.key == "race" then
 		-- фон штатной примерочной для расы модели; нет такого — тёмный
 		local info = C_CreatureInfo.GetRaceInfo(photo.preview.raceID or select(3, UnitRace("player")))
@@ -114,12 +144,6 @@ local function OpenBackgroundMenu(owner)
 	MenuUtil.CreateContextMenu(owner, function(_, root)
 		for _, b in ipairs(BACKGROUNDS) do
 			root:CreateRadio(b.name, function() return photo.bgKey == b.key end, function() SetBackground(b.key) end)
-		end
-		local loc = root:CreateButton(L["Локации"])
-		if loc.SetScrollMode then loc:SetScrollMode(420) end
-		for _, b in ipairs(LOCATIONS) do
-			local info = b.map and C_Map and C_Map.GetMapInfo and C_Map.GetMapInfo(b.map)
-			loc:CreateRadio(info and info.name or b.name, function() return photo.bgKey == b.key end, function() SetBackground(b.key) end)
 		end
 	end)
 end
@@ -199,6 +223,7 @@ end
 function TH:ClosePhotoMode()
 	if not photo or not photo:IsShown() then return end
 	photo:Hide()
+	LeaveWorld()
 	if uiWasShown and UIParent and not UIParent:IsShown() then UIParent:Show() end
 	uiWasShown = nil
 end
@@ -349,7 +374,7 @@ function TH:OpenPhotoMode()
 	preview:SetItems(main.items)
 	preview:Reload()
 	RememberLight(preview.scene)
-	SetBackground(photo.bgKey or TH.db.photoBg or "gradient")
+	SetBackground(photo.bgKey or TH.db.photoBg or "world")
 	SetLight(photo.lightKey or "normal")
 	SetVignette(photo.vignetteOn ~= false)
 	UpdateCaption()
