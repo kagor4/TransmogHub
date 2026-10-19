@@ -166,7 +166,7 @@ local function flush()
 end
 local ns = {}
 local dir = arg[1]
-for _, f in ipairs({ "Locales/Locale.lua", "Locales/enUS.lua", "Data/Bundled.lua", "Data/Blocklist.lua", "Data/Charts.lua", "Data/Secrets.lua", "Data/TagIcons.lua", "Data/Sources.lua", "Core.lua", "Moderation.lua", "Network.lua", "Appearance.lua", "Preview.lua", "TagPicker.lua", "UI.lua", "SaveDialog.lua", "IconPicker.lua", "Secret.lua", "Achievements.lua", "Charts.lua", "Profile.lua", "Help.lua", "Tour.lua", "Standing.lua", "Ideas.lua", "Wowhead.lua", "Sources.lua", "Minimap.lua", "Skin.lua", "Usage.lua", "Toasts.lua", "Follow.lua", "Fonts.lua", "Settings.lua", "ChatLinks.lua" }) do
+for _, f in ipairs({ "Locales/Locale.lua", "Locales/enUS.lua", "Data/Bundled.lua", "Data/Blocklist.lua", "Data/Charts.lua", "Data/Secrets.lua", "Data/TagIcons.lua", "Data/Sources.lua", "Core.lua", "Moderation.lua", "Network.lua", "Appearance.lua", "Preview.lua", "TagPicker.lua", "UI.lua", "SaveDialog.lua", "IconPicker.lua", "Secret.lua", "Achievements.lua", "Charts.lua", "Profile.lua", "Help.lua", "Tour.lua", "Standing.lua", "Ideas.lua", "Wowhead.lua", "Sources.lua", "Minimap.lua", "Skin.lua", "Usage.lua", "Toasts.lua", "Follow.lua", "Fonts.lua", "Settings.lua", "ChatLinks.lua", "PhotoMode.lua" }) do
   assert(loadfile(dir .. "/" .. f))("TransmogHub", ns)
 end
 TransmogHub_Charts = nil -- тесты проверяют и расчёт мест без официального чарта
@@ -1856,7 +1856,7 @@ end)()
 	local files = { "Core.lua", "Moderation.lua", "Network.lua", "Appearance.lua", "Preview.lua", "TagPicker.lua", "UI.lua",
 		"SaveDialog.lua", "IconPicker.lua", "Achievements.lua", "Charts.lua", "Profile.lua", "Help.lua", "Tour.lua",
 		"Standing.lua", "Ideas.lua", "Wowhead.lua", "Minimap.lua", "Skin.lua", "Usage.lua", "Toasts.lua", "Follow.lua",
-		"Fonts.lua", "Settings.lua", "Secret.lua", "ChatLinks.lua" }
+		"Fonts.lua", "Settings.lua", "Secret.lua", "ChatLinks.lua", "PhotoMode.lua", "Preview.lua" }
 	local unknown = {}
 	for _, name in ipairs(files) do
 		local f = assert(io.open(dir .. "/" .. name))
@@ -2644,6 +2644,27 @@ end)()
 	TransmogHub_Bundled = realBundled
 	_G.UnitFactionGroup = nil
 	TH.db.net.presence, TH.db.presenceSent = {}, {}
+end)()
+
+-- Позы и фотостудия: анимация на модели, интерфейс игры прячется и возвращается
+;(function()
+	local model = TH.UI.model
+	local act = model.scene:GetPlayerActor()
+	if not act then return end
+	local anim, speed
+	act.SetAnimation = function(_, a, _, sp) anim, speed = a, sp end
+	model:SetPose("dance")
+	assert(anim == 69 and speed == 1, "dance pose applied: " .. tostring(anim))
+	model:SetFrozen(true)
+	assert(anim == 69 and speed == 0, "frozen on a frame")
+	model:SetFrozen(false)
+	assert(speed == 1, "unfrozen")
+	UIParent.shown = true
+	TH:OpenPhotoMode()
+	assert(TransmogHubPhoto and TransmogHubPhoto:IsShown() and not UIParent:IsShown(), "photo mode open, game UI hidden")
+	TH:ClosePhotoMode()
+	assert(not TransmogHubPhoto:IsShown() and UIParent:IsShown(), "photo mode closed, game UI back")
+	model:SetPose(nil)
 end)()
 
 print("ALL OK")

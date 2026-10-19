@@ -961,6 +961,16 @@ function UI:BuildPreview(panel)
 	hint:SetJustifyH("CENTER")
 	hint:SetText(L["ЛКМ — вращать, колесо — приблизить, двойной клик — сброс"])
 
+	-- поза модели и фотостудия — в нижних углах сцены
+	self.poseBtn = FlatButton(panel, L["Поза"])
+	self.poseBtn:SetPoint("BOTTOMLEFT", self.model.scene, "BOTTOMLEFT", 2, 2)
+	self.poseBtn:SetScript("OnClick", function(b) self:OpenPoseMenu(b, self.model) end)
+	Tip(self.poseBtn, L["Поза"], L["Как стоит модель: стойки, эмоции, заклинания. Можно замереть на кадре и убрать оружие в ножны."])
+	self.photoBtn = FlatButton(panel, L["Фотостудия"])
+	self.photoBtn:SetPoint("BOTTOMRIGHT", self.model.scene, "BOTTOMRIGHT", -2, 2)
+	self.photoBtn:SetScript("OnClick", function() TH:OpenPhotoMode() end)
+	Tip(self.photoBtn, L["Фотостудия"], L["Образ во весь экран на красивом фоне, без интерфейса игры: поза, ракурс, подпись и снимок экрана."])
+
 	-- Предупреждение, если образ собран на модели другого пола
 	self.sexHint = Label(panel, "GameFontNormalSmall", 280)
 	self.sexHint:SetPoint("TOP", hint, "BOTTOM", 0, -4)
@@ -1587,6 +1597,32 @@ function UI:SetRace(raceID)
 		if type(w) == "number" and type(bw) == "number" and w > bw - 12 then fs:SetFontObject(GameFontNormalSmall) end
 	end
 	self.model:SetRace(raceID)
+end
+
+-- Меню поз для модели (предпросмотр или фотостудия)
+function UI:OpenPoseMenu(owner, preview)
+	if not (MenuUtil and MenuUtil.CreateContextMenu) then return end
+	MenuUtil.CreateContextMenu(owner, function(_, root)
+		root:CreateTitle(L["Поза"])
+		for _, pose in ipairs(TH.POSES) do
+			root:CreateRadio(pose.name, function() return (preview.poseKey or "stand") == pose.key end,
+				function() preview:SetPose(pose.key, preview.freeze, preview.sheathe) end)
+		end
+		root:CreateDivider()
+		root:CreateCheckbox(L["Замереть на кадре"], function() return preview.freeze end,
+			function() preview:SetFrozen(not preview.freeze) end)
+		root:CreateCheckbox(L["Оружие в ножнах"], function()
+			local pose = TH.POSE_BY_KEY[preview.poseKey or "stand"]
+			if preview.sheathe == nil then return not (pose and pose.arms) end
+			return preview.sheathe
+		end, function()
+			local pose = TH.POSE_BY_KEY[preview.poseKey or "stand"]
+			local cur = preview.sheathe
+			if cur == nil then cur = not (pose and pose.arms) end
+			preview.sheathe = not cur
+			preview:ApplyPose()
+		end)
+	end)
 end
 
 function UI:OpenRaceMenu(owner)

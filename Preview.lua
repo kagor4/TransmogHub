@@ -70,6 +70,68 @@ function TH:CreatePreview(parent)
 	return preview
 end
 
+---------------------------------------------------------------------------
+-- Позы: анимации модели (номера — из AnimationData игры). freeze — остановить на кадре
+-- (пауза), sheathe — оружие в ножнах. Часть эмоций у некоторых рас не проигрывается:
+-- тогда модель просто стоит.
+---------------------------------------------------------------------------
+TH.POSES = {
+	{ key = "stand", anim = 0, name = L["Стойка"] },
+	{ key = "ready", anim = 25, name = L["Боевая стойка"] },
+	{ key = "ready2h", anim = 27, name = L["Боевая стойка с оружием"], arms = true },
+	{ key = "roar", anim = 55, name = L["Боевой клич"], arms = true },
+	{ key = "cast", anim = 52, name = L["Подготовка заклинания"] },
+	{ key = "spell", anim = 54, name = L["Заклинание"] },
+	{ key = "bow", anim = 66, name = L["Поклон"] },
+	{ key = "wave", anim = 67, name = L["Приветствие"] },
+	{ key = "salute", anim = 113, name = L["Салют"] },
+	{ key = "cheer", anim = 68, name = L["Ликование"] },
+	{ key = "dance", anim = 69, name = L["Танец"] },
+	{ key = "laugh", anim = 70, name = L["Смех"] },
+	{ key = "flex", anim = 82, name = L["Напрячь мышцы"] },
+	{ key = "point", anim = 84, name = L["Указать"] },
+	{ key = "kneel", anim = 75, name = L["На колене"] },
+	{ key = "sit", anim = 97, name = L["Сидя"] },
+}
+TH.POSE_BY_KEY = {}
+for _, p in ipairs(TH.POSES) do TH.POSE_BY_KEY[p.key] = p end
+
+-- pose — ключ из TH.POSES (nil — обычная стойка), freeze — замереть, sheathe — оружие убрать
+function Preview:SetPose(key, freeze, sheathe)
+	self.poseKey, self.freeze, self.sheathe = key, freeze, sheathe
+	self.poseStart = GetTime()
+	self.frozenAt = nil
+	self:ApplyPose()
+end
+
+-- Пауза: замереть на текущем кадре (или продолжить)
+function Preview:SetFrozen(freeze)
+	if freeze and not self.freeze then
+		self.frozenAt = GetTime() - (self.poseStart or GetTime())
+	elseif not freeze then
+		self.poseStart = GetTime() - (self.frozenAt or 0)
+		self.frozenAt = nil
+	end
+	self.freeze = freeze
+	self:ApplyPose()
+end
+
+function Preview:ApplyPose()
+	local actor = self.scene:GetPlayerActor()
+	if not actor or not actor:IsLoaded() then return end
+	local pose = TH.POSE_BY_KEY[self.poseKey or "stand"] or TH.POSES[1]
+	local sheathe = self.sheathe
+	if sheathe == nil then sheathe = not pose.arms end
+	if actor.SetSheathed then pcall(actor.SetSheathed, actor, sheathe and true or false) end
+	if actor.SetAnimation then
+		if self.freeze then
+			pcall(actor.SetAnimation, actor, pose.anim, 0, 0, self.frozenAt or 0.5)
+		else
+			pcall(actor.SetAnimation, actor, pose.anim, 0, 1, 0)
+		end
+	end
+end
+
 -- Камера сцены — в исходное положение (приближение, поворот). Модель и вещи остаются:
 -- сцена переиспользует актёра с тем же тегом.
 function Preview:ResetCamera()
@@ -206,6 +268,7 @@ function Preview:ApplyWithRetry(token, attempt)
 	-- чуть позже и плавно, иначе мелькает персонаж в белье
 	if done then
 		self.shownItems, self.shownRace = self.items, self.raceID
+		if self.poseKey or self.sheathe ~= nil then self:ApplyPose() end
 		C_Timer.After(0.3, function() if token == self.loadToken then self:SetHidden(false, true) end end)
 	end
 	if not done and attempt < 20 then
