@@ -390,7 +390,8 @@ end
 local embeddedTried = false
 local function Embedded()
 	if TransmogHub_ATT then return TransmogHub_ATT end
-	if embeddedTried then return nil end
+	-- база собрана для основной игры; в Forever другие вещи и карты — не грузим
+	if TH.FOREVER or embeddedTried then return nil end
 	embeddedTried = true
 	local load = C_AddOns and C_AddOns.LoadAddOn or LoadAddOn
 	if load then pcall(load, "TransmogHub_Sources") end
