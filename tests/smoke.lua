@@ -205,7 +205,8 @@ TH.scripts.OnEvent(TH, "PLAYER_LOGIN")
 assert(Net:IsConnected(), "joined hidden channel")
 local startup = flush()
 assert(startup[1] == "SH1", "hello sent: " .. tostring(startup[1]))
-assert(startup[2] and startup[2]:match("^Sq%w+\t0$"), "initial sync request")
+-- с каталогом из обновления первая синхронизация — с даты каталога, без него — с нуля
+assert(startup[2] and startup[2]:match("^Sq%w+\t%w+$"), "initial sync request")
 assert(lastBn[1] == FRIEND_ID .. ":SH1", "hello to the Battle.net friend")
 
 -- приём сообщений от другого игрока
