@@ -444,7 +444,7 @@ f:close()
 ---------------------------------------------------------------------------
 local BUNDLE_MAX, BUNDLE_FRESH = 2000, 90 * DAY
 -- «Телефонная книга»: игроки с аддоном, бывшие в сети за 2 недели, — новичок стучится к ним.
--- Только авторы образов и игроки рейтинга (их имена и так видны всем), с фракцией по расе.
+-- Отметки «я в сети» (их можно отключить), авторы образов и игроки рейтинга; голосовавшие — нет.
 local PEERS_MAX, PEERS_FRESH = 300, 14 * DAY
 local bundledCount, bundledPeers = 0, 0
 if bundledPath and bundledPath ~= "" then
@@ -520,6 +520,15 @@ if bundledPath and bundledPath ~= "" then
 			seen[set.author] = s
 		end
 	end
+	-- отметки «я в сети»: фракция из них надёжнее, чем по расе
+	for name, p in pairs(db.net.presence or {}) do
+		if type(p) == "table" and p[2] then
+			local s = seen[name] or { t = 0 }
+			if p[2] > s.t then s.t = p[2] end
+			if p[1] == "A" or p[1] == "H" then s.faction = p[1] end
+			seen[name] = s
+		end
+	end
 	for name, sc in pairs(db.net.scores or {}) do
 		if type(sc) == "table" and not sc.removed and sc.t then
 			local s = seen[name] or { t = 0 }
@@ -530,7 +539,7 @@ if bundledPath and bundledPath ~= "" then
 	local peers = {}
 	for name, s in pairs(seen) do
 		if now - s.t <= PEERS_FRESH and s.t <= now and name:find("-", 1, true) and not TH:IsBanned(name) then
-			peers[#peers + 1] = { name, TH.Net.RaceFaction(s.race), s.t }
+			peers[#peers + 1] = { name, s.faction or TH.Net.RaceFaction(s.race), s.t }
 		end
 	end
 	table.sort(peers, function(a, b) if a[3] ~= b[3] then return a[3] > b[3] end return a[1] < b[1] end)

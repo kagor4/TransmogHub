@@ -1756,4 +1756,12 @@ ns.LOCALES.enUS = {
 	["Образ %s от %s — аддон с образами игроков на CurseForge."] = "Outfit %s by %s, from a player outfit catalogue addon on CurseForge.",
 	["Этого образа у вас ещё нет — попросили у %s. Окно откроется, когда образ придёт."] = "You don't have this outfit yet, so we asked %s for it. The window opens when it arrives.",
 	["Этого образа у вас ещё нет: он придёт по сети."] = "You don't have this outfit yet: it will arrive over the network.",
+	["Телефонная книга: "] = "Phonebook: ",
+	["|cff40ff40вы в ней|r"] = "|cff40ff40you're listed|r",
+	["|cffff4040вас в ней нет|r"] = "|cffff4040you're not listed|r",
+	[". Раз в день аддон отмечается в сети: имя персонажа и фракция. По этим отметкам игроки находят друг друга, а новички получают их с обновлением аддона. /thub phonebook on|off"] = ". Once a day the addon checks in on the network with your character name and faction. Players use these check-ins to find each other, and new players get them with addon updates. /thub phonebook on|off",
+	["Игроков с аддоном в сети за 2 недели: %d"] = "Players with the addon online in the last 2 weeks: %d",
+	["Телефонная книга"] = "Phonebook",
+	["Раз в день аддон отмечается в сети: имя персонажа и фракция. По этим отметкам игроки с аддоном находят друг друга, а новички получают их вместе с обновлением аддона. Если снять галочку, через 2 недели вас в книге не будет."] = "Once a day the addon checks in on the network with your character name and faction. Players with the addon use these check-ins to find each other, and new players get them with addon updates. If you untick this, you'll drop out of the phonebook within 2 weeks.",
+	[" — телефонная книга (включена: раз в день аддон отмечается в сети — имя персонажа и фракция; так игроки с аддоном находят друг друга)"] = " — phonebook (on: once a day the addon checks in on the network with your character name and faction, so players with the addon can find each other)",
 }
