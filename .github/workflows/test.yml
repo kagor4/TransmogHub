@@ -16,7 +16,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y lua5.1
 
       - name: Syntax check
-        run: luac5.1 -p *.lua Data/*.lua Locales/*.lua
+        run: luac5.1 -p *.lua Data/*.lua Locales/*.lua TransmogHub_Sources/*.lua
 
       - name: Smoke test
         run: lua5.1 tests/smoke.lua .
@@ -29,6 +29,9 @@ jobs:
 
       - name: Official chart test
         run: lua5.1 tests/charts.lua .
+
+      - name: Built-in item sources (AllTheThings extract)
+        run: lua5.1 tests/att.lua .
 
       # База на пределе хранения: пересчёты после сообщений сети не должны тормозить игру
       - name: Performance check

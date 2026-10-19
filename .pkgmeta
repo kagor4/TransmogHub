@@ -11,3 +11,7 @@ ignore:
 manual-changelog:
   filename: CHANGELOG.md
   markup-type: markdown
+
+# Встроенная база источников (из AllTheThings) — отдельный аддон, грузится по требованию
+move-folders:
+  TransmogHub/TransmogHub_Sources: TransmogHub_Sources

@@ -6,7 +6,9 @@ local TH = ns.TH
 -- Где взять вещь — подробнее, чем «Торговец» или «Случайная добыча» (игра аддонам
 -- больше ничего не сообщает).
 -- 1) AllTheThings, если он установлен: его путь к источнику (зона > торговец, задание…).
--- 2) Наблюдения игроков. Аддон замечает вещи с обликом у торговцев, в добыче и в
+-- 2) Встроенная выжимка базы AllTheThings (лицензия MIT) — отдельный аддон
+--    TransmogHub_Sources, загружается при первой подсказке. Ставить ATT не нужно.
+-- 3) Наблюдения игроков. Аддон замечает вещи с обликом у торговцев, в добыче и в
 --    наградах за задания и раз в день отправляет новые находки разработчику:
 --    предмет, торговец/существо/задание, зона, координаты и цена — без имени игрока.
 --    Сводка приходит всем с обновлением аддона (Data/Sources.lua).
@@ -204,6 +206,10 @@ function TH:StartSources()
 		if not ok and self.ReportError then self:ReportError(err) end
 	end)
 	C_Timer.After(100, function() self:SendSources() end)
+	-- встроенная база источников: подгружаем заранее, не в бою — первая подсказка не подвиснет
+	C_Timer.After(20, function()
+		if not (InCombatLockdown and InCombatLockdown()) then TH.LoadEmbeddedSources() end
+	end)
 end
 
 ---------------------------------------------------------------------------
@@ -377,12 +383,184 @@ local function ATTLines(itemID, sourceID)
 	return out, pending
 end
 
+---------------------------------------------------------------------------
+-- Встроенная база (TransmogHub_ATT из аддона TransmogHub_Sources). Запись вещи —
+-- до 4 источников через «;»: «раздел|место|источник|карта:x:y|цена» (см. tools/att/build.lua)
+---------------------------------------------------------------------------
+local embeddedTried = false
+local function Embedded()
+	if TransmogHub_ATT then return TransmogHub_ATT end
+	if embeddedTried then return nil end
+	embeddedTried = true
+	local load = C_AddOns and C_AddOns.LoadAddOn or LoadAddOn
+	if load then pcall(load, "TransmogHub_Sources") end
+	return TransmogHub_ATT
+end
+TH.LoadEmbeddedSources = Embedded
+
+-- Названия из таблиц базы ({ enUS=…, ruRU=… }) с метками: @ГЛОБАЛЬНАЯ_СТРОКА,
+-- {s:заклинание}, {a:достижение}, {c:класс:подкласс}
+local function Resolve(text)
+	if type(text) ~= "string" then return nil end
+	local g = text:match("^@([%w_]+)$")
+	if g then return type(_G[g]) == "string" and _G[g] or nil end
+	text = text:gsub("{s:(%d+)}", function(id)
+		local name = C_Spell and C_Spell.GetSpellName and C_Spell.GetSpellName(tonumber(id))
+		return name or ""
+	end)
+	text = text:gsub("{a:(%d+)}", function(id)
+		return GetAchievementInfo and select(2, GetAchievementInfo(tonumber(id))) or ""
+	end)
+	text = text:gsub("{c:(%d+):(%d+)}", function(a, b)
+		local info = C_Item and C_Item.GetItemSubClassInfo and C_Item.GetItemSubClassInfo(tonumber(a), tonumber(b))
+		return info or ""
+	end)
+	text = text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+	return text ~= "" and text or nil
+end
+
+local function TableName(t, id)
+	local names = t and t[id]
+	if not names then return nil end
+	return Resolve(LocalName(names))
+end
+
+-- Имя существа: игра знает его, только если оно было в кэше; иначе спросит сервер
+-- (подсказку перерисуем, когда имя придёт)
+local npcNames = {}
+local function NpcName(id)
+	if npcNames[id] then return npcNames[id] end
+	local data = C_TooltipInfo and C_TooltipInfo.GetHyperlink
+		and C_TooltipInfo.GetHyperlink("unit:Creature-0-0-0-0-" .. id .. "-0000000000")
+	local line = data and data.lines and data.lines[1]
+	local name = line and line.leftText
+	if type(name) == "string" and name ~= "" and not Secret(name) and name ~= RETRIEVING_DATA then
+		npcNames[id] = name
+		return name
+	end
+end
+
+local function PlaceName(token)
+	local kind, id = (token or ""):match("^(%a)(%-?%d+)$")
+	id = tonumber(id)
+	if not id then return nil end
+	if kind == "I" then
+		return EJ_GetInstanceInfo and (EJ_GetInstanceInfo(id)) or nil
+	end
+	return ZoneName(id)
+end
+
+-- Источник: текст и ждём ли ещё имя от игры
+local function SourceText(token, cost, db)
+	local kind, id = (token or ""):match("^(%a)(%-?%d+)$")
+	id = tonumber(id)
+	if not id then return nil end
+	if kind == "e" then
+		local name = EJ_GetEncounterInfo and (EJ_GetEncounterInfo(id))
+		return L["Босс: "] .. (name or ("#" .. id))
+	elseif kind == "n" then
+		local name = NpcName(id)
+		local label = cost ~= "" and L["Торговец: "] or L["Добыча: "]
+		return label .. (name or (L["существо #"] .. id)), not name
+	elseif kind == "q" then
+		local title = C_QuestLog and C_QuestLog.GetTitleForQuestID and C_QuestLog.GetTitleForQuestID(id)
+		return L["Задание: "] .. (title and ("«" .. title .. "»") or ("#" .. id)), not title
+	elseif kind == "o" then
+		return TableName(db.objects, id) or L["Сундук или предмет в мире"]
+	elseif kind == "a" then
+		local name = GetAchievementInfo and select(2, GetAchievementInfo(id))
+		return L["Достижение: "] .. (name or ("#" .. id))
+	elseif kind == "p" then
+		local name = C_TradeSkillUI and C_TradeSkillUI.GetTradeSkillDisplayName and C_TradeSkillUI.GetTradeSkillDisplayName(id)
+		return L["Профессия: "] .. (name or ("#" .. id))
+	elseif kind == "h" then
+		return TableName(db.headers, id)
+	end
+end
+
+-- Цена: «g<медь>,c<валюта>x<n>,i<предмет>x<n>»
+local function EmbeddedCost(cost)
+	local parts = {}
+	for part in (cost or ""):gmatch("[^,]+") do
+		local copper = part:match("^g(%d+)$")
+		if copper then
+			local text = CostText(tonumber(copper))
+			if text ~= "" then parts[#parts + 1] = text end
+		else
+			local text = CostText(nil, part)
+			if text ~= "" then parts[#parts + 1] = text end
+		end
+	end
+	return table.concat(parts, " + ")
+end
+
+local CATEGORY_LABEL = {
+	P = L["PvP"], T = L["Торговая лавка"], S = L["Магазин игры"], B = L["Черный рынок"],
+	H = L["Праздник"], W = L["Мировое событие"], D = L["Случайная добыча в мире"], R = L["Акция"],
+}
+
+local function EmbeddedEntries(itemID)
+	local db = Embedded()
+	local raw = db and db.items and db.items[itemID]
+	if not raw then return nil, db end
+	local out = {}
+	for entry in raw:gmatch("[^;]+") do
+		local cat, place, source, coord, cost = strsplit("|", entry)
+		out[#out + 1] = { cat = cat, place = place, source = source, coord = coord or "", cost = cost or "" }
+	end
+	return out, db
+end
+
+local function EmbeddedLines(itemID)
+	local entries, db = EmbeddedEntries(itemID)
+	if not entries then return nil end
+	local out, seen, pending = {}, {}, false
+	for _, e in ipairs(entries) do
+		local parts = {}
+		local place = PlaceName(e.place)
+		if place then parts[#parts + 1] = place end
+		local src, wait = SourceText(e.source, e.cost, db)
+		if wait then pending = true end
+		if src and src ~= place then parts[#parts + 1] = src end
+		if #parts == 0 then parts[1] = CATEGORY_LABEL[e.cat] end
+		if #parts > 0 then
+			local text = table.concat(parts, " > ")
+			local m, x, y = e.coord:match("^(%d+):([%d%.]+):([%d%.]+)$")
+			if x then text = text .. string.format(" (%.1f, %.1f)", tonumber(x), tonumber(y)) end
+			local cost = EmbeddedCost(e.cost)
+			if cost ~= "" then text = text .. ", " .. cost end
+			if CATEGORY_LABEL[e.cat] and parts[1] ~= CATEGORY_LABEL[e.cat] then
+				text = CATEGORY_LABEL[e.cat] .. ": " .. text
+			end
+			if not seen[text] then
+				seen[text] = true
+				out[#out + 1] = text
+				if #out >= MAX_LINES then break end
+			end
+		end
+	end
+	return out, pending
+end
+
+local function EmbeddedPoint(itemID)
+	local entries = EmbeddedEntries(itemID)
+	for _, e in ipairs(entries or {}) do
+		local m, x, y = e.coord:match("^(%d+):([%d%.]+):([%d%.]+)$")
+		if m then
+			local src = SourceText(e.source, e.cost, TransmogHub_ATT or {})
+			return tonumber(m), tonumber(x) / 100, tonumber(y) / 100, src
+		end
+	end
+end
+
 -- Возвращает заголовок и строки «где найти» (или nil), не установлен ли ATT
 -- и ждём ли ещё имена от ATT (тогда подсказку стоит перерисовать)
 function TH:GetWhereToFind(itemID, sourceID)
 	if not itemID then return nil end
 	local att, pending = ATTLines(itemID, sourceID)
 	if att and #att > 0 then return L["Где найти (AllTheThings):"], att, false, pending end
+	local embedded, wait = EmbeddedLines(itemID)
+	if embedded and #embedded > 0 then return L["Где найти:"], embedded, false, pending or wait end
 	local lines = {}
 	local catalog = TransmogHub_Sources and TransmogHub_Sources.items and TransmogHub_Sources.items[itemID]
 	for _, e in ipairs(catalog or {}) do
@@ -391,7 +569,8 @@ function TH:GetWhereToFind(itemID, sourceID)
 	end
 	if #lines == 0 then lines = OwnLines(itemID) end
 	if #lines > 0 then return L["Где найти (по данным игроков):"], lines, false, pending end
-	return nil, nil, att == nil, pending
+	-- совет поставить ATT — только если встроенной базы нет
+	return nil, nil, att == nil and not TransmogHub_ATT, pending
 end
 
 ---------------------------------------------------------------------------
@@ -434,6 +613,8 @@ local function MapPoint(itemID, sourceID)
 			if ok and map then return map, x, y, title end
 		end
 	end
+	local map, x, y, title = EmbeddedPoint(itemID)
+	if map then return map, x, y, title end
 	return CatalogPoint(itemID)
 end
 
