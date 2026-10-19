@@ -1,4 +1,4 @@
-## Interface: 120105
+## Interface: 120105, 120107
 ## Title: Transmog Hub
 ## Notes: Save your transmog, try outfits on any race and vote for the best looks.
 ## Notes-ruRU: Делитесь трансмогом, примеряйте чужие образы и голосуйте за лучшие.
