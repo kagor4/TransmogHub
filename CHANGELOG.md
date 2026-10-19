@@ -1,5 +1,9 @@
 # Transmog Hub — Changelog
 
+## 1.13.1
+- The outfit catalogue that comes with updates is getting ready to include outfits from both Europe and the Americas.
+- When looking for other players to connect to, the addon now only tries players in your own region.
+
 ## 1.13.0
 - **Left-click an item** in an outfit to take it off the preview model, and click again to put it back. Handy for seeing how an outfit looks without a cloak, helm or weapon. The outfit itself doesn't change.
 - **Ctrl+Left-click an item** to try it on your own character in the game's dressing room. Ctrl+click more items to add them on top.

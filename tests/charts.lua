@@ -196,6 +196,29 @@ local hallAward = false
 for _, list in pairs(TransmogHub_Charts.awards) do if list.hall_1 then hallAward = true end end
 assert(hallAward, "hall achievement awarded")
 
+-- снимок базы из другого региона (Америка): его образы и отметки «в сети» — в общем
+-- каталоге с пометкой региона (стучаться аддон будет только к своему региону)
+local usPath = tmp .. "_us.lua"
+local uf = assert(io.open(usPath, "w"))
+uf:write("TransmogHubDB = " .. Ser({ region = 1, net = {
+	sets = { nus1 = { id = "nus1", author = "Янки-Area52", name = "Ковбой", desc = "", race = 1, sex = 0, class = "HUNTER",
+		created = NOW + 15 * DAY - DAY, tags = {}, items = { [1] = { 111 } } } },
+	votes = {}, scores = {}, presence = { ["Янки-Area52"] = { "A", NOW + 15 * DAY - DAY } } } }) .. "\n")
+uf:close()
+arg = { dir, svPath, outPath, tostring(NOW + 15 * DAY), secretsDir, bundledPath, sourcesPath, "us=" .. usPath }
+dofile(dir .. "/tools/charts/build.lua")
+TransmogHub_Bundled = nil
+dofile(bundledPath)
+local usSet, usPeer, euPeer
+for _, set in ipairs(TransmogHub_Bundled.sets) do if set.id == "nus1" then usSet = set end end
+for _, p in ipairs(TransmogHub_Bundled.peers) do
+	if p[1] == "Янки-Area52" then usPeer = p elseif p[1] == "Тихоня-Гордунни" then euPeer = p end
+end
+assert(usSet and usSet.region == "us", "set from the other region in the catalog, tagged")
+assert(usPeer and usPeer[4] == "us", "check-in from the other region tagged")
+assert(not euPeer or euPeer[4] == nil, "own region untagged")
+os.remove(usPath)
+
 os.remove(svPath); os.remove(outPath); os.remove(tmp)
 os.execute("rm -rf '" .. secretsDir .. "'")
 print("CHARTS OK")

@@ -1,6 +1,11 @@
 -- Официальный чарт Transmog Hub.
 --
---   lua5.1 tools/charts/build.lua <папка аддона> <TransmogHub.lua модератора> <выход Data/Charts.lua> [время] [папка secrets] [выход Data/Bundled.lua] [выход Data/Sources.lua]
+--   lua5.1 tools/charts/build.lua <папка аддона> <TransmogHub.lua модератора> <выход Data/Charts.lua> [время] [папка secrets] [выход Data/Bundled.lua] [выход Data/Sources.lua] [снимки других регионов]
+--
+-- Снимки других регионов — «us=путь,…»: базы персонажей модератора в других регионах
+-- (сеть у регионов своя). Их образы, оценки и отметки «в сети» добавляются к основному
+-- снимку (Европа) с пометкой региона: каталог общий, а стучаться аддон будет только
+-- к игрокам своего региона.
 --
 -- Папка secrets — из закрытого репозитория (hidden.lua и master.txt): по ней чарт
 -- выдаёт скрытые достижения за теги и слово в названии. Условия в чарт не попадают.
@@ -18,7 +23,7 @@
 -- С выходом Data/Bundled.lua ещё и каталог: образы из снимка, которые придут всем
 -- с обновлением аддона (видны и там, где рядом никого с аддоном).
 -- С выходом Data/Sources.lua — сводка «где найти вещь» из находок игроков (modSources).
-local dir, svPath, outPath, nowArg, secretsDir, bundledPath, sourcesPath = arg[1], arg[2], arg[3], arg[4], arg[5], arg[6], arg[7]
+local dir, svPath, outPath, nowArg, secretsDir, bundledPath, sourcesPath, extraArg = arg[1], arg[2], arg[3], arg[4], arg[5], arg[6], arg[7], arg[8]
 assert(dir and svPath and outPath, "usage: build.lua <addon dir> <SavedVariables> <out> [unix time] [secrets dir]")
 if nowArg == "" then nowArg = nil end
 if secretsDir == "" then secretsDir = nil end
@@ -48,7 +53,45 @@ assert(type(TransmogHubDB) == "table", "в файле нет TransmogHubDB")
 TH:ADDON_LOADED("TransmogHub")
 local db = TH.db
 db.hidden = {} -- личные «скрыть» модератора на чарт не влияют
+
+-- снимки других регионов: образы, оценки, очки и отметки «в сети» — к основной базе
+local regionOf = {} -- [имя игрока] = регион (для отметок «в сети» и знакомых из каталога)
+for tag, path in (extraArg or ""):gmatch("(%a+)=([^,]+)") do
+	TransmogHubDB = nil
+	local chunk = loadfile(path)
+	if chunk then chunk() end
+	local other = type(TransmogHubDB) == "table" and TransmogHubDB.net
+	TransmogHubDB = db
+	if other then
+		for id, set in pairs(other.sets or {}) do
+			if not db.net.sets[id] and not db.net.tombstones[id] then
+				set.region = tag
+				db.net.sets[id] = set
+			end
+		end
+		for setId, list in pairs(other.votes or {}) do
+			db.net.votes[setId] = db.net.votes[setId] or {}
+			for voter, v in pairs(list) do
+				local mine = db.net.votes[setId][voter]
+				if not mine or (v[2] or 0) > (mine[2] or 0) then db.net.votes[setId][voter] = v end
+			end
+		end
+		for name, sc in pairs(other.scores or {}) do
+			local mine = db.net.scores[name]
+			if not mine or (sc.t or 0) > (mine.t or 0) then db.net.scores[name] = sc end
+			regionOf[name] = tag
+		end
+		db.net.presence = db.net.presence or {}
+		for name, p in pairs(other.presence or {}) do
+			db.net.presence[name] = p
+			regionOf[name] = tag
+		end
+	end
+end
 TH:LoadFeed()
+for _, set in ipairs(TH.feed.sets) do
+	if set.region and set.author then regionOf[set.author] = set.region end
+end
 
 local DAY, WEEK = 86400, 7 * 86400
 
@@ -503,6 +546,7 @@ if bundledPath and bundledPath ~= "" then
 		if set.race then fields[#fields + 1] = "race = " .. tostring(set.race) end
 		if set.sex then fields[#fields + 1] = "sex = " .. tostring(set.sex) end
 		if set.class then fields[#fields + 1] = "class = " .. Str(set.class) end
+		if set.region then fields[#fields + 1] = "region = " .. Str(set.region) end
 		local r = set.rating
 		if r and (r.n or 0) > 0 then
 			local d = r.dist or {}
@@ -546,7 +590,9 @@ if bundledPath and bundledPath ~= "" then
 	while #peers > PEERS_MAX do table.remove(peers) end
 	out[#out + 1] = "\tpeers = {"
 	for _, p in ipairs(peers) do
-		out[#out + 1] = string.format("\t\t{ %s, %s, %d },", Str(p[1]), p[2] and Str(p[2]) or "nil", math.floor(p[3] / DAY) * DAY)
+		local region = regionOf[p[1]]
+		out[#out + 1] = string.format("\t\t{ %s, %s, %d%s },", Str(p[1]), p[2] and Str(p[2]) or "nil", math.floor(p[3] / DAY) * DAY,
+			region and (", " .. Str(region)) or "")
 	end
 	out[#out + 1] = "\t},"
 	out[#out + 1] = "}"

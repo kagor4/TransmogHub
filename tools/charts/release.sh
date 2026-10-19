@@ -11,8 +11,16 @@ SECRETS="$2"
 [ -f "$SNAP" ] || { echo "нет снимка: $SNAP"; exit 1; }
 TMP="$(mktemp)"
 gunzip -c "$SNAP" > "$TMP"
-lua5.1 tools/charts/build.lua . "$TMP" Data/Charts.lua "" "$SECRETS" Data/Bundled.lua Data/Sources.lua
-rm -f "$TMP"
+# снимок базы американского персонажа модератора рядом с основным (если есть)
+US="${SNAP%.lua.gz}-us.lua.gz"
+EXTRA=""
+if [ -f "$US" ]; then
+	TMPUS="$(mktemp)"
+	gunzip -c "$US" > "$TMPUS"
+	EXTRA="us=$TMPUS"
+fi
+lua5.1 tools/charts/build.lua . "$TMP" Data/Charts.lua "" "$SECRETS" Data/Bundled.lua Data/Sources.lua "$EXTRA"
+rm -f "$TMP" ${TMPUS:+"$TMPUS"}
 luac5.1 -p *.lua Data/*.lua Locales/*.lua
 lua5.1 tests/smoke.lua . > /dev/null
 lua5.1 tests/filter.lua . > /dev/null
