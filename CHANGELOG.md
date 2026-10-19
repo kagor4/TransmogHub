@@ -1,5 +1,8 @@
 # Transmog Hub — Changelog
 
+## 1.13.2
+- If you play in both Europe and the Americas, the addon now keeps the network data of each region separately, so players and outfits from one region no longer mix into the other.
+
 ## 1.13.1
 - The outfit catalogue that comes with updates is getting ready to include outfits from both Europe and the Americas.
 - When looking for other players to connect to, the addon now only tries players in your own region.

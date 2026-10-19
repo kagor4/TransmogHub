@@ -158,12 +158,16 @@ function Invoke-Sync {
         # регион игры, который аддон записывает при входе: 1 — Америка, 3 — Европа
         $region = 0
         if ($text -match '\["region"\]\s*=\s*(\d+)') { $region = [int]$Matches[1] }
-        if ($region -eq 1) {
-            # Америка: свежайший файл (персонаж модератора там не обязательно модератор)
+        $isModerator = $text -match '\["moderator"\]\s*=\s*true'
+        # для чарта — свежайший файл аккаунта модератора. В нём базы всех регионов этой
+        # учётной записи Battle.net (аддон хранит их по регионам), сборка их разделит
+        if ($isModerator) {
+            if (-not $snapshot -or $file.LastWriteTime -gt $snapshot.LastWriteTime) { $snapshot = $file }
+        }
+        elseif ($region -eq 1) {
+            # отдельная учётная запись в Америке без модератора — свежайший файл
             if (-not $snapshotUs -or $file.LastWriteTime -gt $snapshotUs.LastWriteTime) { $snapshotUs = $file }
         }
-        # для чарта — свежайший файл аккаунта модератора
-        elseif ($text -match '\["moderator"\]\s*=\s*true' -and (-not $snapshot -or $file.LastWriteTime -gt $snapshot.LastWriteTime)) { $snapshot = $file }
         $reports += Get-SavedArray $text "modLog"
         $decisions += Get-SavedArray $text "modDecisions"
         $tags += Get-SavedArray $text "modTags"

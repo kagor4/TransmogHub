@@ -1626,6 +1626,28 @@ end)
 TH:RegisterEvent("ADDON_LOADED")
 TH:RegisterEvent("PLAYER_LOGIN")
 
+-- Сеть у регионов игры (1 — Америка, 3 — Европа…) своя, а файл сохранений у одной учётной
+-- записи Battle.net общий. Поэтому сетевые данные хранятся по регионам: наверху — текущего,
+-- остальные — в db.regions[регион]. До 1.13.2 всё было одной базой, её считаем европейской.
+local REGION_KEYS = { "net", "knownPeers", "chatContacts", "knocks", "friendChars" }
+function TH:SwitchRegionData()
+	local db = self.db
+	local cur = GetCurrentRegion and GetCurrentRegion()
+	if not cur then return end
+	local prev = db.regions and db.region or 3
+	db.regions = db.regions or {}
+	if prev ~= cur then
+		local saved = {}
+		for _, k in ipairs(REGION_KEYS) do saved[k] = db[k] end
+		db.regions[prev] = saved
+		local load = db.regions[cur] or {}
+		for _, k in ipairs(REGION_KEYS) do db[k] = load[k] end
+		db.regions[cur] = nil
+		ApplyDefaults(db, DEFAULTS) -- у нового региона — пустые таблицы
+	end
+	db.region = cur
+end
+
 function TH:ADDON_LOADED(name)
 	if name ~= ADDON_NAME then return end
 	TransmogHubDB = TransmogHubDB or {}
@@ -1647,9 +1669,7 @@ function TH:ADDON_LOADED(name)
 			if set.status ~= "published" then set.status = "draft" end
 		end
 	end
-	-- регион игры (1 — Америка, 3 — Европа…): по нему коннектор модератора отличает
-	-- снимки баз разных регионов, а аддон — к кому из каталога можно постучаться
-	if GetCurrentRegion then self.db.region = GetCurrentRegion() end
+	self:SwitchRegionData()
 	self.db.schema = DEFAULTS.schema
 	self:UnregisterEvent("ADDON_LOADED")
 end
