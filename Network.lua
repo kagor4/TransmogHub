@@ -1444,22 +1444,31 @@ function Net:IsIsolated()
 		and not self:GroupHasOtherRealm() and not next(self.whisperPeers)
 end
 
+-- Фракция по расе: «A», «H» или nil (нейтральный пандарен, неизвестная раса)
+function Net.RaceFaction(race)
+	race = tonumber(race)
+	return race and ((ALLIANCE[race] and "A") or (HORDE[race] and "H")) or nil
+end
+
+-- К кому стучаться: авторы из базы и каталога и «телефонная книга» каталога — игроки
+-- с аддоном, недавно бывшие в сети (сначала самые недавние). Другую фракцию пропускаем.
 function Net:KnockCandidates()
 	local me, myChars = Net.Me(), TH.db.myChars or {}
-	local mine = UnitFactionGroup and UnitFactionGroup("player")
+	local f = UnitFactionGroup and UnitFactionGroup("player")
+	local mine = (f == "Alliance" and "A") or (f == "Horde" and "H") or nil
 	local last = TH.db.knocks or {}
 	local now, best = Now(), {}
-	local function Consider(set)
-		local name = set.author
+	local function Consider(name, faction, t)
 		if not IsCharName(name) or name == me or myChars[name] or knocked[name] then return end
 		if now - (last[name] or 0) < KNOCK_REPEAT then return end
-		local race = tonumber(set.race)
-		if race and mine == "Alliance" and HORDE[race] then return end
-		if race and mine == "Horde" and ALLIANCE[race] then return end
-		if not best[name] or (set.created or 0) > best[name] then best[name] = set.created or 0 end
+		if mine and faction and faction ~= mine then return end
+		t = t or 0
+		if not best[name] or t > best[name] then best[name] = t end
 	end
-	for _, set in pairs(DB().sets) do Consider(set) end
-	for _, set in ipairs(TransmogHub_Bundled and TransmogHub_Bundled.sets or {}) do Consider(set) end
+	for _, set in pairs(DB().sets) do Consider(set.author, Net.RaceFaction(set.race), set.created) end
+	local bundled = TransmogHub_Bundled or {}
+	for _, set in ipairs(bundled.sets or {}) do Consider(set.author, Net.RaceFaction(set.race), set.created) end
+	for _, p in ipairs(bundled.peers or {}) do Consider(p[1], p[2], p[3]) end
 	local list = {}
 	for name, t in pairs(best) do list[#list + 1] = { name, t } end
 	table.sort(list, function(a, b) if a[2] ~= b[2] then return a[2] > b[2] end return a[1] < b[1] end)

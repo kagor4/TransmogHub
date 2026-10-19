@@ -134,6 +134,13 @@ Build(NOW)
 TransmogHub_Sources = nil
 dofile(sourcesPath)
 assert(TransmogHub_Sources.items[244267][1].n == 2, "rebuild does not double counts")
+-- телефонная книга: авторы и игроки рейтинга с фракцией, без голосовавших
+assert(type(b.peers) == "table" and #b.peers > 0, "phonebook written")
+local inBook = {}
+for _, p in ipairs(b.peers) do inBook[p[1]] = p end
+assert(inBook["Игрок1-Гордунни"], "ranking players seen this week")
+assert(not inBook["Автор1-Гордунни"], "authors silent for over two weeks are left out")
+assert(not inBook["Голос1-Гордунни"], "voters are not published")
 local src = io.open(bundledPath):read("*a")
 assert(not src:find("votes", 1, true), "no vote lists in catalog file")
 assert(c.t == NOW and c.date)
