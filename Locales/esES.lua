@@ -1879,4 +1879,6 @@ ns.LOCALES.esES = {
 	["Телефонная книга"] = "Agenda",
 	["Раз в день аддон отмечается в сети: имя персонажа и фракция. По этим отметкам игроки с аддоном находят друг друга, а новички получают их вместе с обновлением аддона. Если снять галочку, через 2 недели вас в книге не будет."] = "Una vez al día el addon se registra en la red con el nombre y la facción de tu personaje. Los jugadores con el addon se encuentran gracias a estos registros, y los nuevos los reciben con las actualizaciones del addon. Si la desmarcas, saldrás de la agenda en 2 semanas.",
 	[" — телефонная книга (включена: раз в день аддон отмечается в сети — имя персонажа и фракция; так игроки с аддоном находят друг друга)"] = " — agenda (activada: una vez al día el addon se registra en la red con el nombre y la facción de tu personaje, para que los jugadores con el addon se encuentren)",
+	[", |cff40c0ffдогружается образов: %d|r"] = ", |cff40c0ffdescargando conjuntos: %d|r",
+	["|cff40c0ffдогружается образов: %d|r"] = "|cff40c0ffdescargando conjuntos: %d|r",
 }

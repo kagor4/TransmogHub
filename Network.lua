@@ -94,21 +94,53 @@ function Net.EncodeSet(set)
 	}, "\t")
 end
 
+-- Сжатый вид (ответ быстрой синхронизации, только новые версии): вещь — «слот облик
+-- [+второй] [*иллюзия]», слот — одна цифра base36. Короче на 3 знака на вещь.
+function Net.EncodeSetCompact(set)
+	local items = {}
+	for slotID, it in pairs(set.items or {}) do
+		items[#items + 1] = B36:sub(slotID + 1, slotID + 1) .. Enc(it[1])
+			.. (it[2] and ("+" .. Enc(it[2])) or "") .. (it[3] and ("*" .. Enc(it[3])) or "")
+	end
+	table.sort(items)
+	local s = Net.EncodeSet(set)
+	local f = Split(s, "\t")
+	f[10] = table.concat(items, ";")
+	return table.concat(f, "\t")
+end
+
+local function ParseCompactItems(field)
+	local items = {}
+	for entry in field:gmatch("[^;]+") do
+		local slotID = Dec(entry:sub(1, 1))
+		local rest = entry:sub(2)
+		local a = rest:match("^(%-?%w+)")
+		if slotID and a and TH.SLOT_BY_ID[slotID] then
+			items[slotID] = { Dec(a), Dec(rest:match("%+(%-?%w+)")), Dec(rest:match("%*(%-?%w+)")) }
+		end
+	end
+	return items
+end
+
 -- Иконка образа — номер файла игры (fileID)
 local function ValidIcon(n)
 	n = tonumber(n)
 	if n and n > 0 and n < 2 ^ 31 and n == math.floor(n) then return n end
 end
 
-function Net.DecodeSet(s)
+function Net.DecodeSet(s, compact)
 	local f = Split(s, "\t")
 	if #f < 10 or f[1] == "" then return nil end
 	local items = {}
-	for entry in f[10]:gmatch("[^;]+") do
-		local slot, a, b, c = entry:match("^(%w+):(%-?%w+)%.(%-?%w*)%.(%-?%w*)$")
-		local slotID = Dec(slot)
-		if slotID and TH.SLOT_BY_ID[slotID] then
-			items[slotID] = { Dec(a), Dec(b), Dec(c) }
+	if compact then
+		items = ParseCompactItems(f[10])
+	else
+		for entry in f[10]:gmatch("[^;]+") do
+			local slot, a, b, c = entry:match("^(%w+):(%-?%w+)%.(%-?%w*)%.(%-?%w*)$")
+			local slotID = Dec(slot)
+			if slotID and TH.SLOT_BY_ID[slotID] then
+				items[slotID] = { Dec(a), Dec(b), Dec(c) }
+			end
 		end
 	end
 	local tags = {}
@@ -426,14 +458,22 @@ function Net:SendStallReason()
 	if st.reason and st.since and GetTime() - st.since > 20 then return st.reason end
 end
 
-local function Enqueue(text, dest)
-	queue[#queue + 1] = { text = text, kind = dest.kind, target = dest.target }
+-- prio — вне очереди (ответ на просьбу «пришли этот образ»): встаёт за другими срочными
+local function Enqueue(text, dest, prio)
+	local entry = { text = text, kind = dest.kind, target = dest.target, prio = prio }
+	if not prio then
+		queue[#queue + 1] = entry
+		return
+	end
+	local pos = 1
+	while queue[pos] and queue[pos].prio do pos = pos + 1 end
+	table.insert(queue, pos, entry)
 end
 
 -- Сообщение одному адресату, с нарезкой на части
-local function SendTo(body, dest)
+local function SendTo(body, dest, prio)
 	if #body <= MAX_MESSAGE - 1 then
-		Enqueue("S" .. body, dest)
+		Enqueue("S" .. body, dest, prio)
 		return
 	end
 	msgCounter = (msgCounter + 1) % 1296
@@ -444,7 +484,7 @@ local function SendTo(body, dest)
 		local piece = body:sub(pos, pos + CHUNK - 1)
 		pos = pos + CHUNK
 		local kind = first and "B" or (pos > #body and "E" or "C")
-		Enqueue(kind .. id .. piece, dest)
+		Enqueue(kind .. id .. piece, dest, prio)
 		first = false
 	end
 end
@@ -464,6 +504,10 @@ function Net:Send(body, dest, except)
 	for id in pairs(self.bnPeers) do
 		if not (except and except.kind == "BNET" and except.target == id) then SendTo(body, BNET(id)) end
 	end
+end
+
+function Net:SendPriority(body, dest)
+	SendTo(body, dest, true)
 end
 
 -- Активные знакомые через шёпот, самые недавние первыми
@@ -1065,18 +1109,37 @@ function Net:Unpublish(setId)
 end
 
 local pendingAnswers = {} -- [reqId] = true, пока ждём своей очереди ответить
+local sentRecently = {}   -- [id] = время: образ уже прислал кто-то (ответ на «пришли, у кого есть»)
 local myRequests = {}     -- [reqId] = { dest, time, peer }
 
 -- Запрос «что нового». Время синхронизации запоминаем, только когда
 -- кто-то ответил: иначе, войдя в пустой канал, мы бы потом не скачали
 -- старые образы.
+local FALLBACK_AFTER = 10 -- никто не предложил по-новому — спрашиваем по-старому (старые версии)
+
+-- С какого времени просить новое. Первый раз — не с нуля, а с выпуска каталога, который
+-- пришёл с обновлением: всё, что было до него, у нас уже есть (с запасом в двое суток).
+function Net:SyncSince(peerName)
+	local last = peerName and DB().peerSync[peerName] or DB().lastSync or 0
+	if last == 0 then
+		local generated = TransmogHub_Bundled and tonumber(TransmogHub_Bundled.generated) or 0
+		if generated > 0 then last = generated - 2 * 86400 end
+	end
+	return math.max(0, last - 3600) -- час запаса
+end
+
 function Net:RequestSync(dest, peerName)
 	dest = dest or CHANNEL
-	local last = peerName and DB().peerSync[peerName] or DB().lastSync or 0
-	local since = math.max(0, last - 3600) -- час запаса
+	local since = self:SyncSince(peerName)
 	local reqId = Enc(math.random(0, 60000000))
-	myRequests[reqId] = { dest = dest, time = Now(), peer = peerName }
-	self:Send("Q" .. reqId .. "\t" .. Enc(since), dest)
+	local req = { dest = dest, time = Now(), peer = peerName, since = since }
+	myRequests[reqId] = req
+	self:Send("q" .. reqId .. "\t" .. Enc(since), dest)
+	C_Timer.After(FALLBACK_AFTER, function()
+		if myRequests[reqId] == req and not req.offers then
+			self:Send("Q" .. reqId .. "\t" .. Enc(since), dest)
+		end
+	end)
 end
 
 local syncScheduled = false
@@ -1195,6 +1258,14 @@ local function SendVotes(self, setId, entries, dest, except)
 	SendBatches(self, "W", setId, entries, dest, except)
 end
 
+-- Голоса, жалобы и прочее (всё, кроме самих образов) новее since
+local function SendRest(self, since, dest)
+	local _, votes, reports, batches = CollectSince(since)
+	for setId, list in pairs(votes) do SendVotes(self, setId, list, dest) end
+	for setId, list in pairs(reports) do SendBatches(self, "X", setId, list, dest) end
+	for _, b in ipairs(batches) do SendBatches(self, b[1], b[2], b[3], dest) end
+end
+
 function Net:Answer(reqId, since, dest)
 	pendingAnswers[reqId] = nil
 	local sets, votes, reports, batches = CollectSince(since)
@@ -1217,7 +1288,19 @@ local handlers = {}
 
 handlers.P = function(self, body, sender, origin)
 	local set = Net.DecodeSet(body)
-	if set and self:StoreSet(set, sender) then self:Relay("P" .. body, origin) end
+	if not set then return end
+	self:Arrived(set.id)
+	if self:StoreSet(set, sender) then self:Relay("P" .. body, origin) end
+end
+
+-- Образ в сжатом виде (ответ на «пришли эти»). Дальше пересылаем обычным P —
+-- его понимают и старые версии.
+handlers.b = function(self, body, sender, origin)
+	local set = Net.DecodeSet(body, true)
+	if not set then return end
+	sentRecently[set.id] = GetTime()
+	self:Arrived(set.id)
+	if self:StoreSet(set, sender) then self:Relay("P" .. Net.EncodeSet(set), origin) end
 end
 
 handlers.V = function(self, body, sender, origin)
@@ -1635,8 +1718,9 @@ end
 
 -- Попросить у игрока его образы: незнакомому — стук (ответ запустит синхронизацию),
 -- знакомому — сразу запрос синхронизации
-function Net:AskFor(name)
+function Net:AskFor(name, id)
 	name = Net.FullName(name)
+	if id then self:WantSet(id, IsCharName(name) and name or nil) end
 	if not IsCharName(name) or name == Net.Me() then return end
 	local t = self.whisperPeers[name]
 	if t and Now() - t < PEER_TIMEOUT then
@@ -1776,6 +1860,205 @@ handlers.Q = function(self, body, _, origin)
 	C_Timer.After(1 + math.random() * 5, function()
 		if pendingAnswers[reqId] then self:Answer(reqId, since, dest) end
 	end)
+end
+
+---------------------------------------------------------------------------
+-- Быстрая синхронизация. Вместо «пришлите всё новое с since» (старый Q):
+--   q  reqId \t since                          запрос
+--   o  reqId \t отпечатки                      предложение: какие образы есть, новые первыми
+--   r  reqId \t кому \t since \t отпечатки       «пришли эти»; кому «*» — любой, у кого есть;
+--                                              since — этот игрок присылает и голоса и прочее
+--   b  образ в сжатом виде                      ответ на r, вне очереди
+-- Отпечаток — короткий хеш id (до 6 знаков): список из 600 образов — около 15 сообщений,
+-- и никто не шлёт то, что у нас уже есть. В канале, группе и гильдии предлагают до трёх
+-- игроков, недостающее делим между ними: у каждого свой лимит отправки, качаем сразу у
+-- нескольких. Старые версии q не понимают: если за 10 секунд никто не предложил — старый Q.
+---------------------------------------------------------------------------
+local OFFER_MAX = 600     -- сколько образов предлагаем
+local MAX_OFFERS = 3      -- сколько игроков предлагают на один запрос в канале
+local OFFER_WINDOW = 2.5  -- столько ждём других предложений после первого
+local INCOMING_TTL = 180  -- не пришёл за это время — забываем (попросим при следующей синхронизации)
+local offerPending, offersHeard = {}, {} -- [reqId]
+local incoming = {}       -- [отпечаток] = { t, from }: образ уже попросили, ждём
+local fpCache = {}
+
+local function Fingerprint(id)
+	local fp = fpCache[id]
+	if fp then return fp end
+	local h = 0
+	for i = 1, #id do h = (h * 31 + id:byte(i)) % 2147483629 end
+	fp = Enc(h)
+	fpCache[id] = fp
+	return fp
+end
+Net.Fingerprint = Fingerprint
+
+local function IsDirect(origin) return origin.kind == "BNET" or origin.kind == "WHISPER" end
+local function ReplyDest(origin)
+	if IsDirect(origin) then return origin end
+	return origin.kind == "GROUP" and GROUP or origin.kind == "GUILD" and GUILD or CHANNEL
+end
+
+-- Все образы, что у нас есть (база, каталог из обновления) и удалённые: [отпечаток] = образ или true
+local function KnownIndex()
+	local db, idx = DB(), {}
+	for id, set in pairs(db.sets) do idx[Fingerprint(id)] = set end
+	for _, set in ipairs(TransmogHub_Bundled and TransmogHub_Bundled.sets or {}) do
+		if set.id and not idx[Fingerprint(set.id)] then idx[Fingerprint(set.id)] = set end
+	end
+	for id in pairs(db.tombstones) do idx[Fingerprint(id)] = idx[Fingerprint(id)] or true end
+	return idx
+end
+
+local function OfferList(since)
+	local list = {}
+	for _, set in pairs(DB().sets) do
+		if (set.created or 0) > since or (set.received or 0) > since then list[#list + 1] = set end
+	end
+	table.sort(list, function(a, b) return (a.created or 0) > (b.created or 0) end)
+	local out = {}
+	for i = 1, math.min(#list, OFFER_MAX) do out[i] = Fingerprint(list[i].id) end
+	return out
+end
+
+-- Образ пришёл (или уже был): больше не ждём
+function Net:Arrived(id)
+	if id then incoming[Fingerprint(id)] = nil end
+end
+
+-- Сколько образов попросили и ещё ждём (для строки состояния)
+function Net:IncomingCount()
+	local now, n = Now(), 0
+	for fp, w in pairs(incoming) do
+		if now - w.t > INCOMING_TTL then incoming[fp] = nil else n = n + 1 end
+	end
+	return n
+end
+
+handlers.q = function(self, body, _, origin)
+	local reqId, since = body:match("^(%w+)\t(%w+)$")
+	if not reqId or offerPending[reqId] then return end
+	since = Dec(since) or 0
+	local offer = OfferList(since)
+	local _, votes, reports, batches = CollectSince(since)
+	if #offer == 0 and not next(votes) and not next(reports) and #batches == 0 then
+		if IsDirect(origin) then self:Send("A" .. reqId, origin) end
+		return
+	end
+	local msg = "o" .. reqId .. "\t" .. table.concat(offer, ",")
+	if IsDirect(origin) then
+		self:SendPriority(msg, origin)
+		return
+	end
+	offerPending[reqId] = true
+	C_Timer.After(0.5 + math.random() * 3, function()
+		if offerPending[reqId] and (offersHeard[reqId] or 0) < MAX_OFFERS then
+			self:SendPriority(msg, ReplyDest(origin))
+		end
+		offerPending[reqId] = nil
+	end)
+end
+
+handlers.o = function(self, body, sender, origin)
+	local reqId, list = body:match("^(%w+)\t(.*)$")
+	if not reqId then return end
+	offersHeard[reqId] = (offersHeard[reqId] or 0) + 1
+	local req = myRequests[reqId]
+	if not req or req.planned then return end
+	req.offers = req.offers or {}
+	if req.offers[sender] then return end
+	local fps, has = {}, {}
+	for fp in list:gmatch("[^,]+") do
+		if #fp <= 7 and not has[fp] then
+			fps[#fps + 1] = fp
+			has[fp] = true
+		end
+	end
+	req.offers[sender] = { fps = fps, has = has }
+	req.order = req.order or {}
+	req.order[#req.order + 1] = sender
+	req.replyDest = ReplyDest(origin)
+	if IsDirect(origin) or #req.order >= MAX_OFFERS then
+		self:PlanFetch(reqId)
+	elseif #req.order == 1 then
+		C_Timer.After(OFFER_WINDOW, function() self:PlanFetch(reqId) end)
+	end
+end
+
+-- Разложить недостающее по предложившим: каждому — то, что у него есть, поровну.
+-- Порядок — как в предложениях (новые первыми). Первый предложивший присылает ещё
+-- голоса и прочее и в конце — «A» (синхронизировано).
+function Net:PlanFetch(reqId)
+	local req = myRequests[reqId]
+	if not req or req.planned or not req.order then return end
+	req.planned = true
+	local known, now = KnownIndex(), Now()
+	local plan, load = {}, {}
+	for _, name in ipairs(req.order) do plan[name], load[name] = {}, 0 end
+	local taken = {}
+	for _, name in ipairs(req.order) do
+		for _, fp in ipairs(req.offers[name].fps) do
+			local w = incoming[fp]
+			if not known[fp] and not taken[fp] and not (w and now - w.t < INCOMING_TTL) then
+				taken[fp] = true
+				local best
+				for _, other in ipairs(req.order) do
+					if req.offers[other].has[fp] and (not best or load[other] < load[best]) then best = other end
+				end
+				plan[best][#plan[best] + 1] = fp
+				load[best] = load[best] + 1
+				incoming[fp] = { t = now, from = best }
+			end
+		end
+	end
+	for i, name in ipairs(req.order) do
+		local primary = i == 1
+		if primary or #plan[name] > 0 then
+			self:Send("r" .. reqId .. "\t" .. name .. "\t" .. (primary and Enc(req.since or 0) or "") .. "\t"
+				.. table.concat(plan[name], ","), req.replyDest)
+		end
+	end
+end
+
+-- Попросить конкретный образ (ссылка из чата): у того, кто её прислал, и у всех в канале
+function Net:WantSet(id, name)
+	local fp = Fingerprint(id)
+	incoming[fp] = { t = Now(), from = name or "*" }
+	local reqId = Enc(math.random(0, 60000000))
+	if name and self.whisperPeers[name] and Now() - self.whisperPeers[name] < PEER_TIMEOUT then
+		self:Send("r" .. reqId .. "\t" .. name .. "\t\t" .. fp, WHISPER(name))
+	end
+	if self:IsConnected() then self:Send("r" .. reqId .. "\t*\t\t" .. fp, CHANNEL) end
+end
+
+handlers.r = function(self, body, _, origin)
+	local reqId, target, since, list = body:match("^(%w+)\t([^\t]*)\t(%w*)\t(.*)$")
+	if not reqId then return end
+	local anyone = target == "*"
+	if not anyone and target ~= Net.Me() then return end
+	local dest = ReplyDest(origin)
+	local known = KnownIndex()
+	local sets = {}
+	for fp in list:gmatch("[^,]+") do
+		local set = known[fp]
+		if type(set) == "table" then sets[#sets + 1] = set end
+	end
+	local function Reply()
+		for _, set in ipairs(sets) do
+			if not (anyone and sentRecently[set.id] and GetTime() - sentRecently[set.id] < 30) then
+				self:SendPriority("b" .. Net.EncodeSetCompact(set), dest)
+			end
+		end
+		if since ~= "" then
+			SendRest(self, Dec(since) or 0, dest)
+			self:Send("A" .. reqId, dest)
+		end
+	end
+	if anyone then
+		if #sets > 0 then C_Timer.After(0.5 + math.random() * 2, Reply) end
+	else
+		Reply()
+	end
 end
 
 handlers.A = function(self, body)

@@ -1562,6 +1562,9 @@ function TH:NetworkStatusText()
 	end
 	local text = string.format(L["|cff40ff40Сеть подключена|r, игроков с аддоном: %d, друзей с других серверов: %d, %s"],
 		Net:PeerCount(), Net:BNetPeerCount(), base)
+	if Net:IncomingCount() > 0 then
+		text = text .. string.format(L[", |cff40c0ffдогружается образов: %d|r"], Net:IncomingCount())
+	end
 	if Net:IsLocked() and Net:QueueLength() > 0 then
 		text = text .. L[", |cffffd100отправка на паузе (бой или подземелье)|r"]
 	elseif Net:QueueLength() > 0 then

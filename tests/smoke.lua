@@ -205,7 +205,7 @@ TH.scripts.OnEvent(TH, "PLAYER_LOGIN")
 assert(Net:IsConnected(), "joined hidden channel")
 local startup = flush()
 assert(startup[1] == "SH1", "hello sent: " .. tostring(startup[1]))
-assert(startup[2] and startup[2]:match("^SQ%w+\t0$"), "initial sync request")
+assert(startup[2] and startup[2]:match("^Sq%w+\t0$"), "initial sync request")
 assert(lastBn[1] == FRIEND_ID .. ":SH1", "hello to the Battle.net friend")
 
 -- приём сообщений от другого игрока
@@ -296,7 +296,7 @@ C_Timer.After = function(_, fn) fn() end
 assert(#flush() == 0, "no duplicate answer")
 -- our own sync request gets answered: lastSync is remembered
 Net:RequestSync(); local q = flush()[1]
-local reqId = q:match("^SQ(%w+)\t")
+local reqId = q:match("^Sq(%w+)\t")
 receive({ "SA" .. reqId })
 assert(Net.synced and TH.db.net.lastSync == serverTime, "lastSync set after answer")
 
@@ -484,7 +484,7 @@ end
 bnReceive({ "SI1" })
 flush()
 assert(Net.bnPeers[FRIEND_ID] and Net.bnPeers[FRIEND_ID].name == FRIEND, "friend registered")
-local bnQ = lastBn[1] and lastBn[1]:match("^" .. FRIEND_ID .. ":SQ(%w+)\t")
+local bnQ = lastBn[1] and lastBn[1]:match("^" .. FRIEND_ID .. ":Sq(%w+)\t")
 assert(bnQ, "sync request to friend: " .. tostring(lastBn[1]))
 bnReceive({ "SA" .. bnQ })
 assert(TH.db.net.peerSync[FRIEND], "per-friend sync time remembered")
@@ -2644,6 +2644,82 @@ end)()
 	TransmogHub_Bundled = realBundled
 	_G.UnitFactionGroup = nil
 	TH.db.net.presence, TH.db.presenceSent = {}, {}
+end)()
+
+-- Быстрая синхронизация: предложение списком отпечатков, просьба только о недостающем,
+-- сжатые образы вне очереди, запасной старый запрос и отправная точка — каталог обновления
+;(function()
+	local function assemble(msgs)
+		local out, buf = {}, nil
+		for _, m in ipairs(msgs) do
+			local k = m:sub(1, 1)
+			if k == "S" then out[#out + 1] = m:sub(2)
+			elseif k == "B" then buf = { m:sub(4) }
+			elseif k == "C" then buf[#buf + 1] = m:sub(4)
+			elseif k == "E" then buf[#buf + 1] = m:sub(4); out[#out + 1] = table.concat(buf); buf = nil end
+		end
+		return out
+	end
+	flush()
+	-- сжатый вид образа: туда и обратно без потерь, и короче обычного
+	local s = { id = "nfast1", author = "Быстр-Гордунни", name = "Быстрый", desc = "", race = 1, sex = 0, class = "MAGE",
+		created = serverTime - 5, tags = {}, items = { [1] = { 111 }, [16] = { 222, 333, 44 }, [5] = { 555 } } }
+	local back = Net.DecodeSet(Net.EncodeSetCompact(s), true)
+	assert(back.items[16][1] == 222 and back.items[16][2] == 333 and back.items[16][3] == 44 and back.items[5][1] == 555, "compact roundtrip")
+	assert(#Net.EncodeSetCompact(s) < #Net.EncodeSet(s), "compact is shorter")
+
+	-- отвечаем на q: предложение с отпечатками своих образов
+	receive({ "Sqfx1\t0" })
+	local offer
+	for _, m in ipairs(assemble(flush())) do if m:sub(1, 5) == "ofx1\t" then offer = m end end
+	assert(offer and offer:find(Net.Fingerprint(next(TH.db.net.sets)), 1, true), "offer lists fingerprints")
+
+	-- наш запрос: предложили известный образ и новый — просим только новый
+	Net:RequestSync(); local q = assemble(flush())[1]
+	local reqId = q:match("^q(%w+)\t")
+	local known = Net.Fingerprint(next(TH.db.net.sets))
+	receive({ "So" .. reqId .. "\t" .. known .. "," .. Net.Fingerprint("nfast1") })
+	local ask = assemble(flush())[1]
+	local prefix = "r" .. reqId .. "\t" .. PEER .. "\t"
+	assert(ask and ask:sub(1, #prefix) == prefix and ask:sub(-#Net.Fingerprint("nfast1")) == Net.Fingerprint("nfast1")
+		and not ask:find(known, 1, true), "ask only for the missing set: " .. tostring(ask))
+	assert(Net:IncomingCount() == 1, "one set on the way")
+	receive({ "Sb" .. Net.EncodeSetCompact(s) })
+	assert(TH.db.net.sets.nfast1 and Net:IncomingCount() == 0, "compact set stored")
+	flush()
+
+	-- просьба к нам: шлём образ вне очереди, потом прочее и «A»
+	Net:Send("Sfiller", { kind = "CHANNEL" })
+	receive({ "Srfx2\t" .. Net.Me() .. "\t0\t" .. Net.Fingerprint("nfast1") })
+	local reply = assemble(flush())
+	assert(reply[1]:sub(1, 7) == "bnfast1", "requested set goes first: " .. tostring(reply[1]))
+	assert(reply[#reply] == "Afx2", "sync answer closed")
+	-- просьба к другому игроку — молчим
+	receive({ "Srfx3\tДругой-Гордунни\t0\t" .. Net.Fingerprint("nfast1") })
+	assert(#flush() == 0, "request for someone else ignored")
+
+	-- никто не предложил по-новому: через 10 секунд — старый Q
+	local timers, realAfter = {}, C_Timer.After
+	C_Timer.After = function(_, f) timers[#timers + 1] = f end
+	Net:RequestSync(); flush()
+	for _, f in ipairs(timers) do f() end
+	C_Timer.After = realAfter
+	local old = assemble(flush())[1]
+	assert(old and old:match("^Q%w+\t"), "fallback to old sync request")
+
+	-- первый запрос — с выпуска каталога из обновления, а не с нуля
+	local lastSync = TH.db.net.lastSync
+	TH.db.net.lastSync = 0
+	local realBundled = TransmogHub_Bundled
+	TransmogHub_Bundled = { generated = serverTime - 86400, sets = {} }
+	assert(Net:SyncSince() == serverTime - 86400 - 2 * 86400 - 3600, "since bundled catalog")
+	TransmogHub_Bundled = realBundled
+	TH.db.net.lastSync = lastSync
+
+	-- ссылка на образ, которого нет: просим у всех в канале
+	TH:OpenSharedSet("nmissing9", "")
+	local want = assemble(flush())[1]
+	assert(want and want:match("^r%w+\t%*\t\t") and want:find(Net.Fingerprint("nmissing9"), 1, true), "ask channel for a linked set")
 end)()
 
 print("ALL OK")
