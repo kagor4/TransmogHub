@@ -210,7 +210,7 @@ local function SetFraming(kind)
 	if camera.SetTargetSpline then camera:SetTargetSpline(nil) end
 	local x, y = camera:GetTarget()
 	camera:SetTarget(x or 0, y or 0, bottomZ * scale + h * f.height)
-	local d = h * f.distance * (preview.wide or 1)
+	local d = h * f.distance
 	if camera.GetMinZoomDistance and camera.GetMaxZoomDistance then
 		local lo, hi = camera:GetMinZoomDistance(), camera:GetMaxZoomDistance()
 		if lo and hi then d = math.max(lo, math.min(hi, d)) end
@@ -363,7 +363,7 @@ function TH:OpenPhotoMode()
 	-- сцена на весь экран — модель того же размера, что в узком окне 0.8 высоты
 	local w, h = photo:GetWidth() or 0, photo:GetHeight() or 0
 	preview.wide = (w > 0 and h > 0) and math.max(1, w / (h * 0.8)) or nil
-	preview:ResetCamera() -- камера заново, с поправкой на широкое окно
+	preview:ApplyWideView()
 	preview:SetItems(main.items)
 	preview:Reload()
 	RememberLight(preview.scene)
