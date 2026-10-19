@@ -199,12 +199,12 @@ local function Build()
 		buttons[#buttons + 1] = b
 		return b
 	end
-	Add(L["Поза"], function(b)
-		local anchor = AnchorUtil and AnchorUtil.CreateAnchor and AnchorUtil.CreateAnchor("TOPLEFT", b, "BOTTOMLEFT", 0, -4)
-		TH.UI:OpenPoseMenu(b, photo.preview, anchor)
-	end)
-	photo.pauseBtn = Add(L["Продолжить"], function(b) TH.UI:TogglePause(b, photo.preview) end)
-	photo.pauseBtn:SetText(L["Пауза"])
+	local poseBtn = Add(L["Поза"], function() TH.UI:TogglePosePanel(photo.posePanel, photo.preview) end)
+	photo.posePanel = TH.UI:CreatePosePanel(bar)
+	photo.posePanel:SetPoint("TOPLEFT", poseBtn, "BOTTOMLEFT", 0, -26) -- под подсказкой
+	photo.pauseBtn = TH.UI:CreatePauseButton(bar, photo.preview)
+	photo.pauseBtn:SetPoint("LEFT", x, 0)
+	x = x + 24 + 6
 	Add(L["Фон"], NextBackground)
 	Add(L["Свет"], function(b)
 		if not (MenuUtil and MenuUtil.CreateContextMenu) then return end
@@ -259,7 +259,7 @@ local function Build()
 	photo.hint = photo:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
 	photo.hint:SetPoint("TOP", bar, "BOTTOM", 0, -6)
 	photo.hint:SetText(L["ЛКМ — вращать, колесо — приблизить, Esc — выйти"])
-	bar:HookScript("OnHide", function() photo.hint:Hide() end)
+	bar:HookScript("OnHide", function() photo.hint:Hide() end) -- панель поз — дочерняя, тоже прячется
 	bar:HookScript("OnShow", function() photo.hint:Show() end)
 end
 
@@ -286,7 +286,8 @@ function TH:OpenPhotoMode()
 	-- сцена во всю высоту экрана (без панели сверху и подписи снизу), ширина — 0.8 высоты
 	local h = math.max(200, (photo:GetHeight() or 768) - 150)
 	preview.scene:SetSize(h * 0.8, h)
-	photo.pauseBtn:SetText(preview.freeze and L["Продолжить"] or L["Пауза"])
+	TH.UI:UpdatePauseButton(photo.pauseBtn, preview)
+	photo.posePanel:Hide()
 	preview:SetItems(main.items)
 	preview:Reload()
 	RememberLight(preview.scene)

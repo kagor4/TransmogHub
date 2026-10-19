@@ -1806,6 +1806,5 @@ ns.LOCALES.enUS = {
 	["Свет"] = "Light",
 	["Виньетка"] = "Vignette",
 	["Пауза"] = "Pause",
-	["Продолжить"] = "Resume",
 	["Номер анимации"] = "Animation ID",
 }

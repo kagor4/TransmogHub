@@ -2659,6 +2659,12 @@ end)()
 	assert(anim == 69 and speed == 0, "frozen on a frame")
 	model:SetFrozen(false)
 	assert(speed == 1, "unfrozen")
+	TH.UI:TogglePosePanel(TH.UI.posePanel, model)
+	assert(TH.UI.posePanel:IsShown(), "pose panel opens")
+	TH.UI.posePanel.rows[11].scripts.OnClick()
+	assert(anim == 69 and TH.UI.posePanel:IsShown(), "pose picked, panel stays open")
+	TH.UI:TogglePosePanel(TH.UI.posePanel, model)
+	assert(not TH.UI.posePanel:IsShown(), "pose panel closes")
 	TH.UI:TogglePause(TH.UI.pauseBtn, model)
 	assert(speed == 0 and model.freeze, "pause button freezes")
 	TH.UI:TogglePause(TH.UI.pauseBtn, model)
@@ -2677,7 +2683,7 @@ end)()
 	local timers = {}
 	local realAfter = C_Timer.After
 	C_Timer.After = function(_, f) timers[#timers + 1] = f end
-	pv:ApplyPose()
+	pv:PlayIntro()
 	assert(anim == 54 and #kits == 2 and not pv.intro, "class intro plays once")
 	for _, f in ipairs(timers) do f() end
 	C_Timer.After = realAfter

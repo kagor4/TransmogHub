@@ -964,16 +964,12 @@ function UI:BuildPreview(panel)
 	-- поза модели и фотостудия — в нижних углах сцены
 	self.poseBtn = FlatButton(panel, L["Поза"])
 	self.poseBtn:SetPoint("BOTTOMLEFT", self.model.scene, "BOTTOMLEFT", 2, 2)
-	self.poseBtn:SetScript("OnClick", function(b)
-		local anchor = AnchorUtil and AnchorUtil.CreateAnchor and AnchorUtil.CreateAnchor("TOPLEFT", self, "TOPRIGHT", 4, 0)
-		self:OpenPoseMenu(b, self.model, anchor)
-	end)
+	self.posePanel = self:CreatePosePanel(self)
+	self.posePanel:SetPoint("TOPLEFT", self, "TOPRIGHT", 2, -24)
+	self.poseBtn:SetScript("OnClick", function() self:TogglePosePanel(self.posePanel, self.model) end)
 	Tip(self.poseBtn, L["Поза"], L["Как стоит модель: стойки, эмоции, заклинания. Можно замереть на кадре и убрать оружие в ножны."])
-	self.pauseBtn = FlatButton(panel, L["Продолжить"])
-	self.pauseBtn:SetText(L["Пауза"])
-	self.pauseBtn:SetPoint("LEFT", self.poseBtn, "RIGHT", 4, 0)
-	self.pauseBtn:SetScript("OnClick", function(b) self:TogglePause(b, self.model) end)
-	Tip(self.pauseBtn, L["Пауза"], L["Замереть на кадре"])
+	self.pauseBtn = self:CreatePauseButton(panel, self.model)
+	self.pauseBtn:SetPoint("LEFT", self.poseBtn, "RIGHT", 2, 0)
 	self.photoBtn = FlatButton(panel, L["Фотостудия"])
 	self.photoBtn:SetPoint("BOTTOMRIGHT", self.model.scene, "BOTTOMRIGHT", -2, 2)
 	self.photoBtn:SetScript("OnClick", function() TH:OpenPhotoMode() end)
@@ -1613,48 +1609,103 @@ function UI:SetRace(raceID)
 end
 
 -- Меню поз для модели (предпросмотр или фотостудия)
--- Меню открывается у anchor (сбоку от окна), а не у курсора — чтобы не закрывать модель
-local function OpenMenuAt(owner, anchor, generator)
-	if anchor and Menu and Menu.GetManager and MenuUtil.CreateRootMenuDescription and MenuVariants and Menu.PopulateDescription then
-		local ok = pcall(function()
-			local desc = MenuUtil.CreateRootMenuDescription(MenuVariants.GetDefaultContextMenuMixin())
-			Menu.PopulateDescription(generator, owner, desc)
-			Menu.GetManager():OpenMenu(owner, desc, anchor)
+-- Панель поз: своя рамка сбоку от окна, после выбора не закрывается (поза видна сразу)
+function UI:CreatePosePanel(parent)
+	local p = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+	p:SetBackdrop({
+		bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+		edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+		edgeSize = 12, insets = { left = 3, right = 3, top = 3, bottom = 3 },
+	})
+	p:SetBackdropColor(0, 0, 0, 0.85)
+	p:EnableMouse(true)
+	p:SetFrameStrata("DIALOG")
+	p:Hide()
+	local title = p:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+	title:SetPoint("TOPLEFT", 10, -8)
+	title:SetText(L["Поза"])
+	local close = CreateFrame("Button", nil, p, "UIPanelCloseButton")
+	close:SetSize(22, 22)
+	close:SetPoint("TOPRIGHT", 0, 0)
+	p.rows = {}
+	local ROW = 18
+	for i, pose in ipairs(TH.POSES) do
+		local r = CreateFrame("Button", nil, p)
+		r:SetSize(170, ROW)
+		r:SetPoint("TOPLEFT", 6, -26 - (i - 1) * ROW)
+		r.sel = r:CreateTexture(nil, "BACKGROUND")
+		r.sel:SetAllPoints()
+		r.sel:SetColorTexture(1, 0.82, 0, 0.2)
+		r:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight", "ADD")
+		r.text = r:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+		r.text:SetPoint("LEFT", 6, 0)
+		r.text:SetText(pose.name)
+		r:SetScript("OnClick", function()
+			local pv = p.preview
+			pv:SetPose(pose.key, pv.freeze, pv.sheathe)
+			p:Refresh()
 		end)
-		if ok then return end
+		r.key = pose.key
+		p.rows[i] = r
 	end
-	MenuUtil.CreateContextMenu(owner, generator)
+	local cb = CreateFrame("CheckButton", nil, p, "UICheckButtonTemplate")
+	cb:SetSize(22, 22)
+	cb:SetPoint("TOPLEFT", 6, -30 - #TH.POSES * ROW)
+	cb:SetScript("OnClick", function(c)
+		p.preview.sheathe = c:GetChecked() and true or false
+		p.preview:ApplyPose()
+	end)
+	local cl = p:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	cl:SetPoint("LEFT", cb, "RIGHT", 2, 0)
+	cl:SetText(L["Оружие в ножнах"])
+	p.sheathe = cb
+	p:SetSize(182, 62 + #TH.POSES * ROW)
+	function p:Refresh()
+		local pv = self.preview
+		if not pv then return end
+		local cur = pv.poseKey or "stand"
+		for _, r in ipairs(self.rows) do r.sel:SetShown(r.key == cur) end
+		local sheathe = pv.sheathe
+		if sheathe == nil then
+			local pose = TH.POSE_BY_KEY[cur]
+			sheathe = not (pose and pose.arms)
+		end
+		self.sheathe:SetChecked(sheathe)
+	end
+	return p
 end
 
--- anchor — куда поставить меню (nil — у курсора)
-function UI:OpenPoseMenu(owner, preview, anchor)
-	if not (MenuUtil and MenuUtil.CreateContextMenu) then return end
-	OpenMenuAt(owner, anchor, function(_, root)
-		if root.SetGridMode and MenuConstants and MenuConstants.VerticalGridDirection then
-			root:SetGridMode(MenuConstants.VerticalGridDirection, 2) -- две колонки — меню вдвое ниже
-		end
-		for _, pose in ipairs(TH.POSES) do
-			root:CreateRadio(pose.name, function() return (preview.poseKey or "stand") == pose.key end,
-				function() preview:SetPose(pose.key, preview.freeze, preview.sheathe) end)
-		end
-		root:CreateCheckbox(L["Оружие в ножнах"], function()
-			local pose = TH.POSE_BY_KEY[preview.poseKey or "stand"]
-			if preview.sheathe == nil then return not (pose and pose.arms) end
-			return preview.sheathe
-		end, function()
-			local pose = TH.POSE_BY_KEY[preview.poseKey or "stand"]
-			local cur = preview.sheathe
-			if cur == nil then cur = not (pose and pose.arms) end
-			preview.sheathe = not cur
-			preview:ApplyPose()
-		end)
-	end)
+-- Открыть/закрыть панель поз для preview
+function UI:TogglePosePanel(panel, preview)
+	if panel:IsShown() and panel.preview == preview then
+		panel:Hide()
+		return
+	end
+	panel.preview = preview
+	panel:Refresh()
+	panel:Show()
 end
 
 -- Кнопка паузы: замереть на кадре / продолжить
 function UI:TogglePause(button, preview)
 	preview:SetFrozen(not preview.freeze)
-	button:SetText(preview.freeze and L["Продолжить"] or L["Пауза"])
+	self:UpdatePauseButton(button, preview)
+end
+
+-- Значок: на паузе — «играть», иначе — «пауза» (как у секундомера игры)
+function UI:UpdatePauseButton(button, preview)
+	button:SetNormalTexture(preview.freeze and "Interface\\Buttons\\UI-SpellbookIcon-NextPage-Up" or "Interface\\TimeManager\\PauseButton")
+end
+
+-- Кнопка-значок паузы
+function UI:CreatePauseButton(parent, preview)
+	local b = CreateFrame("Button", nil, parent)
+	b:SetSize(24, 24)
+	b:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
+	b:SetScript("OnClick", function(btn) self:TogglePause(btn, preview) end)
+	self:UpdatePauseButton(b, preview)
+	Tip(b, L["Пауза"], L["Замереть на кадре"])
+	return b
 end
 
 function UI:OpenRaceMenu(owner)

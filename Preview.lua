@@ -147,26 +147,6 @@ end
 function Preview:ApplyPose()
 	local actor = self.scene:GetPlayerActor()
 	if not actor or not actor:IsLoaded() then return end
-	-- классовое появление: сыграть один раз, потом — обычная поза
-	local intro = self.intro
-	if intro and not self.freeze then
-		self.intro = nil
-		if actor.SetSpellVisualKit then
-			for _, kit in ipairs(intro.kits) do pcall(actor.SetSpellVisualKit, actor, kit, true) end
-		end
-		if actor.SetSheathed then pcall(actor.SetSheathed, actor, false) end
-		if actor.SetAnimation then pcall(actor.SetAnimation, actor, intro.anim, 0, 1, 0) end
-		self.introToken = (self.introToken or 0) + 1
-		local token = self.introToken
-		C_Timer.After(INTRO_TIME, function()
-			-- за это время не выбрали другую позу и не перезагрузили модель
-			if token == self.introToken and self.intro == nil then
-				self.poseStart = GetTime()
-				self:ApplyPose()
-			end
-		end)
-		return
-	end
 	self.introToken = (self.introToken or 0) + 1
 	local pose = PoseByKey(self.poseKey)
 	local sheathe = self.sheathe
@@ -179,6 +159,29 @@ function Preview:ApplyPose()
 			pcall(actor.SetAnimation, actor, pose.anim, 0, 1, 0)
 		end
 	end
+end
+
+-- Классовое появление: играется, когда модель показалась (в одежде); загрузка модели
+-- сбрасывает анимацию, поэтому раньше нельзя. Потом — выбранная поза.
+function Preview:PlayIntro()
+	local intro = self.intro
+	local actor = self.scene:GetPlayerActor()
+	if not intro or self.freeze or not actor then return end
+	self.intro = nil
+	if actor.SetSpellVisualKit then
+		for _, kit in ipairs(intro.kits) do pcall(actor.SetSpellVisualKit, actor, kit, true) end
+	end
+	if actor.SetSheathed then pcall(actor.SetSheathed, actor, false) end
+	if actor.SetAnimation then pcall(actor.SetAnimation, actor, intro.anim, 0, 1, 0) end
+	self.introToken = (self.introToken or 0) + 1
+	local token = self.introToken
+	C_Timer.After(INTRO_TIME, function()
+		-- за это время не выбрали другую позу и не перезагрузили модель
+		if token == self.introToken then
+			self.poseStart = GetTime()
+			self:ApplyPose()
+		end
+	end)
 end
 
 -- Камера сцены — в исходное положение (приближение, поворот). Модель и вещи остаются:
@@ -317,8 +320,12 @@ function Preview:ApplyWithRetry(token, attempt)
 	-- чуть позже и плавно, иначе мелькает персонаж в белье
 	if done then
 		self.shownItems, self.shownRace = self.items, self.raceID
-		if self.poseKey or self.sheathe ~= nil or self.intro then self:ApplyPose() end
-		C_Timer.After(0.3, function() if token == self.loadToken then self:SetHidden(false, true) end end)
+		if self.poseKey or self.sheathe ~= nil then self:ApplyPose() end
+		C_Timer.After(0.3, function()
+			if token ~= self.loadToken then return end
+			self:SetHidden(false, true)
+			if self.intro then self:PlayIntro() end
+		end)
 	end
 	if not done and attempt < 20 then
 		C_Timer.After(0.15, function() self:ApplyWithRetry(token, attempt + 1) end)
