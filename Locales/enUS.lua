@@ -1764,4 +1764,6 @@ ns.LOCALES.enUS = {
 	["Телефонная книга"] = "Phonebook",
 	["Раз в день аддон отмечается в сети: имя персонажа и фракция. По этим отметкам игроки с аддоном находят друг друга, а новички получают их вместе с обновлением аддона. Если снять галочку, через 2 недели вас в книге не будет."] = "Once a day the addon checks in on the network with your character name and faction. Players with the addon use these check-ins to find each other, and new players get them with addon updates. If you untick this, you'll drop out of the phonebook within 2 weeks.",
 	[" — телефонная книга (включена: раз в день аддон отмечается в сети — имя персонажа и фракция; так игроки с аддоном находят друг друга)"] = " — phonebook (on: once a day the addon checks in on the network with your character name and faction, so players with the addon can find each other)",
+	[", |cff40c0ffдогружается образов: %d|r"] = ", |cff40c0ffdownloading outfits: %d|r",
+	["|cff40c0ffдогружается образов: %d|r"] = "|cff40c0ffdownloading outfits: %d|r",
 }
