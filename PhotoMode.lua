@@ -170,9 +170,7 @@ local function Build()
 
 	photo.preview = TH:CreatePreview(photo)
 	local scene = photo.preview.scene
-	scene:SetPoint("TOP", 0, -50)
-	scene:SetPoint("BOTTOM", 0, 90)
-	scene:SetScript("OnSizeChanged", function(s, _, h) s:SetWidth((h or 600) * 0.8) end)
+	scene:SetPoint("CENTER", 0, 10)
 
 	photo.title = photo:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
 	photo.title:SetPoint("BOTTOM", 0, 48)
@@ -201,7 +199,12 @@ local function Build()
 		buttons[#buttons + 1] = b
 		return b
 	end
-	Add(L["Поза"], function(b) TH.UI:OpenPoseMenu(b, photo.preview) end)
+	Add(L["Поза"], function(b)
+		local anchor = AnchorUtil and AnchorUtil.CreateAnchor and AnchorUtil.CreateAnchor("TOPLEFT", b, "BOTTOMLEFT", 0, -4)
+		TH.UI:OpenPoseMenu(b, photo.preview, anchor)
+	end)
+	photo.pauseBtn = Add(L["Продолжить"], function(b) TH.UI:TogglePause(b, photo.preview) end)
+	photo.pauseBtn:SetText(L["Пауза"])
 	Add(L["Фон"], NextBackground)
 	Add(L["Свет"], function(b)
 		if not (MenuUtil and MenuUtil.CreateContextMenu) then return end
@@ -250,7 +253,7 @@ local function Build()
 	photo.animBox = box
 	local boxLabel = bar:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 	boxLabel:SetPoint("BOTTOM", box, "TOP", 0, 1)
-	boxLabel:SetText(L["Анимация №"])
+	boxLabel:SetText(L["Номер анимации"])
 	x = x + 8 + 56
 	bar:SetWidth(x)
 	photo.hint = photo:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
@@ -276,6 +279,10 @@ function TH:OpenPhotoMode()
 		UIParent:Hide()
 	end
 	photo:Show()
+	-- сцена во всю высоту экрана (без панели сверху и подписи снизу), ширина — 0.8 высоты
+	local h = math.max(200, (photo:GetHeight() or 768) - 150)
+	preview.scene:SetSize(h * 0.8, h)
+	photo.pauseBtn:SetText(preview.freeze and L["Продолжить"] or L["Пауза"])
 	preview:SetItems(main.items)
 	preview:Reload()
 	RememberLight(preview.scene)

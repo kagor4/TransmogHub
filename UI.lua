@@ -964,8 +964,16 @@ function UI:BuildPreview(panel)
 	-- поза модели и фотостудия — в нижних углах сцены
 	self.poseBtn = FlatButton(panel, L["Поза"])
 	self.poseBtn:SetPoint("BOTTOMLEFT", self.model.scene, "BOTTOMLEFT", 2, 2)
-	self.poseBtn:SetScript("OnClick", function(b) self:OpenPoseMenu(b, self.model) end)
+	self.poseBtn:SetScript("OnClick", function(b)
+		local anchor = AnchorUtil and AnchorUtil.CreateAnchor and AnchorUtil.CreateAnchor("TOPLEFT", self, "TOPRIGHT", 4, 0)
+		self:OpenPoseMenu(b, self.model, anchor)
+	end)
 	Tip(self.poseBtn, L["Поза"], L["Как стоит модель: стойки, эмоции, заклинания. Можно замереть на кадре и убрать оружие в ножны."])
+	self.pauseBtn = FlatButton(panel, L["Продолжить"])
+	self.pauseBtn:SetText(L["Пауза"])
+	self.pauseBtn:SetPoint("LEFT", self.poseBtn, "RIGHT", 4, 0)
+	self.pauseBtn:SetScript("OnClick", function(b) self:TogglePause(b, self.model) end)
+	Tip(self.pauseBtn, L["Пауза"], L["Замереть на кадре"])
 	self.photoBtn = FlatButton(panel, L["Фотостудия"])
 	self.photoBtn:SetPoint("BOTTOMRIGHT", self.model.scene, "BOTTOMRIGHT", -2, 2)
 	self.photoBtn:SetScript("OnClick", function() TH:OpenPhotoMode() end)
@@ -974,6 +982,7 @@ function UI:BuildPreview(panel)
 	local over = (self.model.scene:GetFrameLevel() or 1) + 100
 	self.poseBtn:SetFrameLevel(over)
 	self.photoBtn:SetFrameLevel(over)
+	self.pauseBtn:SetFrameLevel(over)
 
 	-- Предупреждение, если образ собран на модели другого пола
 	self.sexHint = Label(panel, "GameFontNormalSmall", 280)
@@ -1604,30 +1613,30 @@ function UI:SetRace(raceID)
 end
 
 -- Меню поз для модели (предпросмотр или фотостудия)
-function UI:OpenPoseMenu(owner, preview)
+-- Меню открывается у anchor (сбоку от окна), а не у курсора — чтобы не закрывать модель
+local function OpenMenuAt(owner, anchor, generator)
+	if anchor and Menu and Menu.GetManager and MenuUtil.CreateRootMenuDescription and MenuVariants and Menu.PopulateDescription then
+		local ok = pcall(function()
+			local desc = MenuUtil.CreateRootMenuDescription(MenuVariants.GetDefaultContextMenuMixin())
+			Menu.PopulateDescription(generator, owner, desc)
+			Menu.GetManager():OpenMenu(owner, desc, anchor)
+		end)
+		if ok then return end
+	end
+	MenuUtil.CreateContextMenu(owner, generator)
+end
+
+-- anchor — куда поставить меню (nil — у курсора)
+function UI:OpenPoseMenu(owner, preview, anchor)
 	if not (MenuUtil and MenuUtil.CreateContextMenu) then return end
-	MenuUtil.CreateContextMenu(owner, function(_, root)
-		root:CreateTitle(L["Поза"])
+	OpenMenuAt(owner, anchor, function(_, root)
+		if root.SetGridMode and MenuConstants and MenuConstants.VerticalGridDirection then
+			root:SetGridMode(MenuConstants.VerticalGridDirection, 2) -- две колонки — меню вдвое ниже
+		end
 		for _, pose in ipairs(TH.POSES) do
 			root:CreateRadio(pose.name, function() return (preview.poseKey or "stand") == pose.key end,
 				function() preview:SetPose(pose.key, preview.freeze, preview.sheathe) end)
 		end
-		-- классовые: сначала класс образа
-		local cls = root:CreateButton(L["Классовая поза"])
-		local set = TH:GetSet(self.selectedId)
-		local list = {}
-		for _, p in ipairs(TH.CLASS_POSES) do
-			if set and set.class == p.class then table.insert(list, 1, p) else list[#list + 1] = p end
-		end
-		for _, p in ipairs(list) do
-			local name = (LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE[p.class]) or p.class
-			if set and set.class == p.class then name = name .. L[" (класс образа)"] end
-			cls:CreateRadio(name, function() return preview.poseKey == p.key end,
-				function() preview:SetPose(p.key, false, preview.sheathe) end)
-		end
-		root:CreateDivider()
-		root:CreateCheckbox(L["Замереть на кадре"], function() return preview.freeze end,
-			function() preview:SetFrozen(not preview.freeze) end)
 		root:CreateCheckbox(L["Оружие в ножнах"], function()
 			local pose = TH.POSE_BY_KEY[preview.poseKey or "stand"]
 			if preview.sheathe == nil then return not (pose and pose.arms) end
@@ -1640,6 +1649,12 @@ function UI:OpenPoseMenu(owner, preview)
 			preview:ApplyPose()
 		end)
 	end)
+end
+
+-- Кнопка паузы: замереть на кадре / продолжить
+function UI:TogglePause(button, preview)
+	preview:SetFrozen(not preview.freeze)
+	button:SetText(preview.freeze and L["Продолжить"] or L["Пауза"])
 end
 
 function UI:OpenRaceMenu(owner)

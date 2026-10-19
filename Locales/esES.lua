@@ -1805,7 +1805,7 @@ ns.LOCALES.esES = {
 	["Силуэт"] = "Silueta",
 	["Свет"] = "Luz",
 	["Виньетка"] = "Viñeta",
-	["Анимация №"] = "Animación n.º",
-	["Классовая поза"] = "Pose de clase",
-	[" (класс образа)"] = " (clase del conjunto)",
+	["Пауза"] = "Pausa",
+	["Продолжить"] = "Reanudar",
+	["Номер анимации"] = "N.º de animación",
 }

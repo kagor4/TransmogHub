@@ -2659,10 +2659,10 @@ end)()
 	assert(anim == 69 and speed == 0, "frozen on a frame")
 	model:SetFrozen(false)
 	assert(speed == 1, "unfrozen")
-	local kits = {}
-	act.SetSpellVisualKit = function(_, k) kits[#kits + 1] = k end
-	model:SetPose("class:MAGE")
-	assert(anim == 54 and #kits > 0, "class pose plays its effects")
+	TH.UI:TogglePause(TH.UI.pauseBtn, model)
+	assert(speed == 0 and model.freeze, "pause button freezes")
+	TH.UI:TogglePause(TH.UI.pauseBtn, model)
+	assert(speed == 1 and not model.freeze, "pause button resumes")
 	model:SetPose("anim:123")
 	assert(anim == 123, "pose by animation number")
 	UIParent.shown = true

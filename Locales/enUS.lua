@@ -1805,7 +1805,7 @@ ns.LOCALES.enUS = {
 	["Силуэт"] = "Silhouette",
 	["Свет"] = "Light",
 	["Виньетка"] = "Vignette",
-	["Анимация №"] = "Animation #",
-	["Классовая поза"] = "Class pose",
-	[" (класс образа)"] = " (outfit's class)",
+	["Пауза"] = "Pause",
+	["Продолжить"] = "Resume",
+	["Номер анимации"] = "Animation ID",
 }
