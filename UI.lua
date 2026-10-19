@@ -1162,7 +1162,11 @@ function UI:BuildDetail(panel)
 
 		r:SetScript("OnEnter", function(f) self:ShowSlotTooltip(f) end)
 		r:SetScript("OnMouseUp", function(f, mouse)
-			if mouse == "RightButton" then self:OpenItemMenu(f) end
+			if mouse == "RightButton" then
+				self:OpenItemMenu(f)
+			elseif mouse == "LeftButton" and IsControlKeyDown and IsControlKeyDown() then
+				self:TryOnItem(f)
+			end
 		end)
 		r:SetScript("OnLeave", GameTooltip_Hide)
 		self.slotRows[i] = r
@@ -1665,6 +1669,26 @@ function UI:OpenTagMenu(owner)
 	TH:SkinNow(f) -- окно создано позже главного: оформление EllesmereUI докрашиваем при показе
 end
 
+-- Ctrl+ЛКМ по вещи: примерить её на себя в примерочной игры (как Ctrl+клик по ссылке
+-- в чате). Следующие вещи добавляются к уже надетым там же
+function UI:TryOnItem(row)
+	local set = TH:GetSet(self.selectedId)
+	local it = set and set.items and set.items[row.entry.id]
+	if not it or not it[1] or not (ItemUtil and ItemUtil.CreateItemTransmogInfo and DressUpItemTransmogInfo) then return end
+	local secondary = it[2]
+	if row.entry.id == INVSLOT_MAINHAND and not secondary then
+		secondary = Constants.Transmog.MainHandTransmogIsIndividualWeapon -- обычное, не парное оружие
+	end
+	local info = ItemUtil.CreateItemTransmogInfo(it[1], secondary, it[3])
+	-- игра откроет примерочную со своим фоном; затем ставим вещь точно в её ячейку
+	-- (иначе левый наплечник или оружие в левой руке могут встать не туда)
+	DressUpItemTransmogInfo(info)
+	local actor = DressUpFrame and DressUpFrame.ModelScene and DressUpFrame.ModelScene:GetPlayerActor()
+	if actor and actor.SetItemTransmogInfo then
+		actor:SetItemTransmogInfo(info, row.entry.id, row.entry.id ~= INVSLOT_MAINHAND)
+	end
+end
+
 -- Меню по ПКМ на вещи в карточке образа
 function UI:OpenItemMenu(row)
 	if row.illusion then return end
@@ -1720,6 +1744,7 @@ function UI:ShowSlotTooltip(row, refresh)
 		else
 			GameTooltip:AddLine(L["Облик не собран"], 1, 0.25, 0.25)
 		end
+		GameTooltip:AddLine(L["Ctrl+ЛКМ — примерить на себя (можно несколько вещей)"], 0.6, 0.6, 0.6)
 		if not det.illusion and TH.CanShowOnMap and TH:CanShowOnMap(det.itemID, row.sourceID) then
 			GameTooltip:AddLine(L["ПКМ — метка на карте, ссылка на Wowhead"], 0.6, 0.6, 0.6)
 		else

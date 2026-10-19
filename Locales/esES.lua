@@ -1779,4 +1779,5 @@ ns.LOCALES.esES = {
 	["Где найти:"] = "Dónde encontrarlo:",
 	["Добыча с существ в локации"] = "Botín de criaturas de la zona",
 	["Награды локации: редкие, сундуки, локальные задания"] = "Recompensas de zona: raros, tesoros, misiones de mundo",
+	["Ctrl+ЛКМ — примерить на себя (можно несколько вещей)"] = "Ctrl+clic izquierdo: pruébatelo (sirve para varios objetos)",
 }
