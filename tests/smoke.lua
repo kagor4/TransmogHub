@@ -2772,6 +2772,13 @@ end)()
 	IsControlKeyDown = function() return true end
 	row.scripts.OnMouseUp(row, "LeftButton")
 	assert(shown and shown[1] == set.items[1][1] and placed == 1, "ctrl-click tries the item on")
+	-- просто ЛКМ — снять вещь с модели и надеть обратно
+	IsControlKeyDown = function() return false end
+	ui:Select(set.id)
+	row.scripts.OnMouseUp(row, "LeftButton")
+	assert(ui.model.items[1] == nil and ui.model.items ~= set.items, "item taken off the model")
+	row.scripts.OnMouseUp(row, "LeftButton")
+	assert(ui.model.items == set.items, "item back on the model")
 	IsControlKeyDown, DressUpItemTransmogInfo, DressUpFrame = nil, nil, nil
 	ItemUtil.CreateItemTransmogInfo = realCreate
 end)()

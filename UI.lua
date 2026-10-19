@@ -1166,6 +1166,8 @@ function UI:BuildDetail(panel)
 				self:OpenItemMenu(f)
 			elseif mouse == "LeftButton" and IsControlKeyDown and IsControlKeyDown() then
 				self:TryOnItem(f)
+			elseif mouse == "LeftButton" then
+				self:ToggleRemoved(f)
 			end
 		end)
 		r:SetScript("OnLeave", GameTooltip_Hide)
@@ -1689,6 +1691,38 @@ function UI:TryOnItem(row)
 	end
 end
 
+-- ЛКМ по вещи: снять её с модели в окне аддона (и надеть обратно). Только для
+-- просмотра, сам образ не меняется; у другого образа всё снова надето
+function UI:ToggleRemoved(row)
+	if not row.sourceID then return end
+	local key = row.entry.id .. ":" .. row.entry.index
+	self.removed = self.removed or {}
+	self.removed[key] = not self.removed[key] or nil
+	self.removedItems = nil
+	self:RefreshDetail()
+end
+
+-- Вещи образа без снятых
+function UI:ShownItems(set)
+	local items = set.items or {}
+	if self.removedFor ~= set.id then
+		self.removedFor, self.removed, self.removedItems = set.id, nil, nil
+	end
+	if not (self.removed and next(self.removed)) then return items end
+	if self.removedItems then return self.removedItems end
+	local out = {}
+	for slotID, it in pairs(items) do
+		if not self.removed[slotID .. ":1"] then
+			local copy = { it[1], it[2], it[3] }
+			if self.removed[slotID .. ":2"] then copy[2] = nil end -- левый наплечник как правый
+			if self.removed[slotID .. ":3"] then copy[3] = nil end -- оружие без чар
+			out[slotID] = copy
+		end
+	end
+	self.removedItems = out
+	return out
+end
+
 -- Меню по ПКМ на вещи в карточке образа
 function UI:OpenItemMenu(row)
 	if row.illusion then return end
@@ -1744,6 +1778,7 @@ function UI:ShowSlotTooltip(row, refresh)
 		else
 			GameTooltip:AddLine(L["Облик не собран"], 1, 0.25, 0.25)
 		end
+		GameTooltip:AddLine(L["ЛКМ — снять с модели или надеть обратно"], 0.6, 0.6, 0.6)
 		GameTooltip:AddLine(L["Ctrl+ЛКМ — примерить на себя (можно несколько вещей)"], 0.6, 0.6, 0.6)
 		if not det.illusion and TH.CanShowOnMap and TH:CanShowOnMap(det.itemID, row.sourceID) then
 			GameTooltip:AddLine(L["ПКМ — метка на карте, ссылка на Wowhead"], 0.6, 0.6, 0.6)
@@ -2040,6 +2075,7 @@ function UI:RefreshDetail()
 	self.dDesc:SetText(set.desc or "")
 
 	local items = set.items or {}
+	local shown = self:ShownItems(set)
 	local y, last = -146, nil
 	for _, row in ipairs(self.slotRows) do
 		local entry = row.entry
@@ -2063,6 +2099,9 @@ function UI:RefreshDetail()
 		end
 		row.sourceID = sourceID
 		row.illusion = entry.illusion
+		-- снятая с модели вещь — бледной строкой
+		local off = self.removed and self.removed[entry.id .. ":" .. entry.index]
+		row:SetAlpha(off and 0.35 or 1)
 		if det then
 			row.icon:SetTexture(det.icon)
 			if det.hidden then
@@ -2092,11 +2131,11 @@ function UI:RefreshDetail()
 	local color = (have == total) and "|cff40ff40" or "|cffffd100"
 	self.dCollected:SetText(string.format(L["Собрано: %s%d из %d|r"], color, have, total))
 
-	if self.model.items ~= items then
+	if self.model.items ~= shown then
 		-- другой образ — камера заново: отдалённая колесом модель не остаётся крошечной
 		if self.model.shownSetId ~= set.id then self.model:ResetCamera() end
 		self.model.shownSetId = set.id
-		self.model:SetItems(items)
+		self.model:SetItems(shown)
 	end
 
 	local fav = TH.db.favorites[set.id]
