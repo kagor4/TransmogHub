@@ -105,6 +105,7 @@ end
 -- Добыча: d:предмет:существо:зона:x:y:имя (o — из сундука или другого объекта)
 local function OnLoot()
 	local target = UnitGUID("target")
+	if Secret(target) then target = nil end
 	local map, x, y = Position()
 	for slot = 1, (GetNumLootItems and GetNumLootItems() or 0) do
 		local itemID = ItemWithLook(GetLootSlotLink(slot))
