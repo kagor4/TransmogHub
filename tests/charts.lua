@@ -224,7 +224,10 @@ local onePath = tmp .. "_one.lua"
 TransmogHubDB = nil
 dofile(svPath)
 local eu = TransmogHubDB
+eu.net.presence = eu.net.presence or {}
+eu.net.presence["Мойамер-Area52"] = { "H", NOW + 15 * DAY - DAY } -- отметка своего персонажа до разделения регионов
 local oneDB = { region = 1, moderator = true, modSources = eu.modSources, regions = { [3] = { net = eu.net } },
+	charRegion = { ["Мойамер-Area52"] = 1, ["Модератор-Гордунни"] = 3 },
 	net = { sets = { nus2 = { id = "nus2", author = "Ковбой-Area52", name = "Шериф", desc = "", race = 2, sex = 0, class = "HUNTER",
 		created = NOW + 15 * DAY - DAY, tags = {}, items = { [1] = { 111 } } } }, votes = {}, scores = {},
 		presence = { ["Ковбой-Area52"] = { "H", NOW + 15 * DAY - DAY } } } }
@@ -240,6 +243,9 @@ for _, set in ipairs(TransmogHub_Bundled.sets) do
 	if set.id == "nus2" then usIn = set elseif not set.region then euIn = euIn + 1 end
 end
 assert(usIn and usIn.region == "us", "american set from the same file, tagged")
+local mine
+for _, p in ipairs(TransmogHub_Bundled.peers) do if p[1] == "Мойамер-Area52" then mine = p end end
+assert(mine and mine[4] == "us", "own american character tagged even from the european base")
 assert(euIn >= 40, "european sets still the base: " .. euIn)
 os.remove(onePath)
 
