@@ -274,6 +274,10 @@ function TH:OpenPhotoMode()
 	preview.raceID = main.raceID
 	preview.poseKey, preview.freeze, preview.sheathe, preview.frozenAt = main.poseKey, main.freeze, main.sheathe, main.frozenAt
 	preview.poseStart = GetTime()
+	-- появление в стиле класса образа (или своего), потом — выбранная поза
+	local set = TH:GetSet(self.UI.selectedId)
+	local class = (set and set.class or select(2, UnitClass("player")) or ""):upper()
+	preview.intro = TH.CLASS_INTROS[class]
 	if UIParent and UIParent:IsShown() then
 		uiWasShown = true
 		UIParent:Hide()

@@ -2670,6 +2670,18 @@ end)()
 	assert(TransmogHubPhoto and TransmogHubPhoto:IsShown() and not UIParent:IsShown(), "photo mode open, game UI hidden")
 	TH:ClosePhotoMode()
 	assert(not TransmogHubPhoto:IsShown() and UIParent:IsShown(), "photo mode closed, game UI back")
+	-- классовое появление, потом обычная поза
+	local pv, kits = { scene = model.scene, intro = TH.CLASS_INTROS.MAGE }, {}
+	setmetatable(pv, getmetatable(model))
+	act.SetSpellVisualKit = function(_, k) kits[#kits + 1] = k end
+	local timers = {}
+	local realAfter = C_Timer.After
+	C_Timer.After = function(_, f) timers[#timers + 1] = f end
+	pv:ApplyPose()
+	assert(anim == 54 and #kits == 2 and not pv.intro, "class intro plays once")
+	for _, f in ipairs(timers) do f() end
+	C_Timer.After = realAfter
+	assert(anim == 0 and speed == 1, "intro goes back to the normal pose")
 	model:SetPose(nil)
 end)()
 

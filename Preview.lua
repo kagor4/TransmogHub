@@ -96,6 +96,24 @@ TH.POSES = {
 TH.POSE_BY_KEY = {}
 for _, p in ipairs(TH.POSES) do TH.POSE_BY_KEY[p.key] = p end
 
+-- Классовое появление в фотостудии: анимация и эффекты класса (номера эффектов — по
+-- фото-аддону Narcissus), через пару секунд модель переходит в выбранную позу
+TH.CLASS_INTROS = {
+	WARRIOR = { anim = 39, kits = { 77753, 113504 } },
+	PALADIN = { anim = 142, kits = { 109802, 105334 } },
+	HUNTER = { anim = 113, kits = { 11212 } },
+	ROGUE = { anim = 0, kits = { 105866 } },
+	PRIEST = { anim = 54, kits = { 41593, 44806 } },
+	DEATHKNIGHT = { anim = 142, kits = { 57627, 57287 } },
+	SHAMAN = { anim = 115, kits = { 100019 } },
+	MAGE = { anim = 54, kits = { 68828, 68661 } },
+	WARLOCK = { anim = 55, kits = { 71357, 86545 } },
+	MONK = { anim = 116, kits = { 6095, 65638 } },
+	DRUID = { anim = 142, kits = { 82209, 81597 } },
+	DEMONHUNTER = { anim = 39, kits = { 79517 } },
+}
+local INTRO_TIME = 2.5
+
 -- Поза по ключу; «anim:N» — анимация по номеру (подбор позы в фотостудии)
 local function PoseByKey(key)
 	local n = key and tonumber(key:match("^anim:(%d+)$"))
@@ -107,6 +125,7 @@ TH.PoseByKey = PoseByKey
 -- pose — ключ из TH.POSES (nil — обычная стойка), freeze — замереть, sheathe — оружие убрать
 function Preview:SetPose(key, freeze, sheathe)
 	self.poseKey, self.freeze, self.sheathe = key, freeze, sheathe
+	self.intro = nil
 	self.poseStart = GetTime()
 	self.frozenAt = nil
 	self:ApplyPose()
@@ -114,6 +133,7 @@ end
 
 -- Пауза: замереть на текущем кадре (или продолжить)
 function Preview:SetFrozen(freeze)
+	self.intro = nil
 	if freeze and not self.freeze then
 		self.frozenAt = GetTime() - (self.poseStart or GetTime())
 	elseif not freeze then
@@ -127,6 +147,27 @@ end
 function Preview:ApplyPose()
 	local actor = self.scene:GetPlayerActor()
 	if not actor or not actor:IsLoaded() then return end
+	-- классовое появление: сыграть один раз, потом — обычная поза
+	local intro = self.intro
+	if intro and not self.freeze then
+		self.intro = nil
+		if actor.SetSpellVisualKit then
+			for _, kit in ipairs(intro.kits) do pcall(actor.SetSpellVisualKit, actor, kit, true) end
+		end
+		if actor.SetSheathed then pcall(actor.SetSheathed, actor, false) end
+		if actor.SetAnimation then pcall(actor.SetAnimation, actor, intro.anim, 0, 1, 0) end
+		self.introToken = (self.introToken or 0) + 1
+		local token = self.introToken
+		C_Timer.After(INTRO_TIME, function()
+			-- за это время не выбрали другую позу и не перезагрузили модель
+			if token == self.introToken and self.intro == nil then
+				self.poseStart = GetTime()
+				self:ApplyPose()
+			end
+		end)
+		return
+	end
+	self.introToken = (self.introToken or 0) + 1
 	local pose = PoseByKey(self.poseKey)
 	local sheathe = self.sheathe
 	if sheathe == nil then sheathe = not pose.arms end
@@ -276,7 +317,7 @@ function Preview:ApplyWithRetry(token, attempt)
 	-- чуть позже и плавно, иначе мелькает персонаж в белье
 	if done then
 		self.shownItems, self.shownRace = self.items, self.raceID
-		if self.poseKey or self.sheathe ~= nil then self:ApplyPose() end
+		if self.poseKey or self.sheathe ~= nil or self.intro then self:ApplyPose() end
 		C_Timer.After(0.3, function() if token == self.loadToken then self:SetHidden(false, true) end end)
 	end
 	if not done and attempt < 20 then
