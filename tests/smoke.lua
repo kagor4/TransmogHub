@@ -2782,4 +2782,19 @@ end)()
 	IsControlKeyDown, DressUpItemTransmogInfo, DressUpFrame = nil, nil, nil
 	ItemUtil.CreateItemTransmogInfo = realCreate
 end)()
+;(function()
+	-- каталог: к игрокам другого региона аддон не стучится (шёпот между регионами не ходит)
+	local real, realRegion = TransmogHub_Bundled, GetCurrentRegion
+	TransmogHub_Bundled = { sets = { { id = "nreg1", author = "Янки-Area52", race = 1, created = Net.Now(), region = "us" } },
+		peers = { { "Ковбой-Area52", "A", Net.Now(), "us" }, { "Свой-Гордунни", "A", Net.Now() } } }
+	GetCurrentRegion = function() return 3 end
+	local names = {}
+	for _, c in ipairs(Net:KnockCandidates()) do names[c[1]] = true end
+	assert(names["Свой-Гордунни"] and not names["Ковбой-Area52"] and not names["Янки-Area52"], "only own region from the catalog")
+	GetCurrentRegion = function() return 1 end
+	names = {}
+	for _, c in ipairs(Net:KnockCandidates()) do names[c[1]] = true end
+	assert(names["Ковбой-Area52"] and names["Янки-Area52"] and not names["Свой-Гордунни"], "US client knocks US players")
+	TransmogHub_Bundled, GetCurrentRegion = real, realRegion
+end)()
 print("ALL OK")

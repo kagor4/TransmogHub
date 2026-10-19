@@ -1647,6 +1647,9 @@ function TH:ADDON_LOADED(name)
 			if set.status ~= "published" then set.status = "draft" end
 		end
 	end
+	-- регион игры (1 — Америка, 3 — Европа…): по нему коннектор модератора отличает
+	-- снимки баз разных регионов, а аддон — к кому из каталога можно постучаться
+	if GetCurrentRegion then self.db.region = GetCurrentRegion() end
 	self.db.schema = DEFAULTS.schema
 	self:UnregisterEvent("ADDON_LOADED")
 end
