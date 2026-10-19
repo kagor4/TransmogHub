@@ -12,7 +12,7 @@ local BACKGROUNDS = {
 	{ key = "gradient", name = L["Градиент"], top = { 0.22, 0.12, 0.32 }, bottom = { 0.02, 0.02, 0.04 } },
 	{ key = "light", name = L["Светлый"], color = { 0.82, 0.82, 0.86 } },
 	{ key = "chroma", name = L["Хромакей"], color = { 0, 0.85, 0 } }, -- зелёный фон для монтажа
-	{ key = "race", name = L["Примерочная расы"] },
+	{ key = "race", name = L["Примерочная класса"] }, -- фон штатной примерочной (он у игры по классу)
 	{ key = "world", name = L["Локация персонажа"], world = true }, -- за моделью — то место, где стоит персонаж
 }
 
@@ -115,11 +115,10 @@ local function SetBackground(key)
 	photo.author:SetTextColor(0.9, 0.9, 0.9)
 	if b.world then return end
 	if b.key == "race" then
-		-- фон штатной примерочной для расы модели; нет такого — тёмный
-		local info = C_CreatureInfo.GetRaceInfo(photo.preview.raceID or select(3, UnitRace("player")))
-		local file = info and info.clientFileString and info.clientFileString:lower()
-		local atlas = file and ("dressingroom-background-" .. file)
-		if atlas and C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(atlas) then
+		local set = TH:GetSet(TH.UI.selectedId)
+		local class = (set and set.class or select(2, UnitClass("player")) or ""):lower()
+		local atlas = "dressingroom-background-" .. class
+		if class ~= "" and C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(atlas) then
 			bg:SetAtlas(atlas)
 			return
 		end
@@ -198,16 +197,36 @@ local function SetVignette(on)
 	for _, t in ipairs(photo.vignette) do t:SetShown(on) end
 end
 
--- Ракурсы: во весь рост (как в примерочной), по пояс, портрет
+-- Ракурсы: во весь рост (как в примерочной), по пояс, портрет. Камера сцены смотрит
+-- в середину модели, поэтому для пояса и портрета поднимаем точку, куда она смотрит,
+-- по высоте модели (её рамка — GetActiveBoundingBox).
+local FRAMING = {
+	waist = { height = 0.62, distance = 1.5 },
+	portrait = { height = 0.88, distance = 0.75 },
+}
+
 local function SetFraming(kind)
 	local preview = photo.preview
 	preview:ResetCamera()
-	if kind == "full" then return end
-	local camera = preview.scene.GetActiveCamera and preview.scene:GetActiveCamera()
-	if not (camera and camera.SetZoomDistance and camera.GetMinZoomDistance and camera.GetMaxZoomDistance) then return end
-	local lo, hi = camera:GetMinZoomDistance(), camera:GetMaxZoomDistance()
-	if not (lo and hi) then return end
-	pcall(camera.SetZoomDistance, camera, kind == "waist" and (lo + (hi - lo) * 0.35) or lo)
+	local f = FRAMING[kind]
+	if not f then return end
+	local scene = preview.scene
+	local camera = scene.GetActiveCamera and scene:GetActiveCamera()
+	local actor = scene:GetPlayerActor()
+	if not (camera and camera.SetTarget and camera.SetZoomDistance and actor and actor.GetActiveBoundingBox) then return end
+	local ok, _, _, bottomZ, _, _, topZ = pcall(actor.GetActiveBoundingBox, actor)
+	if not (ok and topZ and bottomZ) then return end
+	local scale = actor.GetScale and actor:GetScale() or 1
+	local h = (topZ - bottomZ) * scale
+	if camera.SetTargetSpline then camera:SetTargetSpline(nil) end
+	local x, y = camera:GetTarget()
+	camera:SetTarget(x or 0, y or 0, bottomZ * scale + h * f.height)
+	local d = h * f.distance
+	if camera.GetMinZoomDistance and camera.GetMaxZoomDistance then
+		local lo, hi = camera:GetMinZoomDistance(), camera:GetMaxZoomDistance()
+		if lo and hi then d = math.max(lo, math.min(hi, d)) end
+	end
+	pcall(camera.SetZoomDistance, camera, d)
 end
 
 local function UpdateCaption()
@@ -316,27 +335,6 @@ local function Build()
 		C_Timer.After(0.8, function() bar:Show() end)
 	end)
 	Add(L["Закрыть"], function() TH:ClosePhotoMode() end)
-	-- подбор позы по номеру анимации: колесо мыши — следующая/предыдущая
-	local box = CreateFrame("EditBox", nil, bar, "InputBoxTemplate")
-	box:SetSize(56, 22)
-	box:SetPoint("LEFT", x + 8, 0)
-	box:SetAutoFocus(false)
-	box:SetNumeric(true)
-	box:SetMaxLetters(5)
-	local function Play(n)
-		n = math.max(0, math.min(99999, n or 0))
-		box:SetText(tostring(n))
-		photo.preview:SetPose("anim:" .. n, false, photo.preview.sheathe)
-	end
-	box:SetScript("OnEnterPressed", function(b) Play(tonumber(b:GetText())); b:ClearFocus() end)
-	box:SetScript("OnEscapePressed", function(b) b:ClearFocus() end)
-	box:EnableMouseWheel(true)
-	box:SetScript("OnMouseWheel", function(b, delta) Play((tonumber(b:GetText()) or 0) + (delta > 0 and 1 or -1)) end)
-	photo.animBox = box
-	local boxLabel = bar:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-	boxLabel:SetPoint("BOTTOM", box, "TOP", 0, 1)
-	boxLabel:SetText(L["Номер анимации"])
-	x = x + 8 + 56
 	bar:SetWidth(x)
 	photo.hint = photo:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
 	photo.hint:SetPoint("TOP", bar, "BOTTOM", 0, -6)
