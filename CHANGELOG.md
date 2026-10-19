@@ -1,5 +1,8 @@
 # Transmog Hub — Changelog
 
+## 1.12.1
+- Ready for patch 12.1.7: the addon is marked as up to date for it.
+
 ## 1.12.0
 - **Where to find items, without AllTheThings.** The addon now has its own copy of item sources from the AllTheThings database, so tooltips show where to get almost every item with an appearance: zone or dungeon, boss, vendor, quest, treasure, achievement or profession, plus coordinates and price.
 - Right-click an item to drop a map pin with these coordinates.
