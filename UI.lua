@@ -1608,6 +1608,19 @@ function UI:OpenPoseMenu(owner, preview)
 			root:CreateRadio(pose.name, function() return (preview.poseKey or "stand") == pose.key end,
 				function() preview:SetPose(pose.key, preview.freeze, preview.sheathe) end)
 		end
+		-- классовые: сначала класс образа
+		local cls = root:CreateButton(L["Классовая поза"])
+		local set = TH:GetSet(self.selectedId)
+		local list = {}
+		for _, p in ipairs(TH.CLASS_POSES) do
+			if set and set.class == p.class then table.insert(list, 1, p) else list[#list + 1] = p end
+		end
+		for _, p in ipairs(list) do
+			local name = (LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE[p.class]) or p.class
+			if set and set.class == p.class then name = name .. L[" (класс образа)"] end
+			cls:CreateRadio(name, function() return preview.poseKey == p.key end,
+				function() preview:SetPose(p.key, false, preview.sheathe) end)
+		end
 		root:CreateDivider()
 		root:CreateCheckbox(L["Замереть на кадре"], function() return preview.freeze end,
 			function() preview:SetFrozen(not preview.freeze) end)

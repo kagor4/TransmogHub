@@ -2659,6 +2659,12 @@ end)()
 	assert(anim == 69 and speed == 0, "frozen on a frame")
 	model:SetFrozen(false)
 	assert(speed == 1, "unfrozen")
+	local kits = {}
+	act.SetSpellVisualKit = function(_, k) kits[#kits + 1] = k end
+	model:SetPose("class:MAGE")
+	assert(anim == 54 and #kits > 0, "class pose plays its effects")
+	model:SetPose("anim:123")
+	assert(anim == 123, "pose by animation number")
 	UIParent.shown = true
 	TH:OpenPhotoMode()
 	assert(TransmogHubPhoto and TransmogHubPhoto:IsShown() and not UIParent:IsShown(), "photo mode open, game UI hidden")

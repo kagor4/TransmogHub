@@ -96,6 +96,35 @@ TH.POSES = {
 TH.POSE_BY_KEY = {}
 for _, p in ipairs(TH.POSES) do TH.POSE_BY_KEY[p.key] = p end
 
+-- Классовые позы: анимация и эффекты класса (номера эффектов — по фото-аддону Narcissus;
+-- в меню создания персонажа свои анимации, но аддонам в игре они недоступны)
+TH.CLASS_POSES = {
+	{ class = "WARRIOR", anim = 39, kits = { 77753, 113504 } },
+	{ class = "PALADIN", anim = 142, kits = { 109802, 105334 } },
+	{ class = "HUNTER", anim = 113, kits = { 11212 } },
+	{ class = "ROGUE", anim = 0, kits = { 105866 } },
+	{ class = "PRIEST", anim = 54, kits = { 41593, 44806 } },
+	{ class = "DEATHKNIGHT", anim = 142, kits = { 57627, 57287 } },
+	{ class = "SHAMAN", anim = 115, kits = { 100019 } },
+	{ class = "MAGE", anim = 54, kits = { 68828, 68661 } },
+	{ class = "WARLOCK", anim = 55, kits = { 71357, 86545 } },
+	{ class = "MONK", anim = 116, kits = { 6095, 65638 } },
+	{ class = "DRUID", anim = 142, kits = { 82209, 81597 } },
+	{ class = "DEMONHUNTER", anim = 39, kits = { 79517 } },
+}
+for _, p in ipairs(TH.CLASS_POSES) do
+	p.key = "class:" .. p.class
+	TH.POSE_BY_KEY[p.key] = p
+end
+
+-- Поза по ключу; «anim:N» — анимация по номеру (подбор позы в фотостудии)
+local function PoseByKey(key)
+	local n = key and tonumber(key:match("^anim:(%d+)$"))
+	if n then return { key = key, anim = n } end
+	return TH.POSE_BY_KEY[key or "stand"] or TH.POSES[1]
+end
+TH.PoseByKey = PoseByKey
+
 -- pose — ключ из TH.POSES (nil — обычная стойка), freeze — замереть, sheathe — оружие убрать
 function Preview:SetPose(key, freeze, sheathe)
 	self.poseKey, self.freeze, self.sheathe = key, freeze, sheathe
@@ -119,9 +148,13 @@ end
 function Preview:ApplyPose()
 	local actor = self.scene:GetPlayerActor()
 	if not actor or not actor:IsLoaded() then return end
-	local pose = TH.POSE_BY_KEY[self.poseKey or "stand"] or TH.POSES[1]
+	local pose = PoseByKey(self.poseKey)
 	local sheathe = self.sheathe
 	if sheathe == nil then sheathe = not pose.arms end
+	-- эффекты класса — один раз при выборе позы (вспышка); на паузе их уже не повторяем
+	if pose.kits and not self.freeze and actor.SetSpellVisualKit then
+		for _, kit in ipairs(pose.kits) do pcall(actor.SetSpellVisualKit, actor, kit, true) end
+	end
 	if actor.SetSheathed then pcall(actor.SetSheathed, actor, sheathe and true or false) end
 	if actor.SetAnimation then
 		if self.freeze then

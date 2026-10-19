@@ -12,6 +12,16 @@ local BACKGROUNDS = {
 	{ key = "gradient", name = L["Градиент"], top = { 0.22, 0.12, 0.32 }, bottom = { 0.02, 0.02, 0.04 } },
 	{ key = "light", name = L["Светлый"], color = { 0.82, 0.82, 0.86 } },
 	{ key = "race", name = L["Примерочная расы"] },
+	{ key = "chroma", name = L["Хромакей"], color = { 0, 0.85, 0 } }, -- зелёный фон для монтажа
+}
+
+-- Свет сцены: направление и цвета (как в Narcissus — пресеты вместо ручного круга)
+local LIGHTS = {
+	{ key = "normal", name = L["Обычный"] },
+	{ key = "warm", name = L["Тёплый"], dir = { -0.4, 0.8, -0.4 }, amb = { 0.55, 0.42, 0.32 }, dif = { 1, 0.82, 0.6 } },
+	{ key = "cold", name = L["Холодный"], dir = { -0.4, 0.8, -0.4 }, amb = { 0.32, 0.4, 0.55 }, dif = { 0.65, 0.8, 1 } },
+	{ key = "side", name = L["Сбоку"], dir = { 1, 0.3, -0.2 }, amb = { 0.15, 0.15, 0.18 }, dif = { 1, 1, 1 } },
+	{ key = "silhouette", name = L["Силуэт"], dir = { 0, -1, 0 }, amb = { 0, 0, 0 }, dif = { 0, 0, 0 } },
 }
 
 local photo -- окно (создаётся при первом открытии)
@@ -56,6 +66,56 @@ local function NextBackground()
 		end
 	end
 	SetBackground(BACKGROUNDS[1].key)
+end
+
+local function SetLight(key)
+	local scene = photo.preview.scene
+	local l
+	for _, x in ipairs(LIGHTS) do if x.key == key then l = x end end
+	photo.lightKey = key
+	if not l or not l.dir then
+		-- обычный свет — тот, что задаёт сцена примерочной
+		if photo.defaultLight then l = photo.defaultLight else return end
+	end
+	if scene.SetLightDirection then pcall(scene.SetLightDirection, scene, l.dir[1], l.dir[2], l.dir[3]) end
+	if scene.SetLightAmbientColor then pcall(scene.SetLightAmbientColor, scene, l.amb[1], l.amb[2], l.amb[3]) end
+	if scene.SetLightDiffuseColor then pcall(scene.SetLightDiffuseColor, scene, l.dif[1], l.dif[2], l.dif[3]) end
+end
+
+-- Свет сцены как есть (чтобы вернуть «обычный»)
+local function RememberLight(scene)
+	if photo.defaultLight or not (scene.GetLightDirection and scene.GetLightAmbientColor and scene.GetLightDiffuseColor) then return end
+	local ok1, x, y, z = pcall(scene.GetLightDirection, scene)
+	local ok2, ar, ag, ab = pcall(scene.GetLightAmbientColor, scene)
+	local ok3, dr, dg, db = pcall(scene.GetLightDiffuseColor, scene)
+	if ok1 and ok2 and ok3 and x and ar and dr then
+		photo.defaultLight = { dir = { x, y, z }, amb = { ar, ag, ab }, dif = { dr, dg, db } }
+	end
+end
+
+-- Виньетка: затемнение по краям кадра
+local function BuildVignette()
+	photo.vignette = {}
+	local function Edge(p1, p2, horizontal, from, to)
+		local t = photo:CreateTexture(nil, "BORDER")
+		t:SetColorTexture(1, 1, 1)
+		t:SetPoint(p1)
+		t:SetPoint(p2)
+		if horizontal then t:SetWidth(260) else t:SetHeight(200) end
+		if t.SetGradient and CreateColor then
+			t:SetGradient(horizontal and "HORIZONTAL" or "VERTICAL", CreateColor(0, 0, 0, from), CreateColor(0, 0, 0, to))
+		end
+		photo.vignette[#photo.vignette + 1] = t
+	end
+	Edge("TOPLEFT", "BOTTOMLEFT", true, 0.75, 0)
+	Edge("TOPRIGHT", "BOTTOMRIGHT", true, 0, 0.75)
+	Edge("TOPLEFT", "TOPRIGHT", false, 0, 0.7)
+	Edge("BOTTOMLEFT", "BOTTOMRIGHT", false, 0.7, 0)
+end
+
+local function SetVignette(on)
+	photo.vignetteOn = on
+	for _, t in ipairs(photo.vignette) do t:SetShown(on) end
 end
 
 -- Ракурсы: во весь рост (как в примерочной), по пояс, портрет
@@ -106,6 +166,7 @@ local function Build()
 
 	photo.bg = photo:CreateTexture(nil, "BACKGROUND")
 	photo.bg:SetAllPoints()
+	BuildVignette()
 
 	photo.preview = TH:CreatePreview(photo)
 	local scene = photo.preview.scene
@@ -141,6 +202,16 @@ local function Build()
 	end
 	Add(L["Поза"], function(b) TH.UI:OpenPoseMenu(b, photo.preview) end)
 	Add(L["Фон"], NextBackground)
+	Add(L["Свет"], function(b)
+		if not (MenuUtil and MenuUtil.CreateContextMenu) then return end
+		MenuUtil.CreateContextMenu(b, function(_, root)
+			for _, l in ipairs(LIGHTS) do
+				root:CreateRadio(l.name, function() return (photo.lightKey or "normal") == l.key end, function() SetLight(l.key) end)
+			end
+			root:CreateDivider()
+			root:CreateCheckbox(L["Виньетка"], function() return photo.vignetteOn end, function() SetVignette(not photo.vignetteOn) end)
+		end)
+	end)
 	Add(L["Ракурс"], function(b)
 		if not (MenuUtil and MenuUtil.CreateContextMenu) then return end
 		MenuUtil.CreateContextMenu(b, function(_, root)
@@ -159,6 +230,27 @@ local function Build()
 		C_Timer.After(0.8, function() bar:Show() end)
 	end)
 	Add(L["Закрыть"], function() TH:ClosePhotoMode() end)
+	-- подбор позы по номеру анимации: колесо мыши — следующая/предыдущая
+	local box = CreateFrame("EditBox", nil, bar, "InputBoxTemplate")
+	box:SetSize(56, 22)
+	box:SetPoint("LEFT", x + 8, 0)
+	box:SetAutoFocus(false)
+	box:SetNumeric(true)
+	box:SetMaxLetters(5)
+	local function Play(n)
+		n = math.max(0, math.min(99999, n or 0))
+		box:SetText(tostring(n))
+		photo.preview:SetPose("anim:" .. n, false, photo.preview.sheathe)
+	end
+	box:SetScript("OnEnterPressed", function(b) Play(tonumber(b:GetText())); b:ClearFocus() end)
+	box:SetScript("OnEscapePressed", function(b) b:ClearFocus() end)
+	box:EnableMouseWheel(true)
+	box:SetScript("OnMouseWheel", function(b, delta) Play((tonumber(b:GetText()) or 0) + (delta > 0 and 1 or -1)) end)
+	photo.animBox = box
+	local boxLabel = bar:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+	boxLabel:SetPoint("BOTTOM", box, "TOP", 0, 1)
+	boxLabel:SetText(L["Анимация №"])
+	x = x + 8 + 56
 	bar:SetWidth(x)
 	photo.hint = photo:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
 	photo.hint:SetPoint("TOP", bar, "BOTTOM", 0, -6)
@@ -185,6 +277,9 @@ function TH:OpenPhotoMode()
 	photo:Show()
 	preview:SetItems(main.items)
 	preview:Reload()
+	RememberLight(preview.scene)
 	SetBackground(photo.bgKey or "gradient")
+	SetLight(photo.lightKey or "normal")
+	SetVignette(photo.vignetteOn ~= false)
 	UpdateCaption()
 end
