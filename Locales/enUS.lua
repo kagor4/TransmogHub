@@ -1806,5 +1806,4 @@ ns.LOCALES.enUS = {
 	["Каз Алгар"] = "Khaz Algar",
 	["Кель'Талас"] = "Quel'Thalas",
 	["Изумрудный Сон"] = "Emerald Dream",
-	["Примерочная класса"] = "Class fitting room",
 }

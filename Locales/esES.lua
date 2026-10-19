@@ -1806,5 +1806,4 @@ ns.LOCALES.esES = {
 	["Каз Алгар"] = "Khaz Algar",
 	["Кель'Талас"] = "Quel'Thalas",
 	["Изумрудный Сон"] = "Sueño Esmeralda",
-	["Примерочная класса"] = "Probador de la clase",
 }

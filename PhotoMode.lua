@@ -12,7 +12,6 @@ local BACKGROUNDS = {
 	{ key = "gradient", name = L["Градиент"], top = { 0.22, 0.12, 0.32 }, bottom = { 0.02, 0.02, 0.04 } },
 	{ key = "light", name = L["Светлый"], color = { 0.82, 0.82, 0.86 } },
 	{ key = "chroma", name = L["Хромакей"], color = { 0, 0.85, 0 } }, -- зелёный фон для монтажа
-	{ key = "race", name = L["Примерочная класса"] }, -- фон штатной примерочной (он у игры по классу)
 	{ key = "world", name = L["Локация персонажа"], world = true }, -- за моделью — то место, где стоит персонаж
 }
 
@@ -114,16 +113,6 @@ local function SetBackground(key)
 	photo.title:SetTextColor(1, 0.82, 0)
 	photo.author:SetTextColor(0.9, 0.9, 0.9)
 	if b.world then return end
-	if b.key == "race" then
-		local set = TH:GetSet(TH.UI.selectedId)
-		local class = (set and set.class or select(2, UnitClass("player")) or ""):lower()
-		local atlas = "dressingroom-background-" .. class
-		if class ~= "" and C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(atlas) then
-			bg:SetAtlas(atlas)
-			return
-		end
-		b = BACKGROUNDS[1]
-	end
 	if b.top then
 		bg:SetColorTexture(1, 1, 1)
 		if bg.SetGradient and CreateColor then
@@ -221,7 +210,7 @@ local function SetFraming(kind)
 	if camera.SetTargetSpline then camera:SetTargetSpline(nil) end
 	local x, y = camera:GetTarget()
 	camera:SetTarget(x or 0, y or 0, bottomZ * scale + h * f.height)
-	local d = h * f.distance
+	local d = h * f.distance * (preview.wide or 1)
 	if camera.GetMinZoomDistance and camera.GetMaxZoomDistance then
 		local lo, hi = camera:GetMinZoomDistance(), camera:GetMaxZoomDistance()
 		if lo and hi then d = math.max(lo, math.min(hi, d)) end
@@ -374,7 +363,7 @@ function TH:OpenPhotoMode()
 	-- сцена на весь экран — модель того же размера, что в узком окне 0.8 высоты
 	local w, h = photo:GetWidth() or 0, photo:GetHeight() or 0
 	preview.wide = (w > 0 and h > 0) and math.max(1, w / (h * 0.8)) or nil
-	preview:ApplyWideView()
+	preview:ResetCamera() -- камера заново, с поправкой на широкое окно
 	preview:SetItems(main.items)
 	preview:Reload()
 	RememberLight(preview.scene)

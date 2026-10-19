@@ -208,18 +208,19 @@ function Preview:ResetCamera()
 	self:ApplyWideView()
 end
 
--- Угол обзора камеры игра считает по ширине окна: в широком окне модель крупнее.
--- wide = во сколько раз окно шире обычного (0.8 высоты) — во столько же расширяем
--- угол, чтобы модель была того же размера, что в узком окне.
+-- Размер модели игра подбирает по ширине окна: в широком окне модель крупнее.
+-- wide = во сколько раз окно шире обычного (0.8 высоты) — во столько же отодвигаем
+-- камеру (и её пределы приближения), чтобы модель была привычного размера.
+-- Вызывать сразу после перехода камеры к сцене: он заново задаёт расстояния.
 function Preview:ApplyWideView()
-	local scene = self.scene
-	if not (self.wide and scene.GetCameraFieldOfView and scene.SetCameraFieldOfView) then return end
-	self.baseFov = self.baseFov or scene:GetCameraFieldOfView()
-	if not self.baseFov then return end
-	local deg = self.baseFov > 3.2 -- на случай, если угол в градусах, а не в радианах
-	local base = deg and math.rad(self.baseFov) or self.baseFov
-	local fov = math.min(2 * math.atan(math.tan(base / 2) * self.wide), 2.8)
-	pcall(scene.SetCameraFieldOfView, scene, deg and math.deg(fov) or fov)
+	local camera = self.wide and self.scene.GetActiveCamera and self.scene:GetActiveCamera()
+	if not (camera and camera.GetZoomDistance and camera.SetMaxZoomDistance) then return end
+	local lo, hi, d = camera:GetMinZoomDistance(), camera:GetMaxZoomDistance(), camera:GetZoomDistance()
+	if not (lo and hi and d) then return end
+	camera:SetMinZoomDistance(lo * self.wide)
+	camera:SetMaxZoomDistance(hi * self.wide)
+	camera:SetZoomDistance(d * self.wide)
+	if camera.SnapAllInterpolatedValues then camera:SnapAllInterpolatedValues() end
 end
 
 ---------------------------------------------------------------------------
