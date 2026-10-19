@@ -2797,4 +2797,22 @@ end)()
 	assert(names["Ковбой-Area52"] and names["Янки-Area52"] and not names["Свой-Гордунни"], "US client knocks US players")
 	TransmogHub_Bundled, GetCurrentRegion = real, realRegion
 end)()
+;(function()
+	-- один файл сохранений на оба региона: сетевые данные хранятся по регионам
+	local db = TH.db
+	local realRegion = GetCurrentRegion
+	local euSets, euKnown = db.net.sets, db.knownPeers
+	GetCurrentRegion = function() return 3 end
+	TH:SwitchRegionData()
+	assert(db.net.sets == euSets and db.region == 3, "same region keeps its data")
+	GetCurrentRegion = function() return 1 end
+	TH:SwitchRegionData()
+	assert(db.net.sets ~= euSets and next(db.net.sets) == nil and db.net.votes and db.region == 1, "other region starts empty")
+	assert(db.regions[3].net.sets == euSets and db.regions[3].knownPeers == euKnown, "europe saved aside")
+	db.net.sets.nusa = { id = "nusa" }
+	GetCurrentRegion = function() return 3 end
+	TH:SwitchRegionData()
+	assert(db.net.sets == euSets and db.knownPeers == euKnown and db.regions[1].net.sets.nusa, "back to europe, america saved aside")
+	GetCurrentRegion = realRegion
+end)()
 print("ALL OK")

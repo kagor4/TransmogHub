@@ -50,6 +50,24 @@ TransmogHub_Charts = nil -- считаем по живым данным, а не
 TransmogHubDB = nil
 assert(loadfile(svPath))()
 assert(type(TransmogHubDB) == "table", "в файле нет TransmogHubDB")
+-- в одном файле — базы сети всех регионов (аддон хранит их по регионам): основная — Европа,
+-- остальные добавляются ниже, как снимки других регионов
+local REGION_TAG = { [1] = "us", [2] = "kr", [3] = "eu", [4] = "tw", [5] = "cn" }
+local otherNets = {} -- { { регион, net } }
+do
+	local raw = TransmogHubDB
+	local cur = raw.regions and raw.region or 3
+	if cur ~= 3 then
+		otherNets[#otherNets + 1] = { REGION_TAG[cur] or tostring(cur), raw.net }
+		raw.net = raw.regions[3] and raw.regions[3].net or nil
+	end
+	for r, saved in pairs(raw.regions or {}) do
+		if r ~= 3 and r ~= cur and type(saved) == "table" and saved.net then
+			otherNets[#otherNets + 1] = { REGION_TAG[r] or tostring(r), saved.net }
+		end
+	end
+	raw.regions = nil
+end
 TH:ADDON_LOADED("TransmogHub")
 local db = TH.db
 db.hidden = {} -- личные «скрыть» модератора на чарт не влияют
@@ -62,7 +80,11 @@ for tag, path in (extraArg or ""):gmatch("(%a+)=([^,]+)") do
 	if chunk then chunk() end
 	local other = type(TransmogHubDB) == "table" and TransmogHubDB.net
 	TransmogHubDB = db
-	if other then
+	if other then otherNets[#otherNets + 1] = { tag, other } end
+end
+for _, entry in ipairs(otherNets) do
+	local tag, other = entry[1], entry[2]
+	do
 		for id, set in pairs(other.sets or {}) do
 			if not db.net.sets[id] and not db.net.tombstones[id] then
 				set.region = tag
