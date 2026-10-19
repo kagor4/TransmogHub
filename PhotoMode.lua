@@ -270,13 +270,18 @@ local function Build()
 
 	photo.preview = TH:CreatePreview(photo)
 	local scene = photo.preview.scene
-	scene:SetPoint("CENTER", 0, 10)
+	-- сцена на весь экран: модель можно сдвигать куда угодно, края её не обрезают
+	scene:SetAllPoints(photo)
+	-- подпись — поверх сцены
+	local over = CreateFrame("Frame", nil, photo)
+	over:SetAllPoints(photo)
+	over:SetFrameLevel((scene:GetFrameLevel() or 1) + 10)
 
-	photo.title = photo:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
+	photo.title = over:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
 	photo.title:SetPoint("BOTTOM", 0, 48)
-	photo.author = photo:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+	photo.author = over:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 	photo.author:SetPoint("TOP", photo.title, "BOTTOM", 0, -6)
-	photo.brand = photo:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+	photo.brand = over:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
 	photo.brand:SetPoint("BOTTOMRIGHT", -16, 12)
 	photo.brand:SetText("Transmog Hub")
 	photo.caption = true
@@ -364,9 +369,6 @@ function TH:OpenPhotoMode()
 		UIParent:Hide()
 	end
 	photo:Show()
-	-- сцена во всю высоту экрана (без панели сверху и подписи снизу), ширина — 0.8 высоты
-	local h = math.max(200, (photo:GetHeight() or 768) - 150)
-	preview.scene:SetSize(h * 0.8, h)
 	TH.UI:UpdatePauseButton(photo.pauseBtn, preview)
 	photo.posePanel:Hide()
 	preview:SetItems(main.items)
