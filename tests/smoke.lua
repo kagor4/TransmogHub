@@ -2600,4 +2600,50 @@ end)()
 	TH.db.knocks, TH.db.knownPeers, TH.db.chatContacts, TH.db.invited = {}, {}, {}, {}
 end)()
 
+-- Телефонная книга: отметки «я в сети» — приём, пересылка, раз в сутки, отключение, стук
+;(function()
+	local Net0 = TH.Net
+	local now = GetServerTime()
+	TH.db.net.presence, TH.db.presenceSent, TH.db.knocks = {}, {}, {}
+	-- чужая отметка: сохраняется и пересылается; старая и повтор — нет
+	flush()
+	local savedPeers = Net0.whisperPeers
+	Net0.whisperPeers = {}
+	Net0:OnMessage("TMHUB", "Sps\tОнлайн-Ревущийфьорд,H," .. Net0.Enc(now - 600), "WHISPER", "Сосед-Гордунни")
+	assert(TH.db.net.presence["Онлайн-Ревущийфьорд"] and TH.db.net.presence["Онлайн-Ревущийфьорд"][1] == "H", "presence stored")
+	local relayed = flush()
+	local found = false
+	for _, m in ipairs(relayed) do if m:find("Онлайн-Ревущийфьорд", 1, true) then found = true end end
+	assert(found, "presence relayed")
+	Net0.whisperPeers = savedPeers
+	TH.db.knownPeers = {}
+	Net0:OnMessage("TMHUB", "Sps\tДревний-Гордунни,A," .. Net0.Enc(now - 30 * 86400), "CHANNEL", "Сосед-Гордунни")
+	assert(not TH.db.net.presence["Древний-Гордунни"], "stale presence ignored")
+	-- своя отметка: раз в сутки; отключённая — не уходит
+	TH.db.sendPresence = true
+	flush()
+	Net0:SendPresence()
+	Net0:SendPresence()
+	local sent = flush()
+	local mine = 0
+	for _, m in ipairs(sent) do if m:find(Net0.Me(), 1, true) and m:find("ps\t", 1, true) then mine = mine + 1 end end
+	assert(mine == 1 and TH.db.net.presence[Net0.Me()], "own presence once a day: " .. mine)
+	TH.db.presenceSent = {}
+	TH.db.sendPresence = false
+	Net0:SendPresence()
+	assert(#flush() == 0, "opted out: no presence sent")
+	TH.db.sendPresence = true
+	-- синхронизация отдаёт отметки; одиночка стучится к недавно отметившимся своей фракции
+	assert(Net0:PresenceCount() >= 2, "presence counted")
+	_G.UnitFactionGroup = function() return "Horde" end
+	local realBundled = TransmogHub_Bundled
+	TransmogHub_Bundled = nil
+	local cands = {}
+	for _, c in ipairs(Net0:KnockCandidates()) do cands[#cands + 1] = c[1] end
+	assert(table.concat(cands, ","):find("Онлайн-Ревущийфьорд", 1, true), "presence used for knocking")
+	TransmogHub_Bundled = realBundled
+	_G.UnitFactionGroup = nil
+	TH.db.net.presence, TH.db.presenceSent = {}, {}
+end)()
+
 print("ALL OK")

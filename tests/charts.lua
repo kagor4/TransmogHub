@@ -82,7 +82,8 @@ local modSources = {
 	"1|" .. NOW .. "|enUS;v:244267:4567:2248:452:601:748::Vendor Ala",
 	"1|" .. NOW .. "|ruRU;v:244267:9999:2248:::0::Редкий",
 }
-f:write("TransmogHubDB = " .. Ser({ net = { sets = sets, votes = votes, scores = scores, tagFlags = tagFlags }, moderator = true, modSources = modSources }) .. "\n")
+local presence = { ["Тихоня-Гордунни"] = { "H", NOW - 2 * DAY }, ["Давний-Гордунни"] = { "A", NOW - 40 * DAY } }
+f:write("TransmogHubDB = " .. Ser({ net = { sets = sets, votes = votes, scores = scores, tagFlags = tagFlags, presence = presence }, moderator = true, modSources = modSources }) .. "\n")
 f:close()
 
 -- Сборка (первый раз — без прошлого чарта)
@@ -141,6 +142,8 @@ for _, p in ipairs(b.peers) do inBook[p[1]] = p end
 assert(inBook["Игрок1-Гордунни"], "ranking players seen this week")
 assert(not inBook["Автор1-Гордунни"], "authors silent for over two weeks are left out")
 assert(not inBook["Голос1-Гордунни"], "voters are not published")
+assert(inBook["Тихоня-Гордунни"] and inBook["Тихоня-Гордунни"][2] == "H", "players who only checked in, with faction")
+assert(not inBook["Давний-Гордунни"], "old check-ins left out")
 local src = io.open(bundledPath):read("*a")
 assert(not src:find("votes", 1, true), "no vote lists in catalog file")
 assert(c.t == NOW and c.date)

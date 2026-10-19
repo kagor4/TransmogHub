@@ -1,5 +1,10 @@
 # Transmog Hub — Changelog
 
+## 1.10.0
+- **Phonebook.** Once a day the addon checks in on the network with your character name and faction. Players who are alone use these check-ins to reach someone who is actually online, and new players get them with addon updates.
+- `/thub net` shows how many players with the addon were online in the last two weeks.
+- You can opt out with `/thub phonebook off` or in Settings → Privacy. Your entry then expires within two weeks.
+
 ## 1.9.0
 - **A much bigger catalogue in every update:** up to 2000 recent outfits from the last 90 days, not just the chart and the Hall of Fame. New players see almost the whole network from the very first launch.
 - **The catalogue now knows who was online recently.** If nobody around you has the addon, it first reaches out to players of your faction who were active in the last two weeks, so you join the network much faster.

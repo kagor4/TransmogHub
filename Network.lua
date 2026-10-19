@@ -225,6 +225,7 @@ local function BNET(id) return { kind = "BNET", target = id } end
 local function WHISPER(name) return { kind = "WHISPER", target = name } end
 
 local MAX_WHISPER_PEERS = 8 -- сколько знакомых через шёпот получают рассылку
+local PRESENCE_TTL, MAX_PRESENCE = 14 * 86400, 2000 -- телефонная книга
 local MAX_RELAY_QUEUE = 200 -- если очередь длиннее, пересылку пропускаем: догонит синхронизация
 
 local function GroupChatType()
@@ -889,6 +890,16 @@ local SCORE_TTL = 60 * 86400 -- кто 60 дней не заходил, проп
 function Net:Prune()
 	local db = DB()
 	local now = Now()
+	-- телефонная книга: 14 дней, не больше 2000 самых свежих
+	db.presence = db.presence or {}
+	local present = {}
+	for name, p in pairs(db.presence) do
+		if now - p[2] > PRESENCE_TTL then db.presence[name] = nil else present[#present + 1] = { name, p[2] } end
+	end
+	if #present > MAX_PRESENCE then
+		table.sort(present, function(a, b) return a[2] > b[2] end)
+		for i = MAX_PRESENCE + 1, #present do db.presence[present[i][1]] = nil end
+	end
 	for setId, list in pairs(db.reports) do
 		for name, r in pairs(list) do
 			if now - r[2] > REPORT_TTL then list[name] = nil end
@@ -1114,6 +1125,11 @@ local function CollectSince(since)
 		if s.t > since then scores[#scores + 1] = ScoreEntry(name, s) end
 	end
 	if #scores > 0 then batches[#batches + 1] = { "Z", "s", scores } end
+	local presence = {}
+	for name, p in pairs(db.presence or {}) do
+		if p[2] > since then presence[#presence + 1] = name .. "," .. p[1] .. "," .. Enc(p[2]) end
+	end
+	if #presence > 0 then batches[#batches + 1] = { "p", "s", presence } end
 	for target, list in pairs(db.follows) do
 		local fresh = {}
 		for name, f in pairs(list) do
@@ -1469,6 +1485,7 @@ function Net:KnockCandidates()
 	local bundled = TransmogHub_Bundled or {}
 	for _, set in ipairs(bundled.sets or {}) do Consider(set.author, Net.RaceFaction(set.race), set.created) end
 	for _, p in ipairs(bundled.peers or {}) do Consider(p[1], p[2], p[3]) end
+	for name, p in pairs(DB().presence or {}) do Consider(name, p[1] ~= "-" and p[1] or nil, p[2]) end
 	local list = {}
 	for name, t in pairs(best) do list[#list + 1] = { name, t } end
 	table.sort(list, function(a, b) if a[2] ~= b[2] then return a[2] > b[2] end return a[1] < b[1] end)
@@ -1653,6 +1670,58 @@ handlers.k = function(self, body, _, origin)
 			sent = sent + 1
 		end
 	end
+end
+
+---------------------------------------------------------------------------
+-- Телефонная книга. Раз в сутки аддон отмечается в сети: «p s\tимя,фракция,время». Отметки
+-- расходятся, как голоса, и копятся у всех (14 дней, до 2000): к недавно бывшим в сети
+-- одиночка стучится первым, а ежедневный выпуск раздаёт их новичкам в каталоге.
+-- Отключить: /thub phonebook off или в настройках (тогда отметок нет, запись истечёт сама).
+---------------------------------------------------------------------------
+function Net:StorePresence(name, faction, t)
+	if not IsCharName(name) or not t or TH:IsBanned(name) then return false end
+	local now = Now()
+	if t > now + 3600 or now - t > PRESENCE_TTL then return false end
+	local db = DB()
+	db.presence = db.presence or {}
+	local old = db.presence[name]
+	if old and old[2] >= t then return false end
+	db.presence[name] = { faction, t }
+	return true
+end
+
+handlers.p = function(self, body, _, origin)
+	local key, list = body:match("^([^\t]+)\t(.+)$")
+	if key ~= "s" then return end
+	local fresh = {}
+	for entry in list:gmatch("[^;]+") do
+		local name, f, t = entry:match("^([^,]+),([AH%-]),(%w+)$")
+		if name and self:StorePresence(name, f, Dec(t)) then fresh[#fresh + 1] = entry end
+	end
+	if #fresh > 0 and #queue < MAX_RELAY_QUEUE then SendBatches(self, "p", "s", fresh, nil, origin) end
+end
+
+-- Отметиться в сети (раз в сутки на персонажа)
+function Net:SendPresence()
+	if not TH.db.sendPresence then return end
+	local me, now = Net.Me(), Now()
+	local day = math.floor(now / 86400)
+	TH.db.presenceSent = TH.db.presenceSent or {}
+	if TH.db.presenceSent[me] == day then return end
+	TH.db.presenceSent[me] = day
+	local f = FactionLetter("player") or "-"
+	if self:StorePresence(me, f, now) then
+		SendBatches(self, "p", "s", { me .. "," .. f .. "," .. Enc(now) })
+	end
+end
+
+-- Сколько игроков с аддоном было в сети за 2 недели (по отметкам)
+function Net:PresenceCount()
+	local n, now = 0, Now()
+	for _, p in pairs(DB().presence or {}) do
+		if now - p[2] <= PRESENCE_TTL then n = n + 1 end
+	end
+	return n
 end
 
 -- «Я поставил аддон тогда-то». Новичок (до 7 дней), с которым вы переписывались или были
@@ -1863,6 +1932,9 @@ function Net:Start()
 	end)
 	-- знакомые прошлых сессий и собеседники: вскоре после входа
 	C_Timer.After(45, function() self:KnockAcquaintances() end)
+	-- отметка «я в сети» для телефонной книги: через 3 минуты и при смене суток
+	C_Timer.After(180, function() self:SendPresence() end)
+	C_Timer.NewTicker(3600, function() self:SendPresence() end)
 	-- Раз в минуту: канал на месте? новые друзья в игре?
 	C_Timer.NewTicker(60, function()
 		CleanupPartial()
