@@ -2167,7 +2167,9 @@ function UI:RefreshStatus()
 	self.netStats[3]:SetText(Net:GuildPeerCount())
 	self.netStats[4]:SetText(Net:SetCount())
 	local note = ""
-	if Net:IsLocked() and Net:QueueLength() > 0 then
+	if Net:IncomingCount() > 0 then
+		note = string.format(L["|cff40c0ffдогружается образов: %d|r"], Net:IncomingCount())
+	elseif Net:IsLocked() and Net:QueueLength() > 0 then
 		note = L["|cffffd100отправка на паузе (бой или подземелье)|r"]
 	elseif Net:QueueLength() > 0 then
 		note = string.format(L["|cffffd100отправляется: %d|r"], Net:QueueLength())

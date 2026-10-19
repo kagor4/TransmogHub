@@ -1,5 +1,11 @@
 # Transmog Hub — Changelog
 
+## 1.11.0
+- **A much faster network.** Players now swap short lists of what they have, and the addon downloads only the outfits you are missing. Outfits that came with the addon update are never downloaded again.
+- New outfits download from up to three players at once.
+- An outfit linked in chat is fetched first, ahead of everything else.
+- The status bar shows how many outfits are still downloading.
+
 ## 1.10.0
 - **Phonebook.** Once a day the addon checks in on the network with your character name and faction. Players who are alone use these check-ins to reach someone who is actually online, and new players get them with addon updates.
 - `/thub net` shows how many players with the addon were online in the last two weeks.

@@ -63,9 +63,10 @@ function TH:OpenSharedSet(id, sender)
 	end
 	self.pendingOpen = id
 	if sender and sender ~= "" then
-		self.Net:AskFor(sender)
+		self.Net:AskFor(sender, id)
 		self:Print(string.format(L["Этого образа у вас ещё нет — попросили у %s. Окно откроется, когда образ придёт."], sender))
 	else
+		self.Net:WantSet(id)
 		self:Print(L["Этого образа у вас ещё нет: он придёт по сети."])
 	end
 	return false
