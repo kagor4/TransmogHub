@@ -1777,4 +1777,6 @@ ns.LOCALES.enUS = {
 	["Случайная добыча в мире"] = "World drop",
 	["Акция"] = "Promotion",
 	["Где найти:"] = "Where to find:",
+	["Добыча с существ в локации"] = "Drops from creatures in the zone",
+	["Награды локации: редкие, сундуки, локальные задания"] = "Zone rewards: rares, treasures, world quests",
 }

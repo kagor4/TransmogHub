@@ -421,7 +421,14 @@ local function Resolve(text)
 	return text ~= "" and text or nil
 end
 
+-- Свои пояснения для заголовков ATT, которые в переводе звучат одинаково
+local HEADER_TEXT = {
+	[-63] = L["Добыча с существ в локации"],
+	[-64] = L["Награды локации: редкие, сундуки, локальные задания"],
+}
+
 local function TableName(t, id)
+	if t and t == (TransmogHub_ATT or {}).headers and HEADER_TEXT[id] then return HEADER_TEXT[id] end
 	local names = t and t[id]
 	if not names then return nil end
 	return Resolve(LocalName(names))

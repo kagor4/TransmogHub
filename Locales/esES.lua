@@ -1777,4 +1777,6 @@ ns.LOCALES.esES = {
 	["Случайная добыча в мире"] = "Botín del mundo",
 	["Акция"] = "Promoción",
 	["Где найти:"] = "Dónde encontrarlo:",
+	["Добыча с существ в локации"] = "Botín de criaturas de la zona",
+	["Награды локации: редкие, сундуки, локальные задания"] = "Recompensas de zona: raros, tesoros, misiones de mundo",
 }

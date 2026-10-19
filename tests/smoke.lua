@@ -2726,7 +2726,7 @@ end)()
 	-- встроенная база источников (выжимка AllTheThings): подсказка и метка на карте без ATT
 	local realATT = TransmogHub_ATT
 	TransmogHub_ATT = { headers = { [-1] = { ruRU = "Сезон арены", enUS = "Arena season" } }, objects = {},
-		items = { [777] = "I|I741|e1519|87:43.5:52.6|;P||h-1||", [778] = "Z|m37|n555|37:41.2:65.3|g250000", [779] = "T||n556|85:48.2:52|" } }
+		items = { [777] = "I|I741|e1519|87:43.5:52.6|;P||h-1||", [778] = "Z|m37|n555|37:41.2:65.3|g250000", [779] = "T||n556|85:48.2:52|", [780] = "Z|m37|h-64||" } }
 	EJ_GetInstanceInfo = function() return "Огненные Недра" end
 	EJ_GetEncounterInfo = function() return "Рагнарос" end
 	local title, lines, noATT = TH:GetWhereToFind(777, 1)
@@ -2738,6 +2738,8 @@ end)()
 	assert(TH:CanShowOnMap(778, 2), "map pin from the built-in base")
 	local _, post = TH:GetWhereToFind(779, 3)
 	assert(post[1]:find("Торговец: ", 1, true), "Trading Post NPC is a vendor: " .. tostring(post[1]))
+	local _, zone = TH:GetWhereToFind(780, 4)
+	assert(zone[1]:find("сундуки", 1, true), "zone rewards explained: " .. tostring(zone[1]))
 	EJ_GetInstanceInfo, EJ_GetEncounterInfo = nil, nil
 	TransmogHub_ATT = realATT
 end)()
