@@ -54,6 +54,7 @@ assert(type(TransmogHubDB) == "table", "в файле нет TransmogHubDB")
 -- остальные добавляются ниже, как снимки других регионов
 local REGION_TAG = { [1] = "us", [2] = "kr", [3] = "eu", [4] = "tw", [5] = "cn" }
 local otherNets = {} -- { { регион, net } }
+local ownRegion -- [имя своего персонажа] = регион, кроме Европы
 do
 	local raw = TransmogHubDB
 	local cur = raw.regions and raw.region or 3
@@ -67,6 +68,12 @@ do
 		end
 	end
 	raw.regions = nil
+	-- свои персонажи модератора в других регионах: их отметки «в сети», попавшие в
+	-- европейскую базу (до разделения регионов), — с пометкой их региона
+	ownRegion = {}
+	for name, r in pairs(raw.charRegion or {}) do
+		if r ~= 3 and REGION_TAG[r] then ownRegion[name] = REGION_TAG[r] end
+	end
 end
 TH:ADDON_LOADED("TransmogHub")
 local db = TH.db
@@ -114,6 +121,7 @@ TH:LoadFeed()
 for _, set in ipairs(TH.feed.sets) do
 	if set.region and set.author then regionOf[set.author] = set.region end
 end
+for name, tag in pairs(ownRegion or {}) do regionOf[name] = tag end
 
 local DAY, WEEK = 86400, 7 * 86400
 

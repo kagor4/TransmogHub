@@ -2814,6 +2814,14 @@ end)()
 	GetCurrentRegion = function() return 3 end
 	TH:SwitchRegionData()
 	assert(db.net.sets == euSets and db.knownPeers == euKnown and db.regions[1].net.sets.nusa, "back to europe, america saved aside")
+	-- «сегодня уже отмечался» — тоже по регионам: в Америке персонаж отметится заново
+	db.presenceSent = { [Net.Me()] = 1 }
+	GetCurrentRegion = function() return 1 end
+	TH:SwitchRegionData()
+	assert(not (db.presenceSent or {})[Net.Me()], "presence day tracked per region")
+	GetCurrentRegion = function() return 3 end
+	TH:SwitchRegionData()
+	assert(db.presenceSent[Net.Me()] == 1, "europe presence day restored")
 	GetCurrentRegion = realRegion
 end)()
 print("ALL OK")
