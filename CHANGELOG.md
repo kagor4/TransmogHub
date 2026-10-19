@@ -1,5 +1,9 @@
 # Transmog Hub — Changelog
 
+## 1.9.0
+- **A much bigger catalogue in every update:** up to 2000 recent outfits from the last 90 days, not just the chart and the Hall of Fame. New players see almost the whole network from the very first launch.
+- **The catalogue now knows who was online recently.** If nobody around you has the addon, it first reaches out to players of your faction who were active in the last two weeks, so you join the network much faster.
+
 ## 1.8.1
 - Smarter introductions: contacts passed between players now carry their faction, so the addon no longer tries to reach players of the other faction. From cross-faction groups it only remembers players of your own faction.
 

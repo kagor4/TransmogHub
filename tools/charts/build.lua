@@ -448,8 +448,11 @@ f:close()
 -- Только опубликованные, без блокировок, жалоб, подозрений на накрутку и изгнанных
 -- авторов (лента их уже отсеяла). Голоса по именам не переносятся: только итог оценки.
 ---------------------------------------------------------------------------
-local BUNDLE_MAX, BUNDLE_FRESH = 400, 60 * DAY
-local bundledCount = 0
+local BUNDLE_MAX, BUNDLE_FRESH = 2000, 90 * DAY
+-- «Телефонная книга»: игроки с аддоном, бывшие в сети за 2 недели, — новичок стучится к ним.
+-- Только авторы образов и игроки рейтинга (их имена и так видны всем), с фракцией по расе.
+local PEERS_MAX, PEERS_FRESH = 300, 14 * DAY
+local bundledCount, bundledPeers = 0, 0
 if bundledPath and bundledPath ~= "" then
 	local pick, picked = {}, {}
 	local function Want(set)
@@ -515,7 +518,36 @@ if bundledPath and bundledPath ~= "" then
 		out[#out + 1] = "\t\t{ " .. table.concat(fields, ", ") .. " },"
 	end
 	out[#out + 1] = "\t},"
+	local seen = {}
+	for _, set in ipairs(TH.feed.sets) do
+		if set.author and set.id:match("^n") then
+			local s = seen[set.author] or { t = 0 }
+			if (set.created or 0) >= s.t then s.t, s.race = set.created or 0, set.race end
+			seen[set.author] = s
+		end
+	end
+	for name, sc in pairs(db.net.scores or {}) do
+		if type(sc) == "table" and not sc.removed and sc.t then
+			local s = seen[name] or { t = 0 }
+			if sc.t > s.t then s.t = sc.t end
+			seen[name] = s
+		end
+	end
+	local peers = {}
+	for name, s in pairs(seen) do
+		if now - s.t <= PEERS_FRESH and s.t <= now and name:find("-", 1, true) and not TH:IsBanned(name) then
+			peers[#peers + 1] = { name, TH.Net.RaceFaction(s.race), s.t }
+		end
+	end
+	table.sort(peers, function(a, b) if a[3] ~= b[3] then return a[3] > b[3] end return a[1] < b[1] end)
+	while #peers > PEERS_MAX do table.remove(peers) end
+	out[#out + 1] = "\tpeers = {"
+	for _, p in ipairs(peers) do
+		out[#out + 1] = string.format("\t\t{ %s, %s, %d },", Str(p[1]), p[2] and Str(p[2]) or "nil", math.floor(p[3] / DAY) * DAY)
+	end
+	out[#out + 1] = "\t},"
 	out[#out + 1] = "}"
+	bundledPeers = #peers
 	local bf = assert(io.open(bundledPath, "w"))
 	bf:write(table.concat(out, "\n"), "\n")
 	bf:close()
@@ -624,5 +656,5 @@ end
 print(string.format("Порог чарта: %d оценок (игроков с оценками в день: %d)", minVotes, activeVoters))
 print(string.format("Чарт %s: в чарте %d образов, тегов %d, игроков %d, первооткрывателей %d, награждённых %d",
 	os.date("!%Y-%m-%d", now), #top, #SortedKeys(byTag), #entries, #SortedKeys(firsts), #SortedKeys(awards)))
-if bundledPath and bundledPath ~= "" then print(string.format("Каталог: %d образов", bundledCount)) end
+if bundledPath and bundledPath ~= "" then print(string.format("Каталог: %d образов, телефонная книга: %d игроков", bundledCount, bundledPeers)) end
 if sourcesPath and sourcesPath ~= "" then print(string.format("Где найти: %d предметов", sourcesCount)) end
