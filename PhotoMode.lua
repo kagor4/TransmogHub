@@ -187,6 +187,7 @@ local function Build()
 	local bar = CreateFrame("Frame", nil, photo)
 	bar:SetPoint("TOP", 0, -10)
 	bar:SetSize(10, 26)
+	bar:SetFrameLevel((photo:GetFrameLevel() or 1) + 100) -- выше сцены, она ловит мышь
 	photo.bar = bar
 	local buttons, x = {}, 0
 	local function Add(text, onClick)

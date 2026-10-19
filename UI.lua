@@ -970,6 +970,10 @@ function UI:BuildPreview(panel)
 	self.photoBtn:SetPoint("BOTTOMRIGHT", self.model.scene, "BOTTOMRIGHT", -2, 2)
 	self.photoBtn:SetScript("OnClick", function() TH:OpenPhotoMode() end)
 	Tip(self.photoBtn, L["Фотостудия"], L["Образ во весь экран на красивом фоне, без интерфейса игры: поза, ракурс, подпись и снимок экрана."])
+	-- сцена с панорамированием перехватывает мышь — кнопки поверх неё
+	local over = (self.model.scene:GetFrameLevel() or 1) + 100
+	self.poseBtn:SetFrameLevel(over)
+	self.photoBtn:SetFrameLevel(over)
 
 	-- Предупреждение, если образ собран на модели другого пола
 	self.sexHint = Label(panel, "GameFontNormalSmall", 280)
