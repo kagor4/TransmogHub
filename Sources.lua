@@ -451,7 +451,7 @@ local function PlaceName(token)
 end
 
 -- Источник: текст и ждём ли ещё имя от игры
-local function SourceText(token, cost, db)
+local function SourceText(token, cost, db, cat)
 	local kind, id = (token or ""):match("^(%a)(%-?%d+)$")
 	id = tonumber(id)
 	if not id then return nil end
@@ -460,7 +460,8 @@ local function SourceText(token, cost, db)
 		return L["Босс: "] .. (name or ("#" .. id))
 	elseif kind == "n" then
 		local name = NpcName(id)
-		local label = cost ~= "" and L["Торговец: "] or L["Добыча: "]
+		-- с ценой или в Торговой лавке — торговец, иначе добыча с существа
+		local label = (cost ~= "" or cat == "T") and L["Торговец: "] or L["Добыча: "]
 		return label .. (name or (L["существо #"] .. id)), not name
 	elseif kind == "q" then
 		local title = C_QuestLog and C_QuestLog.GetTitleForQuestID and C_QuestLog.GetTitleForQuestID(id)
@@ -519,7 +520,7 @@ local function EmbeddedLines(itemID)
 		local parts = {}
 		local place = PlaceName(e.place)
 		if place then parts[#parts + 1] = place end
-		local src, wait = SourceText(e.source, e.cost, db)
+		local src, wait = SourceText(e.source, e.cost, db, e.cat)
 		if wait then pending = true end
 		if src and src ~= place then parts[#parts + 1] = src end
 		if #parts == 0 then parts[1] = CATEGORY_LABEL[e.cat] end
@@ -547,7 +548,7 @@ local function EmbeddedPoint(itemID)
 	for _, e in ipairs(entries or {}) do
 		local m, x, y = e.coord:match("^(%d+):([%d%.]+):([%d%.]+)$")
 		if m then
-			local src = SourceText(e.source, e.cost, TransmogHub_ATT or {})
+			local src = SourceText(e.source, e.cost, TransmogHub_ATT or {}, e.cat)
 			return tonumber(m), tonumber(x) / 100, tonumber(y) / 100, src
 		end
 	end
