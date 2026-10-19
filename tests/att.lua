@@ -15,6 +15,10 @@ assert(db.items[16801] == "I|I741|h-12|232:54.1:31.2|g500000,c1220x5", "header +
 assert(db.headers[-12].ruRU == "Достижения" and db.headers[-12].enUS == "Achievements", "header names")
 -- задание, пропущенное через встроенную функцию базы: свои координаты
 assert(db.items[16802] == "I|I741|q8905|87:43.5:52.6|", "quest: " .. tostring(db.items[16802]))
+-- заголовок по типу вещи («Броня») пропускаем — берём заголовок выше
+assert(db.items[16803] == "I|m2371|h-12||", "generic header skipped: " .. tostring(db.items[16803]))
+-- цена набора, в котором вещь, у торговца
+assert(db.items[16804] == "I|m2371|n241624||c3303x5", "ensemble cost: " .. tostring(db.items[16804]))
 -- вещи без облика (i) не берём
 assert(not db.items[17000], "plain items skipped")
 print("ATT OK")

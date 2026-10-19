@@ -148,6 +148,16 @@ local function Cost(cost)
 	return table.concat(parts, ",")
 end
 
+-- Заголовок по типу вещи («Броня», «Плащи»): внутри только фильтры — о месте ничего не говорит
+local function Generic(node)
+	local g = type(node.g) == "table" and node.g or node
+	if g[1] == nil then return false end
+	for _, child in ipairs(g) do
+		if type(child) ~= "table" or child._k ~= "f" then return false end
+	end
+	return true
+end
+
 local SOURCE_KIND = { n = true, e = true, q = true, o = true, a = true, p = true }
 local items, usedHeaders, usedObjects = {}, {}, {}
 local count = 0
@@ -161,10 +171,12 @@ local function Record(node, chain, cat)
 	for i = #chain, 1, -1 do
 		local a = chain[i]
 		local k, id = a._k, tonumber(a._id)
+		-- цена набора или контейнера, в котором вещь (до торговца): её и показываем
+		if not source and cost == "" and a.cost then cost = Cost(a.cost) end
 		if not source and SOURCE_KIND[k] and id and id > 0 then
 			source = k .. id
 			if k == "o" then usedObjects[id] = true end
-		elseif not source and not header and k == "h" and id and headerNames[id] then
+		elseif not source and not header and k == "h" and id and headerNames[id] and not Generic(a) then
 			header = id
 		end
 		if not map then map, x, y = FirstCoord(a.coords) end

@@ -402,8 +402,10 @@ TH.LoadEmbeddedSources = Embedded
 -- {s:заклинание}, {a:достижение}, {c:класс:подкласс}
 local function Resolve(text)
 	if type(text) ~= "string" then return nil end
-	local g = text:match("^@([%w_]+)$")
-	if g then return type(_G[g]) == "string" and _G[g] or nil end
+	-- глобальные строки игры, в том числе внутри составных названий («@ZONE @BATTLE_PET_SOURCE_1»)
+	text = text:gsub("@([A-Z][A-Z0-9_]*[A-Z0-9])", function(g)
+		return type(_G[g]) == "string" and _G[g] or ""
+	end)
 	text = text:gsub("{s:(%d+)}", function(id)
 		local name = C_Spell and C_Spell.GetSpellName and C_Spell.GetSpellName(tonumber(id))
 		return name or ""
