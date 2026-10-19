@@ -1629,7 +1629,7 @@ TH:RegisterEvent("PLAYER_LOGIN")
 -- Сеть у регионов игры (1 — Америка, 3 — Европа…) своя, а файл сохранений у одной учётной
 -- записи Battle.net общий. Поэтому сетевые данные хранятся по регионам: наверху — текущего,
 -- остальные — в db.regions[регион]. До 1.13.2 всё было одной базой, её считаем европейской.
-local REGION_KEYS = { "net", "knownPeers", "chatContacts", "knocks", "friendChars" }
+local REGION_KEYS = { "net", "knownPeers", "chatContacts", "knocks", "friendChars", "presenceSent" }
 function TH:SwitchRegionData()
 	local db = self.db
 	local cur = GetCurrentRegion and GetCurrentRegion()
@@ -1700,6 +1700,11 @@ function TH:PLAYER_LOGIN()
 	if self.StartSources then self:StartSources() end
 	if self.RegisterBlizzardSettings then pcall(self.RegisterBlizzardSettings, self) end
 	for _, set in pairs(self.db.mySets) do set.name = TH.FormatSetName(set.name) end
+	-- в каком регионе свои персонажи: по этому сборка каталога помечает их отметки «в сети»
+	if GetCurrentRegion then
+		self.db.charRegion = self.db.charRegion or {}
+		self.db.charRegion[self.Net.Me()] = GetCurrentRegion()
+	end
 	if self:IsModerator(self.Net.Me()) then
 		self.db.moderator = true
 	elseif self.db.net.modRoles[self.Net.Me()] then
