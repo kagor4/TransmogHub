@@ -11,8 +11,35 @@ local BACKGROUNDS = {
 	{ key = "dark", name = L["Тёмный"], color = { 0.05, 0.05, 0.07 } },
 	{ key = "gradient", name = L["Градиент"], top = { 0.22, 0.12, 0.32 }, bottom = { 0.02, 0.02, 0.04 } },
 	{ key = "light", name = L["Светлый"], color = { 0.82, 0.82, 0.86 } },
-	{ key = "race", name = L["Примерочная расы"] },
 	{ key = "chroma", name = L["Хромакей"], color = { 0, 0.85, 0 } }, -- зелёный фон для монтажа
+	{ key = "race", name = L["Примерочная расы"] },
+	{ key = "world", name = L["Мир вокруг"], world = true }, -- без фона: за моделью — сама игра
+}
+
+-- Локации: заставки загрузки игры (номера файлов из списка файлов клиента).
+-- map — карта, чьё название берём из игры (на языке клиента); иначе — своё название
+local LOCATIONS = {
+	{ key = "loc:harandar", name = L["Харандар"], file = 7385003 },
+	{ key = "loc:voidstorm", name = L["Буря Бездны"], file = 7507883 },
+	{ key = "loc:zulaman", name = L["Зул'Аман"], file = 7488404 },
+	{ key = "loc:quelthalas", name = L["Кель'Талас"], file = 7266211 },
+	{ key = "loc:sunwell", map = 122, name = L["Остров Кель'Данас"], file = 7578182 },
+	{ key = "loc:hallowfall", map = 2215, name = L["Светлый лес"], file = 5932344 },
+	{ key = "loc:khazalgar", map = 2274, name = L["Каз Алгар"], file = 5899485 },
+	{ key = "loc:undermine", map = 2346, name = L["Нижняя Шахта"], file = 6392587 },
+	{ key = "loc:karesh", map = 2371, name = L["К'ареш"], file = 6918681 },
+	{ key = "loc:sirenisle", map = 2369, name = L["Остров Сирен"], file = 6225617 },
+	{ key = "loc:elwynn", map = 37, name = L["Элвиннский лес"], file = 7377860 },
+	{ key = "loc:dragonisles", map = 1978, name = L["Драконьи острова"], file = 4669853 },
+	{ key = "loc:emerald", map = 2200, name = L["Изумрудный Сон"], file = 5344997 },
+	{ key = "loc:shadowlands", map = 1550, name = L["Темные Земли"], file = 3807424 },
+	{ key = "loc:zereth", map = 1970, name = L["Зерет Мортис"], file = 4370748 },
+	{ key = "loc:kultiras", map = 876, name = L["Кул-Тирас"], file = 2143605 },
+	{ key = "loc:zandalar", map = 875, name = L["Зандалар"], file = 2143606 },
+	{ key = "loc:nazjatar", map = 1355, name = L["Назжатар"], file = 3008537 },
+	{ key = "loc:argus", map = 905, name = L["Аргус"], file = 1717118 },
+	{ key = "loc:easternkingdoms", map = 13, name = L["Восточные королевства"], file = 1498773 },
+	{ key = "loc:kalimdor", map = 12, name = L["Калимдор"], file = 1498775 },
 }
 
 -- Свет сцены: направление и цвета (как в Narcissus — пресеты вместо ручного круга)
@@ -31,8 +58,32 @@ local function SetBackground(key)
 	local bg = photo.bg
 	local b
 	for _, x in ipairs(BACKGROUNDS) do if x.key == key then b = x end end
+	for _, x in ipairs(LOCATIONS) do if x.key == key then b = x end end
 	b = b or BACKGROUNDS[1]
 	photo.bgKey = b.key
+	TH.db.photoBg = b.key
+	bg:SetShown(not b.world)
+	bg:SetTexCoord(0, 1, 0, 1)
+	if bg.SetGradient and CreateColor then bg:SetGradient("VERTICAL", CreateColor(1, 1, 1, 1), CreateColor(1, 1, 1, 1)) end
+	photo.title:SetTextColor(1, 0.82, 0)
+	photo.author:SetTextColor(0.9, 0.9, 0.9)
+	if b.world then return end
+	if b.file then
+		bg:SetTexture(b.file)
+		bg:SetVertexColor(1, 1, 1)
+		-- картинку не растягиваем: обрезаем по краям под пропорции экрана
+		local w, h = photo:GetWidth() or 16, photo:GetHeight() or 9
+		local img = b.aspect or (16 / 9)
+		local scr = (h > 0) and (w / h) or img
+		if scr > img then
+			local cut = (1 - img / scr) / 2
+			bg:SetTexCoord(0, 1, cut, 1 - cut)
+		elseif scr < img then
+			local cut = (1 - scr / img) / 2
+			bg:SetTexCoord(cut, 1 - cut, 0, 1)
+		end
+		return
+	end
 	if b.key == "race" then
 		-- фон штатной примерочной для расы модели; нет такого — тёмный
 		local info = C_CreatureInfo.GetRaceInfo(photo.preview.raceID or select(3, UnitRace("player")))
@@ -58,14 +109,19 @@ local function SetBackground(key)
 	photo.author:SetTextColor(dark and 0.9 or 0.15, dark and 0.9 or 0.15, dark and 0.9 or 0.15)
 end
 
-local function NextBackground()
-	for i, b in ipairs(BACKGROUNDS) do
-		if b.key == photo.bgKey then
-			SetBackground(BACKGROUNDS[i % #BACKGROUNDS + 1].key)
-			return
+local function OpenBackgroundMenu(owner)
+	if not (MenuUtil and MenuUtil.CreateContextMenu) then return end
+	MenuUtil.CreateContextMenu(owner, function(_, root)
+		for _, b in ipairs(BACKGROUNDS) do
+			root:CreateRadio(b.name, function() return photo.bgKey == b.key end, function() SetBackground(b.key) end)
 		end
-	end
-	SetBackground(BACKGROUNDS[1].key)
+		local loc = root:CreateButton(L["Локации"])
+		if loc.SetScrollMode then loc:SetScrollMode(420) end
+		for _, b in ipairs(LOCATIONS) do
+			local info = b.map and C_Map and C_Map.GetMapInfo and C_Map.GetMapInfo(b.map)
+			loc:CreateRadio(info and info.name or b.name, function() return photo.bgKey == b.key end, function() SetBackground(b.key) end)
+		end
+	end)
 end
 
 local function SetLight(key)
@@ -206,7 +262,7 @@ local function Build()
 	photo.pauseBtn:SetSize(24, 24)
 	photo.pauseBtn:SetPoint("LEFT", x, 0)
 	x = x + 24 + 6
-	Add(L["Фон"], NextBackground)
+	Add(L["Фон"], OpenBackgroundMenu)
 	Add(L["Свет"], function(b)
 		if not (MenuUtil and MenuUtil.CreateContextMenu) then return end
 		MenuUtil.CreateContextMenu(b, function(_, root)
@@ -293,7 +349,7 @@ function TH:OpenPhotoMode()
 	preview:SetItems(main.items)
 	preview:Reload()
 	RememberLight(preview.scene)
-	SetBackground(photo.bgKey or "gradient")
+	SetBackground(photo.bgKey or TH.db.photoBg or "gradient")
 	SetLight(photo.lightKey or "normal")
 	SetVignette(photo.vignetteOn ~= false)
 	UpdateCaption()

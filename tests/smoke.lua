@@ -2687,6 +2687,12 @@ end)()
 	assert(TransmogHubPhoto and TransmogHubPhoto:IsShown() and not UIParent:IsShown(), "photo mode open, game UI hidden")
 	TH:ClosePhotoMode()
 	assert(not TransmogHubPhoto:IsShown() and UIParent:IsShown(), "photo mode closed, game UI back")
+	-- фон-локация запоминается между открытиями
+	TH.db.photoBg = "loc:kalimdor"
+	TransmogHubPhoto.bgKey = nil
+	TH:OpenPhotoMode()
+	assert(TransmogHubPhoto.bgKey == "loc:kalimdor", "location background restored")
+	TH:ClosePhotoMode()
 	-- классовое появление, потом обычная поза
 	local pv, kits = { scene = model.scene, intro = TH.CLASS_INTROS.MAGE }, {}
 	setmetatable(pv, getmetatable(model))
