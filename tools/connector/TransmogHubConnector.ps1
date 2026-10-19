@@ -124,9 +124,10 @@ function Sync-File($config, $path, $localLines, $what) {
 
 # Снимок всей базы модератора для официального чарта: сжатый файл целиком
 # (snapshots/TransmogHub.lua.gz). Ежедневная проверка считает по нему чарт.
-function Sync-Snapshot($config, $file) {
+# База персонажа в Америке (сеть там своя) — отдельно, snapshots/TransmogHub-us.lua.gz:
+# её образы попадают в общий каталог.
+function Sync-Snapshot($config, $file, $path = "snapshots/TransmogHub.lua.gz") {
     $headers = @{ Authorization = "Bearer $($config.Token)"; "User-Agent" = "TransmogHubConnector"; Accept = "application/vnd.github+json" }
-    $path = "snapshots/TransmogHub.lua.gz"
     $uri = "https://api.github.com/repos/$($config.Repo)/contents/$path"
     $sha = $null
     try { $sha = (Invoke-RestMethod -Uri $uri -Headers $headers -Method Get).sha } catch {
@@ -140,7 +141,7 @@ function Sync-Snapshot($config, $file) {
     $body = @{ message = "Снимок базы для чарта"; content = [Convert]::ToBase64String($buffer.ToArray()) }
     if ($sha) { $body.sha = $sha }
     Invoke-RestMethod -Uri $uri -Headers $headers -Method Put -Body ($body | ConvertTo-Json) -ContentType "application/json; charset=utf-8" | Out-Null
-    Write-Log ("снимок базы выгружен ({0:N0} КБ)" -f ($raw.Length / 1KB))
+    Write-Log ("снимок базы выгружен: {0} ({1:N0} КБ)" -f $path, ($raw.Length / 1KB))
 }
 
 function Invoke-Sync {
@@ -151,11 +152,22 @@ function Invoke-Sync {
         return
     }
     $reports = @(); $decisions = @(); $tags = @(); $tagStats = @(); $appeals = @(); $ideas = @(); $stats = @(); $usage = @(); $usageNames = @()
-    $snapshot = $null
+    $snapshot = $null; $snapshotUs = $null
     foreach ($file in $files) {
         $text = Get-Content $file.FullName -Raw -Encoding UTF8
-        # для чарта — свежайший файл аккаунта модератора
-        if ($text -match '\["moderator"\]\s*=\s*true' -and (-not $snapshot -or $file.LastWriteTime -gt $snapshot.LastWriteTime)) { $snapshot = $file }
+        # регион игры, который аддон записывает при входе: 1 — Америка, 3 — Европа
+        $region = 0
+        if ($text -match '\["region"\]\s*=\s*(\d+)') { $region = [int]$Matches[1] }
+        $isModerator = $text -match '\["moderator"\]\s*=\s*true'
+        # для чарта — свежайший файл аккаунта модератора. В нём базы всех регионов этой
+        # учётной записи Battle.net (аддон хранит их по регионам), сборка их разделит
+        if ($isModerator) {
+            if (-not $snapshot -or $file.LastWriteTime -gt $snapshot.LastWriteTime) { $snapshot = $file }
+        }
+        elseif ($region -eq 1) {
+            # отдельная учётная запись в Америке без модератора — свежайший файл
+            if (-not $snapshotUs -or $file.LastWriteTime -gt $snapshotUs.LastWriteTime) { $snapshotUs = $file }
+        }
         $reports += Get-SavedArray $text "modLog"
         $decisions += Get-SavedArray $text "modDecisions"
         $tags += Get-SavedArray $text "modTags"
@@ -179,6 +191,7 @@ function Invoke-Sync {
         Sync-File $config "reports/stats/$month.tsv" @($stats | Where-Object { $_.Substring(4, 7) -eq $month }) "статистика рейтингов $month"
     }
     if ($snapshot) { Sync-Snapshot $config $snapshot } else { Write-Log "снимок базы - нет файла модератора" }
+    if ($snapshotUs) { Sync-Snapshot $config $snapshotUs "snapshots/TransmogHub-us.lua.gz" }
 }
 
 try {

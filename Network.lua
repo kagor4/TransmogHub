@@ -1565,6 +1565,12 @@ end
 
 -- К кому стучаться: авторы из базы и каталога и «телефонная книга» каталога — игроки
 -- с аддоном, недавно бывшие в сети (сначала самые недавние). Другую фракцию пропускаем.
+-- Регион игры буквами, как в каталоге: образы и игроки из каталога без пометки — Европа
+local REGION_TAG = { [1] = "us", [2] = "kr", [3] = "eu", [4] = "tw", [5] = "cn" }
+function Net.RegionTag()
+	return REGION_TAG[GetCurrentRegion and GetCurrentRegion() or 3] or "eu"
+end
+
 function Net:KnockCandidates()
 	local me, myChars = Net.Me(), TH.db.myChars or {}
 	local f = UnitFactionGroup and UnitFactionGroup("player")
@@ -1580,8 +1586,14 @@ function Net:KnockCandidates()
 	end
 	for _, set in pairs(DB().sets) do Consider(set.author, Net.RaceFaction(set.race), set.created) end
 	local bundled = TransmogHub_Bundled or {}
-	for _, set in ipairs(bundled.sets or {}) do Consider(set.author, Net.RaceFaction(set.race), set.created) end
-	for _, p in ipairs(bundled.peers or {}) do Consider(p[1], p[2], p[3]) end
+	-- из каталога — только свой регион: шёпот в другой регион не ходит
+	local region = Net.RegionTag()
+	for _, set in ipairs(bundled.sets or {}) do
+		if (set.region or "eu") == region then Consider(set.author, Net.RaceFaction(set.race), set.created) end
+	end
+	for _, p in ipairs(bundled.peers or {}) do
+		if (p[4] or "eu") == region then Consider(p[1], p[2], p[3]) end
+	end
 	for name, p in pairs(DB().presence or {}) do Consider(name, p[1] ~= "-" and p[1] or nil, p[2]) end
 	local list = {}
 	for name, t in pairs(best) do list[#list + 1] = { name, t } end

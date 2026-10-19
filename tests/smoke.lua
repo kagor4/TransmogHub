@@ -205,7 +205,8 @@ TH.scripts.OnEvent(TH, "PLAYER_LOGIN")
 assert(Net:IsConnected(), "joined hidden channel")
 local startup = flush()
 assert(startup[1] == "SH1", "hello sent: " .. tostring(startup[1]))
-assert(startup[2] and startup[2]:match("^Sq%w+\t0$"), "initial sync request")
+-- с каталогом из обновления первая синхронизация — с даты каталога, без него — с нуля
+assert(startup[2] and startup[2]:match("^Sq%w+\t%w+$"), "initial sync request")
 assert(lastBn[1] == FRIEND_ID .. ":SH1", "hello to the Battle.net friend")
 
 -- приём сообщений от другого игрока
@@ -2781,5 +2782,38 @@ end)()
 	assert(ui.model.items == set.items, "item back on the model")
 	IsControlKeyDown, DressUpItemTransmogInfo, DressUpFrame = nil, nil, nil
 	ItemUtil.CreateItemTransmogInfo = realCreate
+end)()
+;(function()
+	-- каталог: к игрокам другого региона аддон не стучится (шёпот между регионами не ходит)
+	local real, realRegion = TransmogHub_Bundled, GetCurrentRegion
+	TransmogHub_Bundled = { sets = { { id = "nreg1", author = "Янки-Area52", race = 1, created = Net.Now(), region = "us" } },
+		peers = { { "Ковбой-Area52", "A", Net.Now(), "us" }, { "Свой-Гордунни", "A", Net.Now() } } }
+	GetCurrentRegion = function() return 3 end
+	local names = {}
+	for _, c in ipairs(Net:KnockCandidates()) do names[c[1]] = true end
+	assert(names["Свой-Гордунни"] and not names["Ковбой-Area52"] and not names["Янки-Area52"], "only own region from the catalog")
+	GetCurrentRegion = function() return 1 end
+	names = {}
+	for _, c in ipairs(Net:KnockCandidates()) do names[c[1]] = true end
+	assert(names["Ковбой-Area52"] and names["Янки-Area52"] and not names["Свой-Гордунни"], "US client knocks US players")
+	TransmogHub_Bundled, GetCurrentRegion = real, realRegion
+end)()
+;(function()
+	-- один файл сохранений на оба региона: сетевые данные хранятся по регионам
+	local db = TH.db
+	local realRegion = GetCurrentRegion
+	local euSets, euKnown = db.net.sets, db.knownPeers
+	GetCurrentRegion = function() return 3 end
+	TH:SwitchRegionData()
+	assert(db.net.sets == euSets and db.region == 3, "same region keeps its data")
+	GetCurrentRegion = function() return 1 end
+	TH:SwitchRegionData()
+	assert(db.net.sets ~= euSets and next(db.net.sets) == nil and db.net.votes and db.region == 1, "other region starts empty")
+	assert(db.regions[3].net.sets == euSets and db.regions[3].knownPeers == euKnown, "europe saved aside")
+	db.net.sets.nusa = { id = "nusa" }
+	GetCurrentRegion = function() return 3 end
+	TH:SwitchRegionData()
+	assert(db.net.sets == euSets and db.knownPeers == euKnown and db.regions[1].net.sets.nusa, "back to europe, america saved aside")
+	GetCurrentRegion = realRegion
 end)()
 print("ALL OK")
