@@ -1,5 +1,12 @@
 # Transmog Hub — Changelog
 
+## 1.12.0
+- **Where to find items, without AllTheThings.** The addon now has its own copy of item sources from the AllTheThings database, so tooltips show where to get almost every item with an appearance: zone or dungeon, boss, vendor, quest, treasure, achievement or profession, plus coordinates and price.
+- Right-click an item to drop a map pin with these coordinates.
+- The data ships as a small extra addon, Transmog Hub - Sources, that loads only when needed. Keep both folders in your AddOns folder.
+- If AllTheThings is installed, its live data is still used first.
+- Item source data: AllTheThings (MIT license). Thank you to the ATT team!
+
 ## 1.11.0
 - **A much faster network.** Players now swap short lists of what they have, and the addon downloads only the outfits you are missing. Outfits that came with the addon update are never downloaded again.
 - New outfits download from up to three players at once.
