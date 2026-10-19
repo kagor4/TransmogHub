@@ -2547,6 +2547,21 @@ end)()
 	TH.db.chatContacts["Ветеран-Гордунни"] = now
 	Net0:OnMessage("TMHUB", "Sw" .. TH.Net.Enc(now - 90 * 86400), "WHISPER", "Ветеран-Гордунни")
 	assert(not TH.db.invited["Ветеран-Гордунни"], "long-time user not counted")
+	-- телефонная книга каталога: стучимся к недавно бывшим в сети, чужую фракцию пропускаем
+	_G.UnitFactionGroup = function() return "Horde" end
+	local realBundled = TransmogHub_Bundled
+	local realSets = TH.db.net.sets
+	TH.db.net.sets = {}
+	TransmogHub_Bundled = { sets = {}, peers = { { "Онлайн-Гордунни", "H", now - 86400 }, { "Альянс-Гордунни", "A", now },
+		{ "Пандарен-Гордунни", nil, now - 2 * 86400 } } }
+	local cands = {}
+	for _, c in ipairs(Net0:KnockCandidates()) do cands[#cands + 1] = c[1] end
+	local joined = table.concat(cands, ",")
+	assert(joined:find("Онлайн-Гордунни", 1, true) and joined:find("Пандарен", 1, true) and not joined:find("Альянс", 1, true),
+		"phonebook candidates by faction: " .. joined)
+	assert(cands[1] == "Онлайн-Гордунни", "most recent first")
+	TransmogHub_Bundled, TH.db.net.sets = realBundled, realSets
+	_G.UnitFactionGroup = nil
 	-- рассылка — не больше 8 знакомых через шёпот
 	Net0.whisperPeers = {}
 	for i = 1, 12 do Net0.whisperPeers["Пир" .. string.char(96 + i) .. "-Гордунни"] = now - i end
