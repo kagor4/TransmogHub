@@ -72,24 +72,25 @@ end
 
 ---------------------------------------------------------------------------
 -- Позы: анимации модели (номера — из AnimationData игры). freeze — остановить на кадре
--- (пауза), sheathe — оружие в ножнах. Часть эмоций у некоторых рас не проигрывается:
+-- (пауза), sheathe — оружие в ножнах. once — анимация не зацикленная (эмоция, заклинание):
+-- сама она замирает на последнем кадре, поэтому играем её снова после короткой стойки. Часть эмоций у некоторых рас не проигрывается:
 -- тогда модель просто стоит.
 ---------------------------------------------------------------------------
 TH.POSES = {
 	{ key = "stand", anim = 0, name = L["Стойка"] },
 	{ key = "ready", anim = 25, name = L["Боевая стойка"] },
 	{ key = "ready2h", anim = 27, name = L["Боевая стойка с оружием"], arms = true },
-	{ key = "roar", anim = 55, name = L["Боевой клич"], arms = true },
+	{ key = "roar", anim = 55, once = 2, name = L["Боевой клич"], arms = true },
 	{ key = "cast", anim = 52, name = L["Подготовка заклинания"] },
-	{ key = "spell", anim = 54, name = L["Заклинание"] },
-	{ key = "bow", anim = 66, name = L["Поклон"] },
-	{ key = "wave", anim = 67, name = L["Приветствие"] },
-	{ key = "salute", anim = 113, name = L["Салют"] },
-	{ key = "cheer", anim = 68, name = L["Ликование"] },
+	{ key = "spell", anim = 54, once = 2, name = L["Заклинание"] },
+	{ key = "bow", anim = 66, once = 2.5, name = L["Поклон"] },
+	{ key = "wave", anim = 67, once = 2.5, name = L["Приветствие"] },
+	{ key = "salute", anim = 113, once = 2.5, name = L["Салют"] },
+	{ key = "cheer", anim = 68, once = 2.5, name = L["Ликование"] },
 	{ key = "dance", anim = 69, name = L["Танец"] },
-	{ key = "laugh", anim = 70, name = L["Смех"] },
-	{ key = "flex", anim = 82, name = L["Напрячь мышцы"] },
-	{ key = "point", anim = 84, name = L["Указать"] },
+	{ key = "laugh", anim = 70, once = 3, name = L["Смех"] },
+	{ key = "flex", anim = 82, once = 2.5, name = L["Напрячь мышцы"] },
+	{ key = "point", anim = 84, once = 2, name = L["Указать"] },
 	{ key = "kneel", anim = 75, name = L["На колене"] },
 	{ key = "sit", anim = 97, name = L["Сидя"] },
 }
@@ -144,20 +145,36 @@ function Preview:SetFrozen(freeze)
 	self:ApplyPose()
 end
 
+local ONCE_GAP = 1.5 -- стойка между повторами эмоции
+
 function Preview:ApplyPose()
 	local actor = self.scene:GetPlayerActor()
 	if not actor or not actor:IsLoaded() then return end
 	self.introToken = (self.introToken or 0) + 1
+	local token = self.introToken
 	local pose = PoseByKey(self.poseKey)
 	local sheathe = self.sheathe
 	if sheathe == nil then sheathe = not pose.arms end
 	if actor.SetSheathed then pcall(actor.SetSheathed, actor, sheathe and true or false) end
-	if actor.SetAnimation then
-		if self.freeze then
-			pcall(actor.SetAnimation, actor, pose.anim, 0, 0, self.frozenAt or 0.5)
+	if not actor.SetAnimation then return end
+	local elapsed = self.freeze and (self.frozenAt or 0.5) or (GetTime() - (self.poseStart or GetTime()))
+	local anim, offset, left = pose.anim, elapsed, nil
+	if pose.once then
+		-- цикл: эмоция once секунд, потом стойка ONCE_GAP секунд
+		local t = elapsed % (pose.once + ONCE_GAP)
+		if t < pose.once then
+			offset, left = t, pose.once - t
 		else
-			pcall(actor.SetAnimation, actor, pose.anim, 0, 1, 0)
+			anim, offset, left = 0, t - pose.once, pose.once + ONCE_GAP - t
 		end
+	end
+	if self.freeze then
+		pcall(actor.SetAnimation, actor, anim, 0, 0, offset)
+		return
+	end
+	pcall(actor.SetAnimation, actor, anim, 0, 1, pose.once and offset or 0)
+	if left then
+		C_Timer.After(left + 0.01, function() if token == self.introToken then self:ApplyPose() end end)
 	end
 end
 

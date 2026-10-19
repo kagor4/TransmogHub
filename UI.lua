@@ -1692,15 +1692,34 @@ function UI:TogglePause(button, preview)
 	self:UpdatePauseButton(button, preview)
 end
 
--- Значок: на паузе — «играть», иначе — «пауза» (как у секундомера игры)
+-- Значок: две полоски — «пауза», стрелка — «играть»; всё по центру кнопки
 function UI:UpdatePauseButton(button, preview)
-	button:SetNormalTexture(preview.freeze and "Interface\\Buttons\\UI-SpellbookIcon-NextPage-Up" or "Interface\\TimeManager\\PauseButton")
+	local frozen = preview.freeze and true or false
+	button.bar1:SetShown(not frozen)
+	button.bar2:SetShown(not frozen)
+	button.play:SetShown(frozen)
 end
 
 -- Кнопка-значок паузы
 function UI:CreatePauseButton(parent, preview)
-	local b = CreateFrame("Button", nil, parent)
-	b:SetSize(24, 24)
+	local b = CreateFrame("Button", nil, parent, "BackdropTemplate")
+	b:SetSize(20, 20)
+	b:SetBackdrop({ edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 8, insets = { left = 2, right = 2, top = 2, bottom = 2 },
+		bgFile = "Interface\\Tooltips\\UI-Tooltip-Background" })
+	b:SetBackdropColor(0, 0, 0, 0.6)
+	b:SetBackdropBorderColor(1, 0.82, 0, 0.6)
+	local function Bar(dx)
+		local t = b:CreateTexture(nil, "ARTWORK")
+		t:SetColorTexture(1, 0.82, 0)
+		t:SetSize(3, 9)
+		t:SetPoint("CENTER", dx, 0)
+		return t
+	end
+	b.bar1, b.bar2 = Bar(-2.5), Bar(2.5)
+	b.play = b:CreateTexture(nil, "ARTWORK")
+	b.play:SetTexture("Interface\\ChatFrame\\ChatFrameExpandArrow")
+	b.play:SetSize(12, 12)
+	b.play:SetPoint("CENTER", 1, 0)
 	b:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
 	b:SetScript("OnClick", function(btn) self:TogglePause(btn, preview) end)
 	self:UpdatePauseButton(b, preview)

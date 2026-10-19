@@ -203,6 +203,7 @@ local function Build()
 	photo.posePanel = TH.UI:CreatePosePanel(bar)
 	photo.posePanel:SetPoint("TOPLEFT", poseBtn, "BOTTOMLEFT", 0, -26) -- под подсказкой
 	photo.pauseBtn = TH.UI:CreatePauseButton(bar, photo.preview)
+	photo.pauseBtn:SetSize(24, 24)
 	photo.pauseBtn:SetPoint("LEFT", x, 0)
 	x = x + 24 + 6
 	Add(L["Фон"], NextBackground)
@@ -272,7 +273,8 @@ function TH:OpenPhotoMode()
 	local main = self.UI.model
 	local preview = photo.preview
 	preview.raceID = main.raceID
-	preview.poseKey, preview.freeze, preview.sheathe, preview.frozenAt = main.poseKey, main.freeze, main.sheathe, main.frozenAt
+	-- после появления — обычная стойка, а не поза из окна аддона
+	preview.poseKey, preview.freeze, preview.sheathe, preview.frozenAt = nil, false, main.sheathe, nil
 	preview.poseStart = GetTime()
 	-- появление в стиле класса образа (или своего), потом — выбранная поза
 	local set = TH:GetSet(self.UI.selectedId)

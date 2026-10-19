@@ -2659,6 +2659,17 @@ end)()
 	assert(anim == 69 and speed == 0, "frozen on a frame")
 	model:SetFrozen(false)
 	assert(speed == 1, "unfrozen")
+	do -- эмоция не зависает на последнем кадре: стойка, потом снова эмоция
+		local timers, realAfter = {}, C_Timer.After
+		C_Timer.After = function(_, f) timers[#timers + 1] = f end
+		model:SetPose("bow")
+		assert(anim == 66 and #timers == 1, "one-shot pose scheduled to loop")
+		model.poseStart = model.poseStart - 2.5
+		timers[1]()
+		assert(anim == 0 and speed == 1, "one-shot pose rests in a stand")
+		C_Timer.After = realAfter
+		model:SetPose("dance")
+	end
 	TH.UI:TogglePosePanel(TH.UI.posePanel, model)
 	assert(TH.UI.posePanel:IsShown(), "pose panel opens")
 	TH.UI.posePanel.rows[11].scripts.OnClick()
