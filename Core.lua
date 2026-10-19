@@ -869,6 +869,7 @@ local DEFAULTS = {
 		ideas = {},      -- ["игрок#время"] = { игрок, время, вид, текст } — предложения разработчику (скрыто)
 		usage = {},      -- то же для статистики нажатий (вид u), отдельно, чтобы не вытеснять письма
 		tagFlags = {},   -- [образ][тег][игрок] = { 1 или 0, время } — «тег не подходит»
+		presence = {},   -- [игрок] = { фракция A/H/-, время } — «я в сети» (телефонная книга)
 	},
 	mySuggest = {},    -- [текст] = время — свои предложения тегов
 	friendChars = {},  -- [Имя-Сервер] = время — персонажи друзей Battle.net, которых мы видели
@@ -918,6 +919,8 @@ local DEFAULTS = {
 	clicks = {},         -- [код кнопки] = нажатий с прошлой отправки
 	usageSent = 0,       -- когда статистику отправили в последний раз
 	sendSources = true,  -- отправлять раз в день, где встретились вещи с обликами (/thub sources)
+	sendPresence = true, -- раз в день отмечаться в сети: имя попадает в телефонную книгу (/thub phonebook)
+	presenceSent = {},   -- [персонаж] = день последней отметки
 	sourcesNoticed = false, -- о сборе мест уже сказали
 	srcSeen = {},        -- [вид:предмет:откуда] = день — уже записано
 	srcQueue = {},       -- находки, ещё не отправленные (Sources.lua)
@@ -1897,6 +1900,7 @@ SlashCmdList.TRANSMOGHUB = function(msg)
 		local friends = {}
 		for _, peer in pairs(Net.bnPeers) do friends[#friends + 1] = peer.name end
 		TH:Print(L["Друзья Battle.net с аддоном: "] .. (#friends > 0 and table.concat(friends, ", ") or L["никого"]))
+		TH:Print(string.format(L["Игроков с аддоном в сети за 2 недели: %d"], Net:PresenceCount()))
 		local whisper = {}
 		for name in pairs(Net.whisperPeers) do whisper[#whisper + 1] = name end
 		TH:Print(L["Знакомые через каталог: "] .. (#whisper > 0 and table.concat(whisper, ", ") or L["никого"]))
@@ -1919,6 +1923,10 @@ SlashCmdList.TRANSMOGHUB = function(msg)
 		if not TH.db.sendUsage then wipe(TH.db.clicks) end
 		TH:Print(L["Статистика нажатий на кнопки: "] .. (TH.db.sendUsage and L["|cff40ff40собирается|r"] or L["|cffff4040выключена|r"])
 			.. L[". Раз в неделю разработчику уходят только названия кнопок аддона и число нажатий. /thub usage on|off, /thub clicks — сводка"])
+	elseif msg == "phonebook" or msg == "phonebook on" or msg == "phonebook off" then
+		if msg ~= "phonebook" then TH.db.sendPresence = msg == "phonebook on" end
+		TH:Print(L["Телефонная книга: "] .. (TH.db.sendPresence and L["|cff40ff40вы в ней|r"] or L["|cffff4040вас в ней нет|r"])
+			.. L[". Раз в день аддон отмечается в сети: имя персонажа и фракция. По этим отметкам игроки находят друг друга, а новички получают их с обновлением аддона. /thub phonebook on|off"])
 	elseif msg == "sources" or msg == "sources on" or msg == "sources off" then
 		if msg ~= "sources" then TH.db.sendSources = msg == "sources on" end
 		if not TH.db.sendSources then wipe(TH.db.srcQueue) end

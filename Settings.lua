@@ -178,6 +178,9 @@ local function Build()
 	left:Check(L["Статистика нажатий на кнопки"], function() return db.sendUsage end,
 		function(v) db.sendUsage = v; if not v then wipe(db.clicks) end end,
 		L["Раз в неделю разработчику уходят только названия кнопок аддона и число нажатий — чтобы улучшать интерфейс."])
+	left:Check(L["Телефонная книга"], function() return db.sendPresence end,
+		function(v) db.sendPresence = v end,
+		L["Раз в день аддон отмечается в сети: имя персонажа и фракция. По этим отметкам игроки с аддоном находят друг друга, а новички получают их вместе с обновлением аддона. Если снять галочку, через 2 недели вас в книге не будет."])
 	left:Check(L["Где встречаются вещи с обликами"], function() return db.sendSources end,
 		function(v) db.sendSources = v; if not v then wipe(db.srcQueue) end end,
 		L["Раз в день разработчику уходят торговцы, существа и задания, у которых вы видели вещи с обликами: предмет, зона, координаты и цена, без вашего имени. Из этого собирается подсказка «Где найти» для всех."])

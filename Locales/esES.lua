@@ -1871,4 +1871,12 @@ ns.LOCALES.esES = {
 	["Образ %s от %s — аддон с образами игроков на CurseForge."] = "Atuendo %s de %s, de un addon de atuendos de jugadores en CurseForge.",
 	["Этого образа у вас ещё нет — попросили у %s. Окно откроется, когда образ придёт."] = "Aún no tienes este atuendo, así que se lo pedimos a %s. La ventana se abrirá cuando llegue.",
 	["Этого образа у вас ещё нет: он придёт по сети."] = "Aún no tienes este atuendo: llegará por la red.",
+	["Телефонная книга: "] = "Agenda: ",
+	["|cff40ff40вы в ней|r"] = "|cff40ff40estás en ella|r",
+	["|cffff4040вас в ней нет|r"] = "|cffff4040no estás en ella|r",
+	[". Раз в день аддон отмечается в сети: имя персонажа и фракция. По этим отметкам игроки находят друг друга, а новички получают их с обновлением аддона. /thub phonebook on|off"] = ". Una vez al día el addon se registra en la red con el nombre y la facción de tu personaje. Los jugadores se encuentran gracias a estos registros, y los nuevos los reciben con las actualizaciones del addon. /thub phonebook on|off",
+	["Игроков с аддоном в сети за 2 недели: %d"] = "Jugadores con el addon conectados en las últimas 2 semanas: %d",
+	["Телефонная книга"] = "Agenda",
+	["Раз в день аддон отмечается в сети: имя персонажа и фракция. По этим отметкам игроки с аддоном находят друг друга, а новички получают их вместе с обновлением аддона. Если снять галочку, через 2 недели вас в книге не будет."] = "Una vez al día el addon se registra en la red con el nombre y la facción de tu personaje. Los jugadores con el addon se encuentran gracias a estos registros, y los nuevos los reciben con las actualizaciones del addon. Si la desmarcas, saldrás de la agenda en 2 semanas.",
+	[" — телефонная книга (включена: раз в день аддон отмечается в сети — имя персонажа и фракция; так игроки с аддоном находят друг друга)"] = " — agenda (activada: una vez al día el addon se registra en la red con el nombre y la facción de tu personaje, para que los jugadores con el addon se encuentren)",
 }
