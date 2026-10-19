@@ -1,5 +1,9 @@
 # Transmog Hub — Changelog
 
+## 1.13.0
+- **Left-click an item** in an outfit to take it off the preview model, and click again to put it back. Handy for seeing how an outfit looks without a cloak, helm or weapon. The outfit itself doesn't change.
+- **Ctrl+Left-click an item** to try it on your own character in the game's dressing room. Ctrl+click more items to add them on top.
+
 ## 1.12.1
 - Ready for patch 12.1.7: the addon is marked as up to date for it.
 

@@ -2754,4 +2754,32 @@ end)()
 	EJ_GetInstanceInfo, EJ_GetEncounterInfo = nil, nil
 	TransmogHub_ATT = realATT
 end)()
+;(function()
+	-- Ctrl+ЛКМ по вещи в карточке: примерочная игры с этой вещью (в её ячейке)
+	local ui = TH.UI
+	local set
+	for _, x in pairs(TH.db.net.sets) do if x.items and x.items[1] then set = x break end end
+	if not set then return end
+	ui.selectedId = set.id
+	local row
+	for _, r in ipairs(ui.slotRows) do if r.entry.id == 1 and r.entry.index == 1 then row = r end end
+	local shown, placed = nil, nil
+	ItemUtil = ItemUtil or {}
+	local realCreate = ItemUtil.CreateItemTransmogInfo
+	ItemUtil.CreateItemTransmogInfo = function(a, b, c) return { a, b, c } end
+	DressUpItemTransmogInfo = function(info) shown = info return true end
+	DressUpFrame = { ModelScene = { GetPlayerActor = function() return { SetItemTransmogInfo = function(_, info, slot) placed = slot end } end } }
+	IsControlKeyDown = function() return true end
+	row.scripts.OnMouseUp(row, "LeftButton")
+	assert(shown and shown[1] == set.items[1][1] and placed == 1, "ctrl-click tries the item on")
+	-- просто ЛКМ — снять вещь с модели и надеть обратно
+	IsControlKeyDown = function() return false end
+	ui:Select(set.id)
+	row.scripts.OnMouseUp(row, "LeftButton")
+	assert(ui.model.items[1] == nil and ui.model.items ~= set.items, "item taken off the model")
+	row.scripts.OnMouseUp(row, "LeftButton")
+	assert(ui.model.items == set.items, "item back on the model")
+	IsControlKeyDown, DressUpItemTransmogInfo, DressUpFrame = nil, nil, nil
+	ItemUtil.CreateItemTransmogInfo = realCreate
+end)()
 print("ALL OK")
