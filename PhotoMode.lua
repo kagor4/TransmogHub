@@ -371,6 +371,10 @@ function TH:OpenPhotoMode()
 	photo:Show()
 	TH.UI:UpdatePauseButton(photo.pauseBtn, preview)
 	photo.posePanel:Hide()
+	-- сцена на весь экран — модель того же размера, что в узком окне 0.8 высоты
+	local w, h = photo:GetWidth() or 0, photo:GetHeight() or 0
+	preview.wide = (w > 0 and h > 0) and math.max(1, w / (h * 0.8)) or nil
+	preview:ApplyWideView()
 	preview:SetItems(main.items)
 	preview:Reload()
 	RememberLight(preview.scene)

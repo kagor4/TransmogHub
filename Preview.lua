@@ -205,6 +205,21 @@ end
 -- сцена переиспользует актёра с тем же тегом.
 function Preview:ResetCamera()
 	self.scene:TransitionToModelSceneID(SCENE_ID, CAMERA_TRANSITION_TYPE_IMMEDIATE, CAMERA_MODIFICATION_TYPE_DISCARD, true)
+	self:ApplyWideView()
+end
+
+-- Угол обзора камеры игра считает по ширине окна: в широком окне модель крупнее.
+-- wide = во сколько раз окно шире обычного (0.8 высоты) — во столько же расширяем
+-- угол, чтобы модель была того же размера, что в узком окне.
+function Preview:ApplyWideView()
+	local scene = self.scene
+	if not (self.wide and scene.GetCameraFieldOfView and scene.SetCameraFieldOfView) then return end
+	self.baseFov = self.baseFov or scene:GetCameraFieldOfView()
+	if not self.baseFov then return end
+	local deg = self.baseFov > 3.2 -- на случай, если угол в градусах, а не в радианах
+	local base = deg and math.rad(self.baseFov) or self.baseFov
+	local fov = math.min(2 * math.atan(math.tan(base / 2) * self.wide), 2.8)
+	pcall(scene.SetCameraFieldOfView, scene, deg and math.deg(fov) or fov)
 end
 
 ---------------------------------------------------------------------------
