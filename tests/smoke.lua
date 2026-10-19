@@ -2379,6 +2379,17 @@ end)()
 		"vendor item with appearance noted: " .. tostring(TH.db.srcQueue[1]))
 	TH.SourcesTest.MERCHANT_SHOW()
 	assert(#TH.db.srcQueue == 1, "same vendor item noted once")
+	-- добыча при секретной цели (игра в бою отдаёт секретную строку): сравнение не должно падать
+	local secretGuid = setmetatable({}, { __eq = function() error("compare secret") end })
+	local realSecret, realUnitGUID = _G.issecretvalue, _G.UnitGUID
+	_G.issecretvalue = function(v) return v == secretGuid end
+	_G.UnitGUID = function() return secretGuid end
+	_G.GetNumLootItems = function() return 1 end
+	_G.GetLootSlotLink = function() return "|Hitem:244267::|h[x]|h" end
+	_G.GetLootSourceInfo = function() return "Creature-0-1-2-3-4568-0000" end
+	local okLoot, errLoot = pcall(TH.SourcesTest.LOOT_OPENED)
+	assert(okLoot, "loot with secret target: " .. tostring(errLoot))
+	_G.issecretvalue, _G.UnitGUID, _G.GetNumLootItems, _G.GetLootSlotLink, _G.GetLootSourceInfo = realSecret, realUnitGUID, nil, nil, nil
 	local title, lines = TH:GetWhereToFind(244267, 200)
 	assert(title and lines[1]:find("Остров Дорн (45.2, 60.1)", 1, true), "own finding shown before catalog: " .. tostring(lines and lines[1]))
 	-- отправка: сообщение «s», у модератора — в журнал без имени
