@@ -12,7 +12,7 @@ local LIST_TOP = 32 -- сверху над списком — переключа
 local SLOT_ROW_H = 19
 
 local VIEWS = {
-	{ key = "top", text = L["Образы"] },
+	{ key = "top", text = L["Все"] },
 	{ key = "friends", text = L["Друзья"] },
 	{ key = "guild", text = L["Гильдия"] },
 	{ key = "favorites", text = L["Избранное"] },
@@ -317,7 +317,7 @@ end
 UI.Tip = Tip
 
 local TAB_TIPS = {
-	top = { L["Образы"], L["Все образы игроков. Сверху над списком — сортировка: лучшие, в тренде, новые."] },
+	top = { L["Все"], L["Все образы игроков. Сверху над списком — сортировка: лучшие, в тренде, новые."] },
 	friends = { L["Друзья"], L["Образы ваших друзей из списка друзей игры и Battle.net."] },
 	guild = { L["Гильдия"], L["Образы ваших согильдийцев с аддоном."] },
 	favorites = { L["Избранное"], L["Образы, отмеченные золотой звёздочкой в списке."] },
@@ -1932,13 +1932,13 @@ function UI:RefreshList()
 			and (TH:GetMinChartVotes() <= 1
 				and L["В чарте пока пусто: ни один образ ещё не оценили.\n\nСвежие образы — во вкладке «Новые»:\nоцените их, и лучшие попадут сюда."]
 				or string.format(L["В чарте пока пусто: ни один образ не набрал %d оценок.\n\nСвежие образы — во вкладке «Новые»:\nоцените их, и лучшие попадут сюда."], TH:GetMinChartVotes())))
-		-- друзья, гильдия, подписки: в «Лучших» только чарт, как в «Образах»
+		-- друзья, гильдия, подписки: в «Лучших» только чарт, как во вкладке «Все»
 		or ((self.view == "friends" or self.view == "guild" or self.view == "subs")
 			and (self:GetSort() == "top" or self:GetSort() == "trending")
 			and #TH:QuerySets(self.view, { sort = "new" }) > 0
 			and (TH:GetMinChartVotes() <= 1
-				and L["Здесь, как и в «Образах», только образы из чарта\n(с оценками) — таких пока нет.\n\nОстальные — во вкладке «Новые»."]
-				or string.format(L["Здесь, как и в «Образах», только образы из чарта\n(от %d оценок) — таких пока нет.\n\nОстальные — во вкладке «Новые»."], TH:GetMinChartVotes())))
+				and L["Здесь, как и во вкладке «Все», только образы из чарта\n(с оценками) — таких пока нет.\n\nОстальные — во вкладке «Новые»."]
+				or string.format(L["Здесь, как и во вкладке «Все», только образы из чарта\n(от %d оценок) — таких пока нет.\n\nОстальные — во вкладке «Новые»."], TH:GetMinChartVotes())))
 		or EMPTY_TEXT[self.view] or EMPTY_TEXT.default)
 	self.emptyText:SetShown(n == 0)
 	self.emptyBtn:SetShown(n == 0 and not filtered and (self.view == "top" or self.view == "mine"))
@@ -2002,11 +2002,23 @@ function UI:RefreshDetail()
 	else
 		self.dAuthorExtra:SetPoint("LEFT", self.dAuthor, "LEFT", nameW + 8, 0)
 	end
-	-- не дальше правого края карточки: длинный ник — раса обрезается троеточием
+	-- не дальше правого края карточки. Не влезает после ника — переезжает вправо, в строку
+	-- названия (там обычно свободно, звёздочка избранного — в углу); не влезет и там — троеточие
 	local card = self.dAuthor.GetParent and self.dAuthor:GetParent()
 	local cardW = card and card.GetWidth and card:GetWidth() or 0
-	if cardW > 0 then self.dAuthorExtra:SetWidth(math.max(cardW - used - 10, 1)) end
 	self.dAuthorExtra:SetJustifyH("LEFT")
+	if cardW > 0 then
+		local fullW = self.dAuthorExtra:GetStringWidth() or 0
+		local room = cardW - used - 10
+		local besideName = cardW - 10 - (self.dName:GetStringWidth() or 0) - 16 - 34
+		if fullW > room and besideName > room then
+			self.dAuthorExtra:ClearAllPoints()
+			self.dAuthorExtra:SetPoint("RIGHT", card, "TOPRIGHT", -34, -19)
+			self.dAuthorExtra:SetJustifyH("RIGHT")
+			room = besideName
+		end
+		self.dAuthorExtra:SetWidth(math.max(math.min(fullW + 2, room), 1))
+	end
 
 	if set.sex and set.sex ~= TH:PlayerSex() then
 		self.sexHint:SetText(string.format(L["Собран на %s модели — точный вид\nв примерочной Wowhead"],

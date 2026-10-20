@@ -1,5 +1,9 @@
 # Transmog Hub — Changelog
 
+## 1.15.1
+- The main tab is now called **All**, next to Friends, Guild, Favorites and Subscriptions.
+- The author's race and gender no longer get cut off: if they don't fit next to the author's name, they move to the outfit title line.
+
 ## 1.15.0
 - **Letters to the developer and appeals are now encrypted.** They still travel through other players' addons, but only the developer can read them: other players only see an unreadable block of text, without your name. The letter and appeal windows mention this.
 - Explanations attached to "Other" reports are sent without your name.
