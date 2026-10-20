@@ -147,7 +147,10 @@ assert(not inBook["Давний-Гордунни"], "old check-ins left out")
 local src = io.open(bundledPath):read("*a")
 assert(not src:find("votes", 1, true), "no vote lists in catalog file")
 assert(c.t == NOW and c.date)
-assert(#c.top == 40, "40 honest sets charted, boosted one excluded: " .. #c.top)
+-- в чарт попадают и образы из каталога с оценками (порог — одна оценка), считаем только свои
+local ours = 0
+for _, id in ipairs(c.top) do if id:match("^nset%d+$") or id == "nboost" then ours = ours + 1 end end
+assert(ours == 40, "40 honest sets charted, boosted one excluded: " .. ours)
 for _, id in ipairs(c.top) do assert(id ~= "nboost", "boosted set not in chart") end
 assert(c.top[1]:match("^nset%d$"), "best sets on top: " .. c.top[1])
 assert(c.tags.raid_midnight and #c.tags.raid_midnight == 11, "raid tag list without the disputed one")
