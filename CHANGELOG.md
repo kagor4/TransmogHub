@@ -1,5 +1,10 @@
 # Transmog Hub — Changelog
 
+## 1.14.0
+- **One rating is now enough to enter the chart** while the community is small. The rating formula stays the same, so an outfit with a single five-star rating sits near the middle, and outfits with many good ratings still rank higher. As more players join, the bar rises on its own.
+- **"New" and "Recommended" now show outfits from the last 60 days** instead of 14, so new outfits stay visible longer.
+- **"Trending" now counts stars from the last 30 days** instead of 7.
+
 ## 1.13.3
 - Small fix for players in both Europe and the Americas: the daily "I'm online" check-in now happens once a day in each region.
 
