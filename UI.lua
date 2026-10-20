@@ -44,10 +44,10 @@ UI.view = "top"
 -- Сортировка списков (кроме «Мои» и «Модерация»); выбирается кнопкой в шапке
 local SORTS = {
 	{ key = "top", text = L["Лучшие"], hint = L["По рейтингу с учётом числа оценок"] },
-	{ key = "trending", text = L["В тренде"], hint = L["Больше всего звёзд за последние 7 дней"] },
-	{ key = "new", text = L["Новые"], hint = L["Образы за последние 14 дней, сначала самые свежие."] },
+	{ key = "trending", text = L["В тренде"], hint = string.format(L["Больше всего звёзд за последние %d дней"], TH.TREND_DAYS) },
+	{ key = "new", text = L["Новые"], hint = string.format(L["Образы за последние %d дней, сначала самые свежие."], TH.NEW_DAYS) },
 	{ key = "recommended", text = L["Рекомендуемые"],
-		hint = L["Образы за последние 14 дней в случайном порядке. Чаще выпадают образы классов ваших персонажей (главного — ещё чаще) и с тегами, которые вам нравятся: вы их ставите своим образам, добавляете в избранное, оцениваете на 4—5. Кубик справа — перемешать."] },
+		hint = string.format(L["Образы за последние %d дней в случайном порядке. Чаще выпадают образы классов ваших персонажей (главного — ещё чаще) и с тегами, которые вам нравятся: вы их ставите своим образам, добавляете в избранное, оцениваете на 4—5. Кубик справа — перемешать."], TH.NEW_DAYS) },
 }
 local SORT_TEXT = {}
 for _, s in ipairs(SORTS) do SORT_TEXT[s.key] = s.text end
@@ -1929,12 +1929,16 @@ function UI:RefreshList()
 	self.emptyText:SetText(filtered and L["По вашему запросу ничего нет.\n\nПопробуйте другие слова или сбросьте теги."]
 		or (self.view == "guild" and not TH:GetGuildNames() and L["Вы не состоите в гильдии."])
 		or (self.view == "top" and (self:GetSort() == "top" or self:GetSort() == "trending")
-			and string.format(L["В чарте пока пусто: ни один образ не набрал %d оценок.\n\nСвежие образы — во вкладке «Новые»:\nоцените их, и лучшие попадут сюда."], TH:GetMinChartVotes()))
+			and (TH:GetMinChartVotes() <= 1
+				and L["В чарте пока пусто: ни один образ ещё не оценили.\n\nСвежие образы — во вкладке «Новые»:\nоцените их, и лучшие попадут сюда."]
+				or string.format(L["В чарте пока пусто: ни один образ не набрал %d оценок.\n\nСвежие образы — во вкладке «Новые»:\nоцените их, и лучшие попадут сюда."], TH:GetMinChartVotes())))
 		-- друзья, гильдия, подписки: в «Лучших» только чарт, как в «Образах»
 		or ((self.view == "friends" or self.view == "guild" or self.view == "subs")
 			and (self:GetSort() == "top" or self:GetSort() == "trending")
 			and #TH:QuerySets(self.view, { sort = "new" }) > 0
-			and string.format(L["Здесь, как и в «Образах», только образы из чарта\n(от %d оценок) — таких пока нет.\n\nОстальные — во вкладке «Новые»."], TH:GetMinChartVotes()))
+			and (TH:GetMinChartVotes() <= 1
+				and L["Здесь, как и в «Образах», только образы из чарта\n(с оценками) — таких пока нет.\n\nОстальные — во вкладке «Новые»."]
+				or string.format(L["Здесь, как и в «Образах», только образы из чарта\n(от %d оценок) — таких пока нет.\n\nОстальные — во вкладке «Новые»."], TH:GetMinChartVotes())))
 		or EMPTY_TEXT[self.view] or EMPTY_TEXT.default)
 	self.emptyText:SetShown(n == 0)
 	self.emptyBtn:SetShown(n == 0 and not filtered and (self.view == "top" or self.view == "mine"))
