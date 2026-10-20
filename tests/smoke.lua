@@ -1235,7 +1235,7 @@ local p1 = TH:ScoreFromMask(maskAll, "")
 local p5 = TH:ScoreFromMask(maskAll, string.rep("5", #TH.SEASONAL_ORDER))
 assert(p5 > p1, "higher tiers give more points")
 assert(TH.ACHIEVEMENT_BY_ID.board_1.seasonal and TH.ACHIEVEMENT_BY_ID.tag_first5.seasonal and not TH.ACHIEVEMENT_BY_ID.save_1.seasonal)
--- чарт: нужно 5 оценок; подозрительные образы уходят на проверку
+-- чарт: пока игроков мало, хватает одной оценки; подозрительные образы уходят на проверку
 local function mkset(id, author)
 	TH.db.net.sets[id] = { id = id, author = author, name = "Чарт", desc = "", race = 1, sex = 0,
 		class = "ROGUE", created = serverTime, tags = {}, items = { [1] = {111} } }
@@ -1254,7 +1254,16 @@ local few, ok, boost = TH.byId.nchart_few, TH.byId.nchart_ok, TH.byId.nchart_boo
 assert(TH:IsCharted(ok) and TH:IsCharted(few), "enough honest votes are charted")
 TH.db.net.votes.nchart_few = { ["А-Гордунни"] = { 5, serverTime } }
 TH:LoadFeed(); few = TH.byId.nchart_few
-assert(not TH:IsCharted(few), "one vote is not enough for the chart")
+assert(TH.MIN_CHART_VOTES == 1 and TH:IsCharted(few), "one vote is enough while players are few")
+assert(TH:GetScore(few) < 3.7, "one five stays near the middle of the rating")
+mkset("nchart_none", "Автор-Гордунни")
+TH:LoadFeed()
+assert(not TH:IsCharted(TH.byId.nchart_none), "no votes, no chart")
+TH.db.net.sets.nchart_none = nil
+-- когда игроков станет больше, порог вырастет: дальше проверки при пороге 5
+TH.MIN_CHART_VOTES, TH.chartThreshold = 5, nil
+TH:LoadFeed(); few = TH.byId.nchart_few
+assert(not TH:IsCharted(few), "one vote is not enough when the bar is 5")
 local sus = TH:GetSuspicion(boost)
 assert(sus and not TH:IsCharted(boost), "all fives from lonely same-realm voters within an hour are suspicious")
 assert(table.concat(sus, ","):find("разовые") and table.concat(sus, ","):find("за час") and table.concat(sus, ","):find("сервер автора"), "reasons")
@@ -1292,6 +1301,7 @@ TH.MODERATORS[Net.Me()] = true; TH.UI.modDismissBtn.scripts.OnClick(); TH.MODERA
 assert(not TH:GetSuspicion(TH.byId.nchart_boost), "verified from the button")
 TH.UI:SetView("top"); TH.UI.selectedId = "nchart_few"; TH.UI:Refresh()
 assert(TH.UI.dRating:GetText():find("до чарта 4") and table.concat(TH.UI.dRatingHint, " "):find("Осталось 4"), "chart hint: " .. tostring(TH.UI.dRating:GetText()))
+TH.MIN_CHART_VOTES, TH.chartThreshold = 1, nil
 TH.db.moderator = false
 TransmogHub_Blocklist.verified = { nchart_boost = 15 }; TH:LoadFeed()
 assert(not TH:GetSuspicion(TH.byId.nchart_boost), "verified via blocklist")
@@ -1667,7 +1677,7 @@ do
 	TH:RefreshLeaderboard(ap, "")
 	TH.db.net.scores = saved
 end
--- порог чарта: 5% от игроков с оценками в день (медиана за 7 прошлых дней), не меньше 5
+-- порог чарта: 5% от игроков с оценками в день (медиана за 7 прошлых дней), не меньше MIN_CHART_VOTES
 ;(function()
 	local savedVotes = TH.db.net.votes
 	TH.db.net.votes = { x = {} }
@@ -1682,16 +1692,16 @@ end
 	local need, perDay = TH:ComputeChartThreshold(now)
 	assert(perDay == 300 and need == 15, "threshold " .. need .. " / " .. perDay)
 	TH.db.net.votes = { x = {} }
-	assert(TH:ComputeChartThreshold(now) == 5, "minimum threshold")
+	assert(TH:ComputeChartThreshold(now) == TH.MIN_CHART_VOTES, "minimum threshold")
 	TH.db.net.votes = savedVotes
 	TH.chartThreshold = nil
 end)()
 
--- «Новые» — только за 14 дней; «Рекомендуемые» — те же, перемешаны с весами интереса
+-- «Новые» — только за NEW_DAYS дней; «Рекомендуемые» — те же, перемешаны с весами интереса
 ;(function()
 	local now = Net.Now()
 	TH.db.net.sets.nrec_old = { id = "nrec_old", author = "Старый-Гордунни", name = "Старый", desc = "", race = 1, sex = 0,
-		class = "ROGUE", created = now - 20 * 86400, tags = {}, items = { [1] = {111} } }
+		class = "ROGUE", created = now - (TH.NEW_DAYS + 6) * 86400, tags = {}, items = { [1] = {111} } }
 	for i = 1, 30 do
 		TH.db.net.sets["nrec_" .. i] = { id = "nrec_" .. i, author = "Свежий" .. i .. "-Гордунни", name = "Свежий", desc = "",
 			race = 1, sex = 0, class = i <= 15 and "MAGE" or "WARRIOR", created = now - i * 3600, tags = { i <= 15 and "mage" or "warrior" },
@@ -1700,7 +1710,7 @@ end)()
 	TH:LoadFeed()
 	local function Ids(list) local t = {} for _, set in ipairs(list) do t[set.id] = true end return t end
 	local newIds = Ids(TH:QuerySets("top", { sort = "new" }))
-	assert(newIds.nrec_1 and not newIds.nrec_old, "new: only last 14 days")
+	assert(newIds.nrec_1 and not newIds.nrec_old, "new: only last NEW_DAYS days")
 	assert(Ids(TH:QuerySets("author", { author = "Старый-Гордунни" })).nrec_old, "old set still in the author's list")
 	local rec = TH:QuerySets("top", { sort = "recommended" })
 	assert(#rec == #TH:QuerySets("top", { sort = "new" }), "recommended has the same sets")
