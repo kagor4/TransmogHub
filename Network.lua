@@ -1521,11 +1521,14 @@ end
 -- Знакомство через каталог. Одиночка (ни канала с людьми, ни друзей Battle.net,
 -- ни согильдийцев, ни группы) стучится скрытым шёпотом к авторам образов из
 -- каталога и базы — тем, кто публиковал недавно. Кто в игре с аддоном, отвечает,
--- и аддоны синхронизируются: одиночка подключён ко всей сети. Стучимся понемногу,
--- к каждому не чаще раза в сутки; «такого игрока нет в игре» в чат не пишем.
+-- и аддоны синхронизируются: одиночка подключён ко всей сети. Стучимся понемногу
+-- (3 игрока раз в 5 минут), пока никого не нашли: к каждому не чаще раза в час —
+-- сеть пока маленькая, и тот, кто был не в игре, может зайти позже. «Такого игрока
+-- нет в игре» в чат не пишем.
 ---------------------------------------------------------------------------
-local KNOCK_BATCH, KNOCK_EVERY, KNOCK_MAX, KNOCK_REPEAT = 3, 300, 8, 86400
-local knockRounds, knocked = 0, {} -- knocked[имя] = время стука в этой сессии
+local KNOCK_BATCH, KNOCK_EVERY, KNOCK_REPEAT = 3, 300, 86400
+local CATALOG_REPEAT = 3600 -- к одному игроку из каталога — не чаще раза в час
+local knocked = {} -- knocked[имя] = время стука в этой сессии
 -- расы Альянса и Орды: шёпот другой фракции игра не пропускает
 local ALLIANCE = { [1] = true, [3] = true, [4] = true, [7] = true, [11] = true, [22] = true, [25] = true, [29] = true,
 	[30] = true, [32] = true, [34] = true, [37] = true, [52] = true, [85] = true, [91] = true, [95] = true }
@@ -1564,8 +1567,8 @@ function Net:KnockCandidates()
 	local last = TH.db.knocks or {}
 	local now, best = Now(), {}
 	local function Consider(name, faction, t)
-		if not IsCharName(name) or name == me or myChars[name] or knocked[name] then return end
-		if now - (last[name] or 0) < KNOCK_REPEAT then return end
+		if not IsCharName(name) or name == me or myChars[name] then return end
+		if now - math.max(knocked[name] or 0, last[name] or 0) < CATALOG_REPEAT then return end
 		if mine and faction and faction ~= mine then return end
 		t = t or 0
 		if not best[name] or t > best[name] then best[name] = t end
@@ -1587,12 +1590,11 @@ function Net:KnockCandidates()
 	return list
 end
 
--- force — проверка вручную (/thub knock): без условия «одиночка» и лимита раундов;
+-- force — проверка вручную (/thub knock): без условия «одиночка»;
 -- target — постучаться к конкретному игроку
 function Net:KnockCatalog(force, target)
 	local names = {}
-	if not force and (knockRounds >= KNOCK_MAX or not self:IsIsolated()) then return names end
-	if not force then knockRounds = knockRounds + 1 end
+	if not force and not self:IsIsolated() then return names end
 	TH.db.knocks = TH.db.knocks or {}
 	local now = Now()
 	local list = self:KnockCandidates()
