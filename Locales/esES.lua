@@ -1031,6 +1031,7 @@ ns.LOCALES.esES = {
 	["Письмо отправлено. Лучшие идеи появятся в обновлениях аддона."] = "Carta enviada. Las mejores ideas aparecerán en las actualizaciones del addon.",
 	["Письмо разработчику"] = "Carta al desarrollador",
 	["Есть идея, нашли ошибку или чего-то не хватает? Напишите — письмо доставит самый быстрый грифон Даларана. Каждое письмо прочитают."] = "¿Tienes una idea, encontraste un error o echas algo en falta? Escríbenos — el grifo más rápido de Dalaran entregará tu carta. Todas las cartas se leen.",
+	["Текст уходит зашифрованным: прочитать его может только разработчик."] = "Tu texto se envía cifrado: solo el desarrollador puede leerlo.",
 	["Отправить"] = "Enviar",
 	["BugGrabber (старый)"] = "BugGrabber (antiguo)",
 	["Напишите хотя бы пару слов: что не так с образом."] = "Escribe al menos unas palabras: qué le pasa al atuendo.",

@@ -749,9 +749,28 @@ end
 -- Оспаривание решения: от игрока хранится последнее обращение. Принимаем и от
 -- забаненных — иначе бан было бы не оспорить.
 local APPEAL_MAX = 300 -- байт текста
+local CIPHER_MAX = 1400 -- шифровка письма или обращения (Crypto.lua): до ~400 байт текста
+
+local function Crypto() return rawget(TH, "LetterCrypto") end -- Crypto.lua
+
+-- Текст письма или обращения: шифровка как есть, обычный текст — очищенный
+local function LetterText(text)
+	if text:sub(1, 1) == "~" then
+		return Crypto() and Crypto().IsCipher(text) and #text <= CIPHER_MAX and text or nil
+	end
+	return Clean(text, APPEAL_MAX)
+end
+
+-- Шифровка «имя\tтекст» для модератора и метка вместо имени; nil — ключа нет
+local function Seal(text)
+	if not (Crypto() and Crypto().Available()) then return nil end
+	return Crypto().Encrypt(Net.Me() .. "\t" .. text), Net.MyAnonKey()
+end
+
 function Net:StoreAppeal(name, t, text)
 	if not (name and t and text) or text == "" then return false end
-	text = Clean(text, APPEAL_MAX)
+	text = LetterText(text)
+	if not text then return false end
 	local appeals = DB().appeals
 	local old = appeals[name]
 	if old and old[1] >= t then return false end
@@ -763,6 +782,13 @@ end
 function Net:SendAppeal(text)
 	local t = Now()
 	text = Clean(text, APPEAL_MAX)
+	-- зашифровано и без имени: «y<метка>\t<время>\t<шифровка>»
+	local cipher, anon = Seal(text)
+	if cipher then
+		self:StoreAppeal(anon, t, cipher)
+		self:Send("y" .. anon .. "\t" .. Enc(t) .. "\t" .. cipher)
+		return
+	end
 	self:StoreAppeal(Net.Me(), t, text)
 	self:Send("J" .. Enc(t) .. "\t" .. text)
 end
@@ -780,7 +806,8 @@ function Net:StoreIdea(name, t, kind, text)
 	local ideas = stat and DB().usage or DB().ideas
 	local key = name .. "#" .. t
 	if ideas[key] then return false end
-	text = Clean(text, APPEAL_MAX)
+	text = LetterText(text)
+	if not text then return false end
 	if stat then
 		if Now() - t > USAGE_TTL then return false end
 		ideas[key] = { name, t, kind, text }
@@ -793,9 +820,22 @@ function Net:StoreIdea(name, t, kind, text)
 	return true
 end
 
+-- Письма (i, b, o) уходят шифровкой, пояснения к жалобам (r) — открыто, но без имени
+-- (по имени иначе было бы видно, кто пожаловался): «x<метка>\t<время>\t<вид>\t<текст>».
+-- Отчёты об ошибках и статистика — как раньше.
+local SEALED_KINDS = { i = true, b = true, o = true }
 function Net:SendIdea(kind, text)
 	local t = Now()
 	text = Clean(text, APPEAL_MAX)
+	local cipher, anon
+	if SEALED_KINDS[kind] then cipher, anon = Seal(text) end
+	if kind == "r" then anon = Net.MyAnonKey() end
+	if anon then
+		local body = cipher or text
+		self:StoreIdea(anon, t, kind, body)
+		self:Send("x" .. anon .. "\t" .. Enc(t) .. "\t" .. kind .. "\t" .. body)
+		return
+	end
 	self:StoreIdea(Net.Me(), t, kind, text)
 	self:Send("N" .. Enc(t) .. "\t" .. kind .. "\t" .. text)
 end
@@ -1264,7 +1304,7 @@ local function CollectSince(since)
 		if #fresh > 0 then batches[#batches + 1] = { "C", setId, fresh } end
 	end
 	for name, a in pairs(db.appeals) do
-		if a[1] > since then batches[#batches + 1] = { "K", name, { Enc(a[1]) .. "\t" .. a[2] } } end
+		if a[1] > since then batches[#batches + 1] = { name:sub(1, 1) == "#" and "y" or "K", name, { Enc(a[1]) .. "\t" .. a[2] } } end
 	end
 	for _, idea in pairs(db.usage) do
 		if idea[2] > since then
@@ -1273,7 +1313,8 @@ local function CollectSince(since)
 	end
 	for _, idea in pairs(db.ideas) do
 		if idea[2] > since then
-			batches[#batches + 1] = { "O", idea[1], { Enc(idea[2]) .. "\t" .. idea[3] .. "\t" .. idea[4] } }
+			local kind = idea[1]:sub(1, 1) == "#" and "x" or "O"
+			batches[#batches + 1] = { kind, idea[1], { Enc(idea[2]) .. "\t" .. idea[3] .. "\t" .. idea[4] } }
 		end
 	end
 	return sets, votes, reports, batches
@@ -1457,6 +1498,20 @@ end
 handlers.K = function(self, body, _, origin)
 	local name, t, text = body:match("^([^\t]+)\t(%w+)\t(.+)$")
 	if name and self:StoreAppeal(name, Dec(t) or 0, text) then self:Relay("K" .. body, origin) end
+end
+
+-- Письма и обращения с меткой вместо имени (шифровка или пояснение к жалобе):
+-- x<метка>\t<время>\t<вид>\t<текст>, y<метка>\t<время>\t<шифровка>
+handlers.x = function(self, body, _, origin)
+	local name, t, kind, text = body:match("^(#[^\t]+)\t(%w+)\t(%a)\t(.+)$")
+	if name and self:StoreIdea(name, Dec(t) or 0, kind, text) then self:Relay("x" .. body, origin) end
+end
+
+handlers.y = function(self, body, _, origin)
+	local name, t, text = body:match("^(#[^\t]+)\t(%w+)\t(.+)$")
+	if name and text:sub(1, 1) == "~" and self:StoreAppeal(name, Dec(t) or 0, text) then
+		self:Relay("y" .. body, origin)
+	end
 end
 
 handlers.G = function(self, body, sender, origin)

@@ -36,6 +36,9 @@ jobs:
       - name: Built-in item sources (AllTheThings extract)
         run: lua5.1 tests/att.lua .
 
+      - name: Letter encryption (Lua encrypts, Python decrypts)
+        run: lua5.1 tests/crypto.lua .
+
       # База на пределе хранения: пересчёты после сообщений сети не должны тормозить игру
       - name: Performance check
         run: lua5.1 tools/bench/bench.lua . 3000 100000 5000 --check

@@ -166,7 +166,7 @@ local function flush()
 end
 local ns = {}
 local dir = arg[1]
-for _, f in ipairs({ "Locales/Locale.lua", "Locales/enUS.lua", "Data/Bundled.lua", "Data/Blocklist.lua", "Data/Charts.lua", "Data/Secrets.lua", "Data/TagIcons.lua", "Data/Sources.lua", "Core.lua", "Moderation.lua", "Network.lua", "Appearance.lua", "Preview.lua", "TagPicker.lua", "UI.lua", "SaveDialog.lua", "IconPicker.lua", "Secret.lua", "Achievements.lua", "Charts.lua", "Profile.lua", "Help.lua", "Tour.lua", "Standing.lua", "Ideas.lua", "Wowhead.lua", "Sources.lua", "Minimap.lua", "Skin.lua", "Usage.lua", "Toasts.lua", "Follow.lua", "Fonts.lua", "Settings.lua", "ChatLinks.lua" }) do
+for _, f in ipairs({ "Locales/Locale.lua", "Locales/enUS.lua", "Data/Bundled.lua", "Data/Blocklist.lua", "Data/Charts.lua", "Data/LetterKey.lua", "Data/Secrets.lua", "Data/TagIcons.lua", "Data/Sources.lua", "Core.lua", "Moderation.lua", "Crypto.lua", "Network.lua", "Appearance.lua", "Preview.lua", "TagPicker.lua", "UI.lua", "SaveDialog.lua", "IconPicker.lua", "Secret.lua", "Achievements.lua", "Charts.lua", "Profile.lua", "Help.lua", "Tour.lua", "Standing.lua", "Ideas.lua", "Wowhead.lua", "Sources.lua", "Minimap.lua", "Skin.lua", "Usage.lua", "Toasts.lua", "Follow.lua", "Fonts.lua", "Settings.lua", "ChatLinks.lua" }) do
   assert(loadfile(dir .. "/" .. f))("TransmogHub", ns)
 end
 TransmogHub_Charts = nil -- тесты проверяют и расчёт мест без официального чарта
@@ -1189,11 +1189,11 @@ local adlg = TransmogHubAppeal
 adlg.edit:SetText("коротко"); adlg.sendBtn.scripts.OnClick()
 assert(adlg.error.text:find("подробнее"), "too short appeal")
 adlg.edit:SetText("Образ заблокировали по ошибке, в названии нет ничего плохого"); adlg.sendBtn.scripts.OnClick()
-assert(not adlg:IsShown() and TH.db.net.appeals[Net.Me()], "appeal sent")
-local out = flush()
-local sentJ = false
-for _, m in ipairs(out) do if m:find("^SJ") or m:find("^BJ") then sentJ = true end end
-assert(sentJ, "appeal message on the wire")
+-- обращение уходит шифровкой и с меткой вместо имени
+assert(not adlg:IsShown() and TH.db.net.appeals[Net.MyAnonKey()] and not TH.db.net.appeals[Net.Me()], "appeal sent")
+assert(TH.db.net.appeals[Net.MyAnonKey()][2]:match("^~[%w+/]+$"), "appeal stored encrypted")
+local out = table.concat(flush(), "")
+assert(out:find("y" .. Net.MyAnonKey(), 1, true) and not out:find("по ошибке", 1, true) and not out:find("Тест", 1, true), "appeal on the wire: encrypted, no name")
 assert(TH:SendAppeal("Ещё одно обращение, длинное достаточно"):find("через"), "weekly limit")
 receive({ "SQrq13\t0" })
 local hasK = false
@@ -1207,10 +1207,26 @@ assert(idd:IsShown() and idd.kind == "i", "ideas dialog")
 TH:SetIdeaKind("b")
 idd.edit:SetText("Кнопка синхронизации не нажимается после боя"); idd.sendBtn.scripts.OnClick()
 assert(not idd:IsShown(), "idea sent")
+-- письмо уходит шифровкой и с меткой вместо имени
 local found
-for _, idea in pairs(TH.db.net.ideas) do if idea[1] == Net.Me() and idea[3] == "b" then found = idea end end
-assert(found and TH.db.modIdeas[#TH.db.modIdeas]:match("^1|.-|%d+|b|Кнопка"), "idea logged for moderator")
-flush()
+for _, idea in pairs(TH.db.net.ideas) do if idea[1] == Net.MyAnonKey() and idea[3] == "b" then found = idea end end
+assert(found and found[4]:match("^~[%w+/]+$"), "idea stored encrypted")
+assert(TH.db.modIdeas[#TH.db.modIdeas]:match("^1|#r.-|%d+|b|~"), "encrypted idea logged for moderator")
+do
+	local wire = table.concat(flush(), "")
+	assert(wire:find("x" .. Net.MyAnonKey(), 1, true) and not wire:find("Кнопка", 1, true), "idea on the wire: encrypted, no name")
+	-- шифровку пересылают как есть; обрезанную или чужого вида не принимают
+	local cipher = TH.LetterCrypto.Encrypt("Кто-Гордунни\tтекст")
+	receive({ "Sx#rzz-Гордунни\tabd\ti\t" .. cipher }, "Пересыльщик-Гордунни"); flush()
+	assert(TH.db.net.ideas["#rzz-Гордунни#" .. tonumber("abd", 36)], "relayed encrypted idea stored")
+	assert(lastBn[1] and lastBn[1]:find("x#rzz", 1, true), "encrypted idea relayed")
+	receive({ "Sx#rzy-Гордунни\tabd\ti\t~bad|cipher" }, "Пересыльщик-Гордунни"); flush()
+	assert(not TH.db.net.ideas["#rzy-Гордунни#" .. tonumber("abd", 36)], "broken cipher dropped")
+	receive({ "SQrq15\t0" })
+	local hasX = false
+	for _, m in ipairs(flush()) do if m:find("x#r", 1, true) then hasX = true end end
+	assert(hasX, "sync answer includes encrypted ideas")
+end
 receive({ "SNabc\ti\tДобавьте тег для пиратских шляп" }, "Идейный-Гордунни"); flush()
 assert(lastBn[1] and lastBn[1]:find("SOИдейный"), "idea relayed")
 assert(TH:SendIdea("i", "Ещё одна идея про теги и наряды") == nil)
@@ -1875,7 +1891,7 @@ end)()
 	local need = {}
 	for _, ch in ipairs(TH.FONT_REQUIRED) do need[ch] = true end
 	-- все не-ASCII знаки в коде аддона (кроме комментариев и Data/Secrets.lua) должны быть в списке
-	local files = { "Core.lua", "Moderation.lua", "Network.lua", "Appearance.lua", "Preview.lua", "TagPicker.lua", "UI.lua",
+	local files = { "Core.lua", "Moderation.lua", "Crypto.lua", "Network.lua", "Appearance.lua", "Preview.lua", "TagPicker.lua", "UI.lua",
 		"SaveDialog.lua", "IconPicker.lua", "Achievements.lua", "Charts.lua", "Profile.lua", "Help.lua", "Tour.lua",
 		"Standing.lua", "Ideas.lua", "Wowhead.lua", "Minimap.lua", "Skin.lua", "Usage.lua", "Toasts.lua", "Follow.lua",
 		"Fonts.lua", "Settings.lua", "Secret.lua", "ChatLinks.lua" }

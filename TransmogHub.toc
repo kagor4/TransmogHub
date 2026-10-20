@@ -19,12 +19,14 @@ Locales\esES.lua
 Data\Bundled.lua
 Data\Blocklist.lua
 Data\Charts.lua
+Data\LetterKey.lua
 Data\Secrets.lua
 Data\TagIcons.lua
 Data\Sources.lua
 
 Core.lua
 Moderation.lua
+Crypto.lua
 Network.lua
 Appearance.lua
 Preview.lua
