@@ -193,6 +193,34 @@ function Net.Me()
 	return myName
 end
 
+-- Кто пожаловался или предложил тег, по сети не передаётся: вместо имени — метка
+-- «#…-Сервер». Свои жалобы аддон подписывает случайной меткой персонажа, по ней имя
+-- не узнать; сервер остаётся, чтобы модератор видел, с разных ли серверов жалобы.
+-- Имя, пришедшее от старых версий, превращается в отпечаток (у всех одинаковый).
+local function NameHash(s)
+	local h = 0
+	for i = 1, #s do h = (h * 31 + s:byte(i)) % 2147483629 end
+	return h
+end
+
+function Net.AnonKey(name)
+	if type(name) ~= "string" or name:sub(1, 1) == "#" then return name end
+	local realm = name:match("%-(.+)$")
+	return "#" .. Enc(NameHash(name)) .. (realm and ("-" .. realm) or "")
+end
+
+function Net.MyAnonKey(char)
+	char = char or Net.Me()
+	TH.db.anonKeys = TH.db.anonKeys or {}
+	local key = TH.db.anonKeys[char]
+	if not key then
+		local realm = char:match("%-(.+)$")
+		key = "#r" .. Enc(math.random(0, 2147483646)) .. Enc(math.random(0, 2147483646)) .. (realm and ("-" .. realm) or "")
+		TH.db.anonKeys[char] = key
+	end
+	return key
+end
+
 local function Now()
 	return GetServerTime and GetServerTime() or time()
 end
@@ -619,6 +647,7 @@ end
 -- Жалоба: один персонаж — одна жалоба на образ, новее заменяет старую
 function Net:StoreReport(setId, reporter, reason, t)
 	if TH:IsBanned(reporter) then return false end
+	reporter = Net.AnonKey(reporter)
 	-- «u» — жалоба отозвана (её автором): запись остаётся, чтобы старая копия не вернулась
 	if not TH.REPORT_LABEL[reason] and reason ~= "u" then return false end
 	local db = DB()
@@ -774,6 +803,7 @@ end
 -- Предложенный тег: один персонаж — одно предложение на текст
 function Net:StoreTagSuggestion(text, name, t)
 	if TH:IsBanned(name) then return false end
+	name = Net.AnonKey(name)
 	if TH.NormalizeTag(text) ~= text or not TH:IsTextAllowed(text) then return false end
 	local db = DB()
 	local list = db.tagSuggest[text]
@@ -1079,16 +1109,19 @@ function Net:SendVote(setId, stars)
 end
 
 function Net:SendReport(setId, reason)
-	local old = DB().reports[setId] and DB().reports[setId][Net.Me()]
+	local me = Net.MyAnonKey()
+	local old = DB().reports[setId] and DB().reports[setId][me]
 	local t = math.max(Now(), old and old[2] + 1 or 0) -- отзыв сразу после жалобы — всё равно новее
-	self:StoreReport(setId, Net.Me(), reason, t)
-	self:Send("R" .. setId .. "\t" .. reason .. "\t" .. Enc(t))
+	self:StoreReport(setId, me, reason, t)
+	-- пачкой «X» с меткой вместо имени (старые версии её тоже понимают)
+	self:Send("X" .. setId .. "\t" .. me .. "," .. reason .. "," .. Enc(t))
 end
 
 function Net:SendTagSuggestion(text)
 	local t = Now()
-	self:StoreTagSuggestion(text, Net.Me(), t)
-	self:Send("G" .. text .. "\t" .. Enc(t))
+	local me = Net.MyAnonKey()
+	self:StoreTagSuggestion(text, me, t)
+	self:Send("Y" .. text .. "\t" .. me .. "," .. Enc(t))
 end
 
 -- entry: { points, earned, best, mask } или nil — выйти из рейтинга
@@ -1327,17 +1360,19 @@ end
 handlers.R = function(self, body, sender, origin)
 	local setId, reason, t = body:match("^([^\t]+)\t(%a)\t(%w+)$")
 	if setId and self:StoreReport(setId, sender, reason, Dec(t) or 0) then
-		self:Relay("X" .. setId .. "\t" .. sender .. "," .. reason .. "," .. t, origin)
+		self:Relay("X" .. setId .. "\t" .. Net.AnonKey(sender) .. "," .. reason .. "," .. t, origin)
 	end
 end
 
-handlers.X = function(self, body, _, origin)
+handlers.X = function(self, body, sender, origin)
 	local setId, list = body:match("^([^\t]+)\t(.+)$")
-	if not setId then return end
+	if not setId or TH:IsBanned(sender) then return end
 	local fresh = {}
 	for entry in list:gmatch("[^;]+") do
 		local name, reason, t = entry:match("^([^,]+),(%a),(%w+)$")
-		if name and self:StoreReport(setId, name, reason, Dec(t) or 0) then fresh[#fresh + 1] = entry end
+		if name and self:StoreReport(setId, name, reason, Dec(t) or 0) then
+			fresh[#fresh + 1] = Net.AnonKey(name) .. "," .. reason .. "," .. t
+		end
 	end
 	if #fresh > 0 and #queue < MAX_RELAY_QUEUE then SendBatches(self, "X", setId, fresh, nil, origin) end
 end
@@ -1427,17 +1462,17 @@ end
 handlers.G = function(self, body, sender, origin)
 	local text, t = body:match("^([^\t]+)\t(%w+)$")
 	if text and self:StoreTagSuggestion(text, sender, Dec(t) or 0) then
-		self:Relay("Y" .. text .. "\t" .. sender .. "," .. t, origin)
+		self:Relay("Y" .. text .. "\t" .. Net.AnonKey(sender) .. "," .. t, origin)
 	end
 end
 
-handlers.Y = function(self, body, _, origin)
+handlers.Y = function(self, body, sender, origin)
 	local text, list = body:match("^([^\t]+)\t(.+)$")
-	if not text then return end
+	if not text or TH:IsBanned(sender) then return end
 	local fresh = {}
 	for entry in list:gmatch("[^;]+") do
 		local name, t = entry:match("^([^,]+),(%w+)$")
-		if name and self:StoreTagSuggestion(text, name, Dec(t) or 0) then fresh[#fresh + 1] = entry end
+		if name and self:StoreTagSuggestion(text, name, Dec(t) or 0) then fresh[#fresh + 1] = Net.AnonKey(name) .. "," .. t end
 	end
 	if #fresh > 0 and #queue < MAX_RELAY_QUEUE then SendBatches(self, "Y", text, fresh, nil, origin) end
 end
@@ -2203,7 +2238,38 @@ function Net:GreetGuild()
 	C_Timer.After(8, function() self:RequestSync(GUILD, "guild") end)
 end
 
+-- Старые жалобы и предложения тегов с именами: имена заменяем метками (раз на регион)
+function Net:AnonymizeOld()
+	local db = DB()
+	if db.anonDone then return end
+	local mine = TH.db.myChars or {}
+	local function Key(name)
+		if mine[name] or name == Net.Me() then return Net.MyAnonKey(name) end
+		return Net.AnonKey(name)
+	end
+	for _, list in pairs(db.reports or {}) do
+		local fresh = {}
+		for name, r in pairs(list) do
+			local k = Key(name)
+			if not fresh[k] or fresh[k][2] < r[2] then fresh[k] = r end
+		end
+		wipe(list)
+		for k, r in pairs(fresh) do list[k] = r end
+	end
+	for _, list in pairs(db.tagSuggest or {}) do
+		local fresh = {}
+		for name, t in pairs(list) do
+			local k = Key(name)
+			fresh[k] = math.min(fresh[k] or t, t)
+		end
+		wipe(list)
+		for k, t in pairs(fresh) do list[k] = t end
+	end
+	db.anonDone = true
+end
+
 function Net:Start()
+	pcall(self.AnonymizeOld, self)
 	C_ChatInfo.RegisterAddonMessagePrefix(PREFIX)
 	local frame = CreateFrame("Frame")
 	frame:RegisterEvent("CHAT_MSG_ADDON")

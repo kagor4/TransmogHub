@@ -549,15 +549,26 @@ TH:CheckAchievements()
 assert(TH.db.achievements.report_ok_1, "confirmed report achievement")
 TH.Net:ApplyModDecision("u", "nrep1")
 local rep = flush()
-assert(rep[1]:match("^SRnrep1\ta\t"), "report broadcast: " .. tostring(rep[1]))
+-- в сеть уходит не имя, а случайная метка персонажа с сервером
+do local myKey = Net.MyAnonKey()
+assert(myKey:match("^#r%w+%-Гордунни$") and Net.MyAnonKey() == myKey, "own anonymous key, stable: " .. myKey)
+assert(rep[1] == "SXnrep1\t" .. myKey .. ",a," .. rep[1]:match(",a,(%w+)$"), "report broadcast without the name: " .. tostring(rep[1]))
+assert(not rep[1]:find("Тест", 1, true), "reporter name not sent") end
 assert(TH.db.hidden.nrep1 and not TH.byId.nrep1, "hidden for the reporter")
-assert(TH.db.modLog[#TH.db.modLog]:match("^1|nrep1|Тест%-Гордунни|a|%d+|Спамер%-Гордунни|Нормальный образ|"), "mod log line")
+assert(TH.db.modLog[#TH.db.modLog]:match("^1|nrep1|#r%w+%-Гордунни|a|%d+|Спамер%-Гордунни|Нормальный образ|"), "mod log line: " .. TH.db.modLog[#TH.db.modLog])
 wipe(TH.db.hidden)
--- reports from others are stored and relayed as X with the reporter's name
+-- жалоба от старой версии (R с именем отправителя): хранится и пересылается с отпечатком имени
 receive({ "SRnrep1\to\tzzz" }, "Жалобщик-Гордунни")
 local xr = flush()
 assert(#xr == 0, "not echoed back into the channel")
-assert(lastBn[1] == FRIEND_ID .. ":SXnrep1\tЖалобщик-Гордунни,o,zzz", "report relayed to the friend: " .. tostring(lastBn[1]))
+do local oldKey = Net.AnonKey("Жалобщик-Гордунни")
+assert(oldKey:match("^#%w+%-Гордунни$") and oldKey == Net.AnonKey("Жалобщик-Гордунни"), "fingerprint is stable")
+assert(lastBn[1] == FRIEND_ID .. ":SXnrep1\t" .. oldKey .. ",o,zzz", "report relayed without the name: " .. tostring(lastBn[1]))
+assert(TH.db.net.reports.nrep1[oldKey] and not TH.db.net.reports.nrep1["Жалобщик-Гордунни"], "stored without the name") end
+-- имена из пачки X старых версий тоже превращаются в отпечатки
+receive({ "SXnrep1\tДругой-Гордунни,x,zzz" }, "Пересыльщик-Гордунни"); flush()
+assert(TH.db.net.reports.nrep1[Net.AnonKey("Другой-Гордунни")] and not TH.db.net.reports.nrep1["Другой-Гордунни"], "batched names fingerprinted")
+TH.db.net.reports.nrep1[Net.AnonKey("Другой-Гордунни")] = nil
 -- 99 reports: still visible; 100 with >=30% share: auto-hidden
 for i = 3, 99 do Net:StoreReport("nrep1", "Ж" .. i .. "-Гордунни", "a", serverTime) end
 TH:LoadFeed(); assert(TH.byId.nrep1, "99 reports: still visible")
@@ -606,11 +617,11 @@ assert(TH:SuggestTag("хуйня") ~= nil, "profane tag")
 assert(TH:SuggestTag("Космо-пират") == nil, "suggest ok")
 assert(TH:SuggestTag("Космо-пират") == "Вы уже предлагали этот тег.", "one per text")
 local sent1 = flush()
-assert(sent1[1] and sent1[1]:match("^SGкосмо%-пират\t%w+$"), "suggestion sent: " .. tostring(sent1[1]))
-assert(TH.db.modTags[#TH.db.modTags]:match("^1|космо%-пират|Тест%-Гордунни|%d+$"), "suggestion logged for moderator")
+assert(sent1[1] and sent1[1] == "SYкосмо-пират\t" .. Net.MyAnonKey() .. "," .. (sent1[1]:match(",(%w+)$") or ""), "suggestion sent without the name: " .. tostring(sent1[1]))
+assert(TH.db.modTags[#TH.db.modTags]:match("^1|космо%-пират|#r%w+%-Гордунни|%d+$"), "suggestion logged for moderator")
 receive({ "SGкосмо-пират\t" .. "abc" })
 flush()
-assert(lastBn[1] == FRIEND_ID .. ":SYкосмо-пират\t" .. PEER .. ",abc", "suggestion relayed to the friend: " .. tostring(lastBn[1]))
+assert(lastBn[1] == FRIEND_ID .. ":SYкосмо-пират\t" .. Net.AnonKey(PEER) .. ",abc", "suggestion relayed to the friend: " .. tostring(lastBn[1]))
 receive({ "SGкосмо-пират\tabc" }); flush(); assert(#lastBn == 0, "duplicate not relayed")
 receive({ "SGхуй\tabc" }); assert(not TH.db.net.tagSuggest["хуй"], "profane suggestion dropped")
 receive({ "SGBad|Tag\tabc" }); assert(not TH.db.net.tagSuggest["Bad|Tag"], "raw suggestion dropped")
@@ -2148,12 +2159,12 @@ end)()
 	TH:LoadFeed()
 	assert(TH.db.hidden.nundo1 and TH:GetReportStats("nundo1") == 1, "reported and hidden")
 	TH:UndoMyReports(); local out = table.concat(flush(), "\n")
-	assert(out:find("Rnundo1\tu\t", 1, true), "retraction sent")
+	assert(out:find("Xnundo1\t" .. Net.MyAnonKey() .. ",u,", 1, true), "retraction sent")
 	assert(not TH.db.hidden.nundo1 and TH:GetReportStats("nundo1") == 0, "visible again, report not counted")
 	assert(TH.byId.nundo1, "back in the feed")
 	assert(not TH:IsTagFlaggedByMe(TH.db.net.sets.nundo1, "c_red"), "tag flag withdrawn")
 	-- старая копия жалобы при синхронизации не возвращается
-	receive({ "SXnundo1\t" .. Net.Me() .. ",o," .. Net.Enc(Net.Now() - 100) }); flush()
+	receive({ "SXnundo1\t" .. Net.MyAnonKey() .. ",o," .. Net.Enc(Net.Now() - 100) }); flush()
 	assert(TH:GetReportStats("nundo1") == 0, "old report copy ignored")
 	local inMod = false
 	for _, x in ipairs(TH:QuerySets("moderation", {})) do if x.id == "nundo1" then inMod = true end end
@@ -2848,4 +2859,21 @@ end)()
 	assert(db.presenceSent[Net.Me()] == 1, "europe presence day restored")
 	GetCurrentRegion = realRegion
 end)()
+-- старые жалобы и предложения тегов с именами: имена заменяются метками, свои — своей меткой
+;(function()
+	local db = TH.db.net
+	local saved = { db.reports, db.tagSuggest, db.anonDone }
+	db.reports = { nmig = { ["Старый-Гордунни"] = { "a", 100 }, [Net.Me()] = { "o", 200 } } }
+	db.tagSuggest = { ["гоблин"] = { ["Старый-Гордунни"] = 300 } }
+	db.anonDone = nil
+	Net:AnonymizeOld()
+	local r = db.reports.nmig
+	assert(r[Net.AnonKey("Старый-Гордунни")] and r[Net.MyAnonKey()] and not r["Старый-Гордунни"] and not r[Net.Me()], "reports re-keyed")
+	assert(db.tagSuggest["гоблин"][Net.AnonKey("Старый-Гордунни")] == 300, "tag suggestions re-keyed")
+	db.reports.nmig2 = { ["Новый-Гордунни"] = { "a", 1 } }
+	Net:AnonymizeOld()
+	assert(db.reports.nmig2["Новый-Гордунни"], "migration runs once")
+	db.reports, db.tagSuggest, db.anonDone = saved[1], saved[2], saved[3]
+end)()
+
 print("ALL OK")
