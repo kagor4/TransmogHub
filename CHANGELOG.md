@@ -1,5 +1,8 @@
 # Transmog Hub — Changelog
 
+## 1.14.2
+- **More privacy for reports.** Reports and tag suggestions travel through the addon network, and copies end up in other players' saved files. They no longer contain your character name: the addon signs them with a random tag instead, so only the fact of a report reaches other players, not who sent it. Older entries are converted the same way.
+
 ## 1.14.1
 - Finding other players is more persistent: while you're not connected to anyone yet, the addon keeps quietly checking in with known players for as long as you play, and tries the same player again after an hour instead of the next day. Players who log in later are now found much sooner.
 
