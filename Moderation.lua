@@ -904,7 +904,7 @@ end
 
 -- Вернуть один скрытый образ (или игрока рейтинга): своя жалоба на него отзывается
 function TH:UndoReport(id)
-	local r = self.db.net.reports[id] and self.db.net.reports[id][self.Net.Me()]
+	local r = self.db.net.reports[id] and self.db.net.reports[id][self.Net.MyAnonKey()]
 	local retracted = r and r[1] ~= "u"
 	if retracted then self.Net:SendReport(id, "u") end
 	self.db.hidden[id] = nil
@@ -926,7 +926,7 @@ function TH:GetHiddenList()
 			local set = self.db.net.sets[id]
 			name = set and ("«" .. (set.name or "?") .. "»  |cff888888" .. (set.author or "?"):gsub("%-.*", "") .. "|r") or L["|cff888888образа уже нет в базе|r"]
 		end
-		local r = self.db.net.reports[id] and self.db.net.reports[id][self.Net.Me()]
+		local r = self.db.net.reports[id] and self.db.net.reports[id][self.Net.MyAnonKey()]
 		list[#list + 1] = { id = id, name = name, reason = r and r[1] ~= "u" and (self.REPORT_LABEL[r[1]] or r[1]) or nil }
 	end
 	table.sort(list, function(a, b) return a.name < b.name end)
@@ -959,8 +959,9 @@ end
 -- «тег не подходит» снимаются. Жалобы других своих персонажей отзываются на них.
 function TH:UndoMyReports()
 	local me, reports, flags = self.Net.Me(), 0, 0
+	local myKey = self.Net.MyAnonKey()
 	for setId, list in pairs(self.db.net.reports) do
-		local r = list[me]
+		local r = list[myKey]
 		if r and r[1] ~= "u" then
 			self.Net:SendReport(setId, "u")
 			reports = reports + 1
