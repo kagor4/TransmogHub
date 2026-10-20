@@ -2316,7 +2316,7 @@ end)()
 		{ id = "nk5", name = "Д", author = "Вчерашний-Ревущийфьорд", created = 1700000200, items = {} },
 		{ id = "nk6", name = "Е", author = "Давний-Ревущийфьорд", created = 1500000000, items = {} },
 	} }
-	TH.db.knocks = { ["Вчерашний-Ревущийфьорд"] = GetServerTime() - 3600 }
+	TH.db.knocks = { ["Вчерашний-Ревущийфьорд"] = GetServerTime() - 1800 }
 	local savedPeers, savedSets = Net0.whisperPeers, TH.db.net.sets
 	Net0.whisperPeers, TH.db.net.sets = {}, {}
 	assert(Net0:IsIsolated(), "no connections: isolated")
@@ -2332,8 +2332,22 @@ end)()
 	local set = {}
 	for _, who in ipairs(knockedTo) do set[who] = true end
 	assert(set["Свежий-Ревущийфьорд"] and set["Старый-Ревущийфьорд"] and set["Давний-Ревущийфьорд"],
-		"recent authors of own faction, not self, not knocked yesterday: " .. table.concat(knockedTo, ","))
-	assert(TH.db.knocks["Свежий-Ревущийфьорд"], "knock remembered for a day")
+		"recent authors of own faction, not self, not knocked within the hour: " .. table.concat(knockedTo, ","))
+	assert(TH.db.knocks["Свежий-Ревущийфьорд"], "knock remembered")
+	-- пока одиноки, стучимся дальше без лимита раундов; к тем же — не раньше чем через час
+	local function KnockedNow()
+		flush(); Net0:KnockCatalog(); flush()
+		local out = {}
+		for _, m in ipairs(lastGroup) do
+			local who = m:match("^WHISPER:(.-):S?H")
+			if who then out[#out + 1] = who end
+		end
+		return out
+	end
+	for _ = 1, 10 do KnockedNow() end
+	TH.db.knocks["Вчерашний-Ревущийфьорд"] = GetServerTime() - 3700
+	local again = KnockedNow()
+	assert(#again == 1 and again[1] == "Вчерашний-Ревущийфьорд", "retry after an hour, no round limit: " .. table.concat(again, ","))
 	-- «игрок не найден» после стука скрыт, чужой — нет
 	_G.ERR_CHAT_PLAYER_NOT_FOUND_S = "Персонаж по имени \"%s\" в игре не найден."
 	assert(Net0.HideKnockMiss(nil, nil, "Персонаж по имени \"Старый-Ревущийфьорд\" в игре не найден."), "knock miss hidden")

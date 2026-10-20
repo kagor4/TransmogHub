@@ -1,5 +1,8 @@
 # Transmog Hub — Changelog
 
+## 1.14.1
+- Finding other players is more persistent: while you're not connected to anyone yet, the addon keeps quietly checking in with known players for as long as you play, and tries the same player again after an hour instead of the next day. Players who log in later are now found much sooner.
+
 ## 1.14.0
 - **One rating is now enough to enter the chart** while the community is small. The rating formula stays the same, so an outfit with a single five-star rating sits near the middle, and outfits with many good ratings still rank higher. As more players join, the bar rises on its own.
 - **"New" and "Recommended" now show outfits from the last 60 days** instead of 14, so new outfits stay visible longer.
