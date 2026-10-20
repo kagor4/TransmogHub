@@ -1,5 +1,8 @@
 # Transmog Hub — Changelog
 
+## 1.14.3
+- The letter and appeal windows now remind you that your text passes through other players' addons, so it's best not to include anything personal.
+
 ## 1.14.2
 - **More privacy for reports.** Reports and tag suggestions travel through the addon network, and copies end up in other players' saved files. They no longer contain your character name: the addon signs them with a random tag instead, so only the fact of a report reaches other players, not who sent it. Older entries are converted the same way.
 

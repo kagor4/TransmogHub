@@ -102,6 +102,12 @@ local function Build()
 	TH.PadButton(send)
 	send:SetSize(140, 24)
 	send:SetPoint("BOTTOMLEFT", 14, 12)
+	-- письма расходятся по сети через клиенты других игроков
+	local note = dlg:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+	note:SetPoint("BOTTOMLEFT", 16, 42)
+	note:SetWidth(408)
+	note:SetJustifyH("LEFT")
+	note:SetText(L["Текст проходит через других игроков с аддоном: не пишите в нём личного."])
 	send:SetText(L["Отправить"])
 	send:SetScript("OnClick", Send)
 	if TH.StylePrimaryButton then TH.StylePrimaryButton(send) end
