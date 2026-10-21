@@ -2061,16 +2061,23 @@ function UI:RefreshDetail()
 		-- официальное место (проверенный ежедневный чарт)
 		local place, pool = TH:GetOfficialRank("top", chartSet.id)
 		if place then
-			note = note .. string.format(L["  |cff40ff40№%d в «Лучших»|r"], place)
+			note = note .. string.format(L["  |cff40ff40#%d в лучших|r"], place)
 			hint[#hint + 1] = string.format(L["|cff40ff40Официально: %d из %d в «Лучших» (на %s).|r"], place, pool, TH:FormatChartsDate())
 		end
 		local tplace, tpool = TH:GetOfficialRank("trending", chartSet.id)
 		if tplace then
-			note = note .. string.format(L["  |cff40c0ff№%d «В тренде»|r"], tplace)
+			note = note .. string.format(L["  |cff40c0ff#%d в тренде|r"], tplace)
 			hint[#hint + 1] = string.format(L["|cff40c0ffОфициально: %d из %d «В тренде» (на %s).|r"], tplace, tpool, TH:FormatChartsDate())
 		end
 		self.dRatingHint = hint
+		-- на всю ширину карточки; с местами в чарте не влезает — короткая запись рейтинга
+		local card = self.dRating:GetParent()
+		local cardW = card and card.GetWidth and card:GetWidth() or 0
+		if cardW > 0 then self.dRating:SetWidth(cardW - 20) end
 		self.dRating:SetText(string.format(L["Рейтинг: |cffffd100%.1f|r из 5, голосов: %d"], r.avg, r.n) .. note)
+		if cardW > 0 and (self.dRating:GetStringWidth() or 0) > cardW - 20 then
+			self.dRating:SetText(string.format(L["Рейтинг: |cffffd100%.1f|r (%d)"], r.avg, r.n) .. note)
+		end
 	else
 		self.dRatingHint = nil
 		self.dRating:SetText(L["Оценок пока нет — будьте первым"])

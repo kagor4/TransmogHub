@@ -1,5 +1,8 @@
 # Transmog Hub — Changelog
 
+## 1.15.2
+- The outfit's chart places next to its rating no longer show as empty squares and fit on the line.
+
 ## 1.15.1
 - The main tab is now called **All**, next to Friends, Guild, Favorites and Subscriptions.
 - The author's race and gender no longer get cut off: if they don't fit next to the author's name, they move to the outfit title line.
