@@ -276,6 +276,7 @@ ns.LOCALES.enUS = {
 	["Ваш портрет висит в Штормграде. На доске объявлений, рядом с ворготом-воришкой."] = "Your portrait hangs in Stormwind. On the notice board, next to a worgen pickpocket.",
 	["Скрытое достижение"] = "Hidden Achievement",
 	["Все"] = "All",
+	["Из подборки Reddit, u/%s"] = "From a Reddit collection, u/%s",
 	["все"] = "all",
 	["Только полученные"] = "Earned only",
 	["полученные"] = "earned",

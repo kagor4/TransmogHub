@@ -1,5 +1,8 @@
 # Transmog Hub — Changelog
 
+## 1.16.0
+- **Outfits from Reddit.** The addon now ships a small collection of outfits shared on Reddit, added with their authors' permission. Instead of a character name they are signed "From a Reddit collection" with the author's Reddit name. You can rate them like any other outfit.
+
 ## 1.15.1
 - The main tab is now called **All**, next to Friends, Guild, Favorites and Subscriptions.
 - The author's race and gender no longer get cut off: if they don't fit next to the author's name, they move to the outfit title line.

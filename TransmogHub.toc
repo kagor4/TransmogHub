@@ -17,6 +17,7 @@ Locales\esES.lua
 
 # Подборки образов, которые приходят с обновлением аддона
 Data\Bundled.lua
+Data\Curated.lua
 Data\Blocklist.lua
 Data\Charts.lua
 Data\LetterKey.lua
