@@ -1024,7 +1024,7 @@ function TH:LoadFeed()
 	end
 	-- подборка из Reddit (Data/Curated.lua): вместо автора-персонажа — подпись источника.
 	-- В Forever её нет: там другие вещи
-	for _, set in ipairs(not self.FOREVER and TransmogHub_Curated and TransmogHub_Curated.sets or {}) do
+	for _, set in ipairs(not rawget(self, "FOREVER") and TransmogHub_Curated and TransmogHub_Curated.sets or {}) do
 		set.curated = true
 		add(set)
 	end
