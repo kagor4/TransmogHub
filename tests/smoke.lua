@@ -166,7 +166,7 @@ local function flush()
 end
 local ns = {}
 local dir = arg[1]
-for _, f in ipairs({ "Locales/Locale.lua", "Locales/enUS.lua", "Data/Bundled.lua", "Data/Blocklist.lua", "Data/Charts.lua", "Data/LetterKey.lua", "Data/Secrets.lua", "Data/TagIcons.lua", "Data/Sources.lua", "Core.lua", "Moderation.lua", "Crypto.lua", "Network.lua", "Appearance.lua", "Preview.lua", "TagPicker.lua", "UI.lua", "SaveDialog.lua", "IconPicker.lua", "Secret.lua", "Achievements.lua", "Charts.lua", "Profile.lua", "Help.lua", "Tour.lua", "Standing.lua", "Ideas.lua", "Wowhead.lua", "Sources.lua", "Minimap.lua", "Skin.lua", "Usage.lua", "Toasts.lua", "Follow.lua", "Fonts.lua", "Settings.lua", "ChatLinks.lua" }) do
+for _, f in ipairs({ "Locales/Locale.lua", "Locales/enUS.lua", "Data/Bundled.lua", "Data/Curated.lua", "Data/Blocklist.lua", "Data/Charts.lua", "Data/LetterKey.lua", "Data/Secrets.lua", "Data/TagIcons.lua", "Data/Sources.lua", "Core.lua", "Moderation.lua", "Crypto.lua", "Network.lua", "Appearance.lua", "Preview.lua", "TagPicker.lua", "UI.lua", "SaveDialog.lua", "IconPicker.lua", "Secret.lua", "Achievements.lua", "Charts.lua", "Profile.lua", "Help.lua", "Tour.lua", "Standing.lua", "Ideas.lua", "Wowhead.lua", "Sources.lua", "Minimap.lua", "Skin.lua", "Usage.lua", "Toasts.lua", "Follow.lua", "Fonts.lua", "Settings.lua", "ChatLinks.lua" }) do
   assert(loadfile(dir .. "/" .. f))("TransmogHub", ns)
 end
 TransmogHub_Charts = nil -- тесты проверяют и расчёт мест без официального чарта
@@ -2890,6 +2890,22 @@ end)()
 	Net:AnonymizeOld()
 	assert(db.reports.nmig2["Новый-Гордунни"], "migration runs once")
 	db.reports, db.tagSuggest, db.anonDone = saved[1], saved[2], saved[3]
+end)()
+
+-- подборка из Reddit: в ленте, с подписью источника вместо автора, оценивается как обычный образ
+;(function()
+	TH:LoadFeed()
+	local set = TH.byId.rd_cilnea9_1
+	assert(set and set.curated and not set.author, "curated set in the feed without an author")
+	assert(TH:CuratedLabel(set):find("Reddit", 1, true) and TH:CuratedLabel(set):find("Cilnea9", 1, true), "source label")
+	assert(set.items[16][1] == 74595, "items kept")
+	TH.UI:Select(set.id)
+	assert(TH.UI.dAuthor.text:find("Reddit", 1, true) and not TH.UI.dFollow:IsShown() and not TH.UI.dAuthorBtn:IsShown(), "details: source, no profile or follow")
+	Net:StoreVote(set.id, "Ценитель-Гордунни", 5, Net.Now())
+	TH:LoadFeed()
+	assert(TH.byId.rd_cilnea9_1.rating and TH.byId.rd_cilnea9_1.rating.n == 1, "curated set can be rated")
+	TH.db.net.votes.rd_cilnea9_1 = nil
+	TH:LoadFeed()
 end)()
 
 print("ALL OK")

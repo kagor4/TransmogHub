@@ -729,6 +729,12 @@ function TH:IsLocalId(id)
 	return type(id) == "string" and id:sub(1, #self.LOCAL_PREFIX) == self.LOCAL_PREFIX
 end
 
+-- Подпись образа из подборки вместо автора: «Из подборки Reddit, u/ник»; nil — обычный образ
+function TH:CuratedLabel(set)
+	if not (set and set.curated) then return nil end
+	return string.format(L["Из подборки Reddit, u/%s"], set.source or "?")
+end
+
 function TH:IsTestId(id)
 	return type(id) == "string" and id:sub(1, #self.TEST_PREFIX) == self.TEST_PREFIX
 end
@@ -1014,6 +1020,12 @@ function TH:LoadFeed()
 	-- каталог из обновления: оценка в нём — итог чарта, свои голоса из сети его дополняют
 	for _, set in ipairs(TransmogHub_Bundled and TransmogHub_Bundled.sets or {}) do
 		if set.rating and not set.baseRating then set.baseRating = set.rating end
+		add(set)
+	end
+	-- подборка из Reddit (Data/Curated.lua): вместо автора-персонажа — подпись источника.
+	-- В Forever её нет: там другие вещи
+	for _, set in ipairs(not rawget(self, "FOREVER") and TransmogHub_Curated and TransmogHub_Curated.sets or {}) do
+		set.curated = true
 		add(set)
 	end
 	self.feed = { sets = sets }

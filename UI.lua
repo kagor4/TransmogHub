@@ -1870,7 +1870,7 @@ function UI:RefreshList()
 		if set then
 			row.setId = set.id
 			row.name:SetText(TH:SetName(set) or L["Без названия"])
-			row.author:SetText(set.author or "")
+			row.author:SetText(set.author or TH:CuratedLabel(set) or "")
 
 			row.icon:SetTexture(TH:GetSetIcon(set))
 
@@ -1879,7 +1879,7 @@ function UI:RefreshList()
 			elseif self.view == "moderation" then
 				local total, by = TH:GetReportStats(set.id)
 				row.rating:SetText(total > 0 and string.format(L["|cffff6060жалоб: %d|r"], total) or L["|cffff9020накрутка?|r"])
-				row.author:SetText((set.author or "") .. (TH:IsBlocked(set) and L[" |cffff6060(блок)|r"] or ""))
+				row.author:SetText((set.author or TH:CuratedLabel(set) or "") .. (TH:IsBlocked(set) and L[" |cffff6060(блок)|r"] or ""))
 			else
 				local r = set.rating
 				if r and r.n and r.n > 0 then
@@ -1978,9 +1978,10 @@ function UI:RefreshDetail()
 	local author = set.author or "?"
 	local extra = who:sub(#author + 1)
 	-- ширина «Автор: Имя» — за ней ставим «подписаться», а раса и класс — после ссылки
-	self.dAuthor:SetText(L["Автор: "] .. author)
+	local curated = TH:CuratedLabel(set)
+	self.dAuthor:SetText(curated or (L["Автор: "] .. author))
 	local nameW = self.dAuthor:GetStringWidth() or 0
-	self.dAuthor:SetText(L["Автор: |cff69ccf0"] .. author .. "|r")
+	self.dAuthor:SetText(curated and ("|cffff8c40" .. curated .. "|r") or (L["Автор: |cff69ccf0"] .. author .. "|r"))
 	self.dAuthorExtra:SetText((extra:gsub("^, ", "")))
 	self.dAuthorBtn:SetShown(set.author ~= nil)
 	local canFollow = set.author ~= nil and not TH.db.myChars[set.author] and not TH:IsTestId(set.id)

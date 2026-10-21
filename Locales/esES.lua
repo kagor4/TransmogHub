@@ -276,6 +276,7 @@ ns.LOCALES.esES = {
 	["Ваш портрет висит в Штормграде. На доске объявлений, рядом с ворготом-воришкой."] = "Tu retrato cuelga en Ventormenta. En el tablón de anuncios, junto a un huargen carterista.",
 	["Скрытое достижение"] = "Logro oculto",
 	["Все"] = "Todos",
+	["Из подборки Reddit, u/%s"] = "De una colección de Reddit, u/%s",
 	["все"] = "todos",
 	["Только полученные"] = "Solo conseguidos",
 	["полученные"] = "conseguidos",
