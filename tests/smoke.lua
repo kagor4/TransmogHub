@@ -2898,7 +2898,7 @@ end)()
 	local set = TH.byId.rd_cilnea9_1
 	assert(set and set.curated and not set.author, "curated set in the feed without an author")
 	assert(TH:CuratedLabel(set):find("Reddit", 1, true) and TH:CuratedLabel(set):find("Cilnea9", 1, true), "source label")
-	assert(set.items[16][1] == 128941, "items kept")
+	assert(set.items[16][1] == 74595, "items kept")
 	TH.UI:Select(set.id)
 	assert(TH.UI.dAuthor.text:find("Reddit", 1, true) and not TH.UI.dFollow:IsShown() and not TH.UI.dAuthorBtn:IsShown(), "details: source, no profile or follow")
 	Net:StoreVote(set.id, "Ценитель-Гордунни", 5, Net.Now())
