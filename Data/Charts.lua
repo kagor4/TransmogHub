@@ -1,7 +1,7 @@
 -- Официальный чарт Transmog Hub. Файл создаётся автоматически (tools/charts/build.lua), не правьте руками.
 TransmogHub_Charts = {
 	date = "2026-10-22",
-	t = 1792651870,
+	t = 1792663316,
 	version = 1,
 	minVotes = 1,
 	activeVoters = 2,
@@ -19,9 +19,16 @@ TransmogHub_Charts = {
 	board = {
 		{ "Дкаг-Ревущийфьорд", 535 },
 		{ "Лесатуля-Гордунни", 230 },
+		{ "Kataskia-Drak'thul", 110 },
 		{ "Шоуприст-Ревущийфьорд", 110 },
+		{ "Deepsmorgant-Drak'thul", 65 },
+		{ "Dpsmorgant-Drak'thul", 65 },
+		{ "Healmorgant-Drak'thul", 65 },
+		{ "Tankmorgant-Drak'thul", 65 },
 		{ "Монбланж-Гордунни", 40 },
 		{ "Кискалисичка-Гордунни", 30 },
+		{ "Kuhthiecutie-Eredar", 0 },
+		{ "Muerog-Illidan", 0 },
 		{ "Rethoficial-Sanguino", 0 },
 		{ "Sabrenya-Draenor", 0 },
 		{ "Эймабой-Гордунни", 0 },
