@@ -450,6 +450,8 @@ if TH.FOREVER then
 		"f_nightfae", "f_necrolord", "f_naaru", "f_shadowlands",
 		"z_silvermoon", "z_exodar", "z_suramar", "z_outland", "z_northrend", "z_pandaria", "z_draenor", "z_zandalar",
 		"z_dragonisles", "z_khazalgar", "z_gilneas",
+		-- лор The War Within и Midnight
+		"f_xalatath", "r_nerubian", "z_azjkahet", "z_undermine", "z_karesh", "z_zulaman",
 		-- праздники из дополнений, арены, рейды основной игры
 		"brewfest", "pilgrim", "deadday", "piratesday", "arena",
 		"raid_classic", "raid_bc", "raid_wotlk", "raid_cata", "raid_mop", "raid_wod", "raid_legion", "raid_bfa",
