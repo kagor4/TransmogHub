@@ -61,6 +61,7 @@ TransmogHub_TagIcons = {
 	noble = { "inv_jewelry_ring_03", "inv_misc_ticket_tarot_madness", "inv_chest_cloth_43" },
 	oriental = { "inv_cask_02", "monk_ability_cherrymanatea" },
 	paladin = { "spell_holy_holybolt", "ability_paladin_shieldofthetemplar", "spell_holy_sealofmight" },
+	murloc = { "inv_misc_head_murloc_01" },
 	pirate = { "inv_misc_bandana_03", "inv_helmet_66", "ability_rogue_dualweild", "inv_misc_hook_01", "inv_misc_coin_02" },
 	priest = { "spell_holy_powerwordshield", "spell_holy_guardianspirit", "spell_shadow_shadowwordpain" },
 	retro = { "inv_misc_pocketwatch_01", "inv_misc_gear_01", "inv_helmet_08" },

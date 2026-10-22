@@ -473,6 +473,7 @@ ns.LOCALES.esES = {
 	["Учёный"] = "Erudito",
 	["Путешественник"] = "Viajero",
 	["Гладиатор"] = "Gladiador",
+	["Мурлочий"] = "Múrloc",
 	["Стиль"] = "Estilo",
 	["Минимализм"] = "Minimalista",
 	["Классика"] = "Clásico",
