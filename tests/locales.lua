@@ -1,6 +1,6 @@
 -- Проверка переводов: у каждого L["…"] в коде есть английский перевод; коды цвета и
 -- подстановки (%s, %d…) совпадают по числу и порядку; в переводах нет знаков, которых
--- нет в шрифтах игры. Испанский тоже должен быть полным; другие языки (если появятся)
+-- нет в шрифтах игры. Испанский и немецкий тоже должны быть полными; другие языки (если появятся)
 -- проверяются так же, но пропуски допустимы.
 --   lua5.1 tests/locales.lua .
 local dir = arg[1] or "."
@@ -40,7 +40,7 @@ for lang, t in pairs(ns.LOCALES) do
 	for _, key in ipairs(order) do
 		local v = t[key]
 		if v == nil then
-			if lang == "enUS" or lang == "esES" then -- эти языки — полностью
+			if lang == "enUS" or lang == "esES" or lang == "deDE" then -- эти языки — полностью
 				missing = missing + 1
 				if missing <= 20 then print("NO " .. lang .. ": " .. key:sub(1, 80) .. "  (" .. keys[key]:match("[^/]+$") .. ")") end
 			end

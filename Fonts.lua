@@ -47,6 +47,12 @@ do
 			REQUIRED[#REQUIRED + 1] = cp < 0xC0 and ("\194" .. string.char(cp)) or ("\195" .. string.char(cp - 0x40))
 		end
 	end
+	-- немецкий клиент: умлауты и ß
+	if ns.ClientLocale and ns.ClientLocale() == "deDE" then
+		for _, cp in ipairs({ 0xC4, 0xD6, 0xDC, 0xE4, 0xF6, 0xFC, 0xDF }) do
+			REQUIRED[#REQUIRED + 1] = "\195" .. string.char(cp - 0x40)
+		end
+	end
 end
 TH.FONT_REQUIRED = REQUIRED
 

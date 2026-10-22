@@ -7,10 +7,13 @@
 - **esES** (и esMX) — `Locales/esES.lua`; один перевод на Испанию и Латинскую Америку,
   нейтральный испанский на «tú». Словарь терминов: atuendo (образ), etiqueta (тег),
   lista oficial (чарт), Salón de la Fama, puntos de estilo, Guardianes de la Pasarela.
+- **deDE** — `Locales/deDE.lua`; на «du». Словарь: Outfit (образ), Tag (тег), offizielle Charts
+  (чарт), Ruhmeshalle, Stilpunkte, Hüter des Laufstegs, Laufsteg-Kodex; названия мест и NPC —
+  как в немецком клиенте игры.
 
-`tests/locales.lua` требует, чтобы английский и испанский были полными. Фильтр мата
-(`Moderation.lua`) знает русские, английские и испанские корни. Для испанского клиента
-проверка шрифтов дополнительно требует á é í ó ú ü ñ ¿ ¡.
+`tests/locales.lua` требует, чтобы английский, испанский и немецкий были полными. Фильтр мата
+(`Moderation.lua`) знает русские, английские, испанские и немецкие корни. Для испанского клиента
+проверка шрифтов дополнительно требует á é í ó ú ü ñ ¿ ¡, для немецкого — ä ö ü ß.
 
 Тексты скрытых достижений переводятся в разделе `locale` тайны (`esES = { name, desc, flavor }`),
 для Forever — в `forever.locale`.

@@ -12,7 +12,7 @@ local TH = ns.TH
 -- Версия фильтра. Прошедшие проверку образы помнят её (set.textOk) и при входе в игру
 -- не проверяются заново — это дорого при тысячах образов. ИЗМЕНИЛИ СПИСКИ ИЛИ ПРАВИЛА
 -- НИЖЕ (в том числе бессмыслицу) — увеличьте номер, и все образы проверятся один раз.
-TH.TEXT_FILTER_VERSION = 3 -- 2: мат, разбитый пробелом; 3: испанский
+TH.TEXT_FILTER_VERSION = 4 -- 2: мат, разбитый пробелом; 3: испанский; 4: немецкий
 
 -- Корни, которые запрещены в любом месте текста (после склейки букв)
 local ANYWHERE = {
@@ -25,6 +25,9 @@ local ANYWHERE = {
 	-- ó и ñ — кодами: в коде аддона только знаки, которые проверяются в шрифтах
 	"hijoputa", "hijodeputa", "gilipol", "malparid", "pendej", "maricon", "maric\195\179n",
 	"chingad", "chingar", "culero", "conchatumadre", "conchesumadre", "mamaverga",
+	-- немецкий (ä, ö, ü — кодами; «ss» после сжатия двойных букв — «s»)
+	"hurensohn", "wichser", "fotze", "arschloch", "arschgeig", "missgeburt", "misgeburt", "schwuchtel", "kanake",
+	"scheis", "schei\195\159", "drecksau", "dreckssau", "spast", "vollidiot", "huresohn",
 }
 
 -- Корни, которые запрещены только в начале слова
@@ -33,6 +36,7 @@ local WORD_START = {
 	"дерьм", "говн", "жоп", "дроч", "ублюд", "шалав", "педик",
 	"shit", "slut", "nazi", "hitler", "porn",
 	"puta", "puto", "joder", "jodid", "cabron", "cabr\195\179n", "mierd", "co\195\177o", "folad", "putit",
+	"hure", "fick", "nutte", "schlampe", "wixer", "neger",
 }
 
 -- Реклама и ссылки

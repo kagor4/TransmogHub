@@ -433,6 +433,7 @@ local function name(input, expected)
   assert(TH.FormatSetName(input) == expected, input .. " -> " .. TH.FormatSetName(input) .. ", expected " .. expected)
 end
 name("ñandú DORADO", "Ñandú Dorado")
+name("ÄRGER im ÖDLAND", "Ärger im Ödland")
 name("CORAZÓN de León", "Corazón de León")
 name("король Лич", "Король Лич")
 name("король лич", "Король лич")
