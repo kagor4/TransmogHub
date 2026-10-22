@@ -53,6 +53,13 @@ do
 			REQUIRED[#REQUIRED + 1] = "\195" .. string.char(cp - 0x40)
 		end
 	end
+	-- французский клиент: буквы с диакритикой и œ
+	if ns.ClientLocale and ns.ClientLocale() == "frFR" then
+		for _, cp in ipairs({ 0xC0, 0xC2, 0xC7, 0xC9, 0xC8, 0xCA, 0xCE, 0xD4, 0xE0, 0xE2, 0xE7, 0xE9, 0xE8, 0xEA, 0xEB, 0xEE, 0xEF, 0xF4, 0xFB, 0xF9 }) do
+			REQUIRED[#REQUIRED + 1] = "\195" .. string.char(cp - 0x40)
+		end
+		REQUIRED[#REQUIRED + 1] = "\197\147" -- œ
+	end
 end
 TH.FONT_REQUIRED = REQUIRED
 

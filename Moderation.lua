@@ -12,7 +12,7 @@ local TH = ns.TH
 -- Версия фильтра. Прошедшие проверку образы помнят её (set.textOk) и при входе в игру
 -- не проверяются заново — это дорого при тысячах образов. ИЗМЕНИЛИ СПИСКИ ИЛИ ПРАВИЛА
 -- НИЖЕ (в том числе бессмыслицу) — увеличьте номер, и все образы проверятся один раз.
-TH.TEXT_FILTER_VERSION = 4 -- 2: мат, разбитый пробелом; 3: испанский; 4: немецкий
+TH.TEXT_FILTER_VERSION = 4 -- 2: мат, разбитый пробелом; 3: испанский; 4: немецкий и французский
 
 -- Корни, которые запрещены в любом месте текста (после склейки букв)
 local ANYWHERE = {
@@ -27,6 +27,8 @@ local ANYWHERE = {
 	"chingad", "chingar", "culero", "conchatumadre", "conchesumadre", "mamaverga",
 	-- немецкий (ä, ö, ü — кодами; «ss» после сжатия двойных букв — «s»)
 	"hurensohn", "wichser", "fotze", "arschloch", "arschgeig", "missgeburt", "misgeburt", "schwuchtel", "kanake",
+	-- французский (é, â — кодами)
+	"connard", "conard", "connasse", "conase", "encule", "encul\195\169", "salope", "filsdepute", "niquetamere", "niquer",
 	"scheis", "schei\195\159", "drecksau", "dreckssau", "spast", "vollidiot", "huresohn",
 }
 
@@ -37,6 +39,7 @@ local WORD_START = {
 	"shit", "slut", "nazi", "hitler", "porn",
 	"puta", "puto", "joder", "jodid", "cabron", "cabr\195\179n", "mierd", "co\195\177o", "folad", "putit",
 	"hure", "fick", "nutte", "schlampe", "wixer", "neger",
+	"putain", "pute", "batard", "b\195\162tard", "merde", "couil", "p\195\169tase",
 }
 
 -- Реклама и ссылки

@@ -434,6 +434,7 @@ local function name(input, expected)
 end
 name("ñandú DORADO", "Ñandú Dorado")
 name("ÄRGER im ÖDLAND", "Ärger im Ödland")
+name("ÉPÉE de LUMIÈRE", "Épée de Lumière")
 name("CORAZÓN de León", "Corazón de León")
 name("король Лич", "Король Лич")
 name("король лич", "Король лич")
