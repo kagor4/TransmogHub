@@ -1,5 +1,8 @@
 # Transmog Hub — Changelog
 
+## 1.15.4
+- The Russian name of the Murloc tag is now simply «Мурлок».
+
 ## 1.15.3
 - New tag: **Murloc**. Mrglglgl!
 

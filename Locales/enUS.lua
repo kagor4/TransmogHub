@@ -473,7 +473,6 @@ ns.LOCALES.enUS = {
 	["Учёный"] = "Scholar",
 	["Путешественник"] = "Traveler",
 	["Гладиатор"] = "Gladiator",
-	["Мурлочий"] = "Murloc",
 	["Стиль"] = "Style",
 	["Минимализм"] = "Minimalist",
 	["Классика"] = "Classic",
