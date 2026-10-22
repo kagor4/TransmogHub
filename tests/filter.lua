@@ -15,7 +15,7 @@ do
 end
 TH.Lower = function(s) return (s:lower():gsub("[\195\208\209][\128-\191]", CYR)) end
 assert(loadfile(arg[1] .. "/Moderation.lua"))("TransmogHub", ns)
-local bad = { "Hijo de puta", "HIJOPUTA", "Puta madre", "Gilipollas", "Pendejo", "Maricón", "Cabrón", "CABRÓN", "Joder tío", "Mierda pura", "Coño", "Chingada", "Hijodeputa", "Follador",
+local bad = { "Pétasse", "Connard", "Fils de pute", "Putain de mage", "Enculé", "Salope", "Bâtard", "MERDE", "Hurensohn", "Du Wichser", "Arschloch", "Scheiße", "SCHEISSE", "Fick dich", "Schlampe", "Missgeburt", "Hijo de puta", "HIJOPUTA", "Puta madre", "Gilipollas", "Pendejo", "Maricón", "Cabrón", "CABRÓN", "Joder tío", "Mierda pura", "Coño", "Chingada", "Hijodeputa", "Follador",
 	"Хуй", "ХУЙ", "х.у.й", "х у й", "хууууй", "xуй", "ПИЗДАТЫЙ рыцарь", "Блядский пират", "бля", "Бля буду",
   "Ебанутый маг", "долбоёб", "Мудак", "пидор", "Сука", "fuck off", "Bitch please", "shitty set", "ж0па", "Жопа",
   "заебал", "сучка", "гандон", "www.mysite.ru", "http://x", "discord.gg/abc", "п и з д а", "ПиЗдЕц",
@@ -26,7 +26,7 @@ local bad = { "Hijo de puta", "HIJOPUTA", "Puta madre", "Gilipollas", "Pendejo",
   "Пиз\194\160дюк", "Пиз\226\128\139дюк", "Х★уй", "Пиз1дюк", "Му|дак", "Е#бан",
   "Бля-дский", "Бля.дь", "Бля*тство", "Сбля-дский",
   "Пиз дача", "Пи зда", "Ху йня", "Бля дский", "Му дак", "Еба ный", "Пидо рас", "Залу па", "Шлю ха" }
-local good = { "Disputa del rey", "Computadora", "Conocer", "Corazón de león", "Caballero de la Muerte", "Señor del Fuego", "Ñandú dorado", "Pollito",
+local good = { "Dispute royale", "Chevalier de la mort", "Cœur de lion", "Ombrelune", "Compute", "Putréfaction", "Batailleur", "Merdien", "Schattenjäger", "Himmelsfürst", "Schicksalsweber", "Flickenpanzer", "Hüter des Waldes", "Sturmwinds Stolz", "Disputa del rey", "Computadora", "Conocer", "Corazón de león", "Caballero de la Muerte", "Señor del Fuego", "Ñandú dorado", "Pollito",
 	"Сабля дракона", "Абордажная сабля", "Корабля капитан", "Художник", "Розовый троль", "Пират Кровавых Парусов",
   "Херувимский страж", "Хлебный пекарь", "Скорбящий рыцарь", "Тёмный некромант", "Shadow Hunter", "Dickens style",
   "Король Лич", "Употребляй с умом", "Сук-ко", "Великий страж Азерота", "Рубашка", "Мундир", "Жокей", "Скибидей",
