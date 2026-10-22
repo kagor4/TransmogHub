@@ -1,5 +1,9 @@
 # Transmog Hub — Changelog
 
+## 1.15.4
+- **New tags from the latest patches:** Xal'atath, Nerubians, Amani Trolls, Azj-Kahet, Undermine, K'aresh and Zul'Aman.
+- The Russian name of the Murloc tag is now simply «Мурлок».
+
 ## 1.15.3
 - New tag: **Murloc**. Mrglglgl!
 
