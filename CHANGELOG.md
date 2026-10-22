@@ -1,5 +1,10 @@
 # Transmog Hub — Changelog
 
+## 1.16.0
+- **German language.** The whole interface, help, achievements and tags are now in German for German game clients. Hidden achievements are translated too.
+- Where to find: source names from AllTheThings in German.
+- The outfit name filter knows German swear words.
+
 ## 1.15.5
 - Fresh official chart: new players in the style points ranking are confirmed and get their places.
 
