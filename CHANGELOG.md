@@ -1,5 +1,8 @@
 # Transmog Hub — Changelog
 
+## 1.15.5
+- Fresh official chart: new players in the style points ranking are confirmed and get their places.
+
 ## 1.15.4
 - **New tags from the latest patches:** Xal'atath, Nerubians, Amani Trolls, Azj-Kahet, Undermine, K'aresh and Zul'Aman.
 - The Russian name of the Murloc tag is now simply «Мурлок».
