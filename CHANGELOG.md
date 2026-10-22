@@ -1,5 +1,8 @@
 # Transmog Hub — Changelog
 
+## 1.15.3
+- New tag: **Murloc**. Mrglglgl!
+
 ## 1.15.2
 - The outfit's chart places next to its rating no longer show as empty squares and fit on the line.
 
