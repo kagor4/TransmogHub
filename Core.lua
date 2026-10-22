@@ -165,6 +165,7 @@ TH.TAG_GROUPS = {
 		{ "pirate", L["Пират"] }, { "assassin", L["Убийца"] }, { "tribal", L["Племенной"] },
 		{ "royal", L["Королевский"] }, { "noble", L["Аристократ"] }, { "commoner", L["Крестьянин"] },
 		{ "scholar", L["Учёный"] }, { "adventurer", L["Путешественник"] }, { "gladiator", L["Гладиатор"] },
+		{ "murloc", L["Мурлочий"] },
 	} },
 	{ name = L["Стиль"], tags = {
 		{ "minimal", L["Минимализм"] }, { "classic", L["Классика"] }, { "tier", L["Классовый комплект"] },
@@ -314,7 +315,7 @@ TH.TAG_THEMES = {
 	{ name = L["Образы и роли"], tags = { "pirate", "knight", "warrior", "assassin", "necro", "tribal", "royal", "noble",
 		"commoner", "scholar", "adventurer", "gladiator", "tank", "healer", "mercenary", "bandit", "guard", "inquisitor",
 		"cultist", "witch", "vampire", "bard", "merchant", "farmer", "innkeeper", "sailor", "ranger", "bounty", "spy",
-		"priestess", "archmage", "warlord", "barbarian", "wizard" } },
+		"priestess", "archmage", "warlord", "barbarian", "wizard", "murloc" } },
 	{ name = L["Стиль"], tags = { "minimal", "classic", "tier", "retro", "elegant", "casual", "battle", "heavy",
 		"light", "robe", "dress", "cute", "funny", "scary", "mysterious", "gothic", "military", "victorian", "formal",
 		"battleworn", "ornate", "bridal", "cozy", "heroic", "villain", "romantic", "peaceful", "hooded", "masked",
@@ -358,7 +359,7 @@ TH.TAG_THEMES = {
 		"c_peach", "c_mint", "c_khaki", "c_mono", "c_pastel", "c_neon", "c_duo" } },
 	{ name = L["Для RP"], tags = { "rp", "commoner", "noble", "royal", "scholar", "adventurer", "casual",
 		"elegant", "dress", "pirate", "mysterious", "funny", "bard", "innkeeper", "merchant", "farmer", "guard",
-		"sailor", "priestess", "cozy", "romantic" } },
+		"sailor", "priestess", "cozy", "romantic", "murloc" } },
 }
 
 -- Дата добавления тегов, добавленных после выхода аддона: [ключ] = "ГГГГ-ММ-ДД".
@@ -369,6 +370,7 @@ TH.TAG_ADDED = {
 	raid_sl = "2026-10-16", raid_df = "2026-10-16", raid_tww = "2026-10-16", raid_midnight = "2026-10-16",
 	pvp = "2026-10-16", arena = "2026-10-16", battleground = "2026-10-16", elite = "2026-10-16",
 	alliance = "2026-10-16", horde = "2026-10-16", dress = "2026-10-17", a_any = "2026-10-17",
+	murloc = "2026-10-22",
 	-- большое пополнение тегов (неиспользуемые потом уберём)
 	gothic = "2026-10-17", military = "2026-10-17", wizard = "2026-10-17", barbarian = "2026-10-17",
 	victorian = "2026-10-17", formal = "2026-10-17", battleworn = "2026-10-17", ornate = "2026-10-17",
