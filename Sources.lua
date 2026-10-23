@@ -329,7 +329,7 @@ local function ATTPath(obj)
 	for i = first, #chain do
 		local g = chain[i]
 		local text = g.sourceText or g.text
-		if type(text) ~= "string" or text == "" or Secret(text)
+		if type(text) ~= "string" or Secret(text) or text == ""
 			or (RETRIEVING_DATA and text:find(RETRIEVING_DATA, 1, true)) then
 			pending = true
 		else
@@ -445,7 +445,7 @@ local function NpcName(id)
 		and C_TooltipInfo.GetHyperlink("unit:Creature-0-0-0-0-" .. id .. "-0000000000")
 	local line = data and data.lines and data.lines[1]
 	local name = line and line.leftText
-	if type(name) == "string" and name ~= "" and not Secret(name) and name ~= RETRIEVING_DATA then
+	if type(name) == "string" and not Secret(name) and name ~= "" and name ~= RETRIEVING_DATA then
 		npcNames[id] = name
 		return name
 	end
