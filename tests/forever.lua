@@ -111,6 +111,10 @@ do
 	assert(n > 1000, "вещей в базе Forever: " .. n)
 	assert(TransmogHub_ATT.items[22108], "вещь из Наксрамаса")
 	TransmogHub_ATT = saved
+	-- и аддон в Forever её загружает (раньше загрузка в Forever была запрещена)
+	local src = assert(io.open(dir .. "/Sources.lua")):read("*a")
+	assert(not src:find("TH.FOREVER or embeddedTried", 1, true), "Forever грузит встроенную базу")
+	TransmogHub_ATT = saved
 end
 
 -- знаки, которых нет в шрифтах Forever, заменены
