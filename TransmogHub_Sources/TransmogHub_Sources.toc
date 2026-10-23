@@ -1,4 +1,4 @@
-## Interface: 120105, 120107
+## Interface: 16001
 ## Title: Transmog Hub - Sources
 ## Notes: Where to find items with appearances, for Transmog Hub. Data from AllTheThings (MIT license).
 ## Notes-ruRU: Где найти вещи с обликами — для Transmog Hub. Данные AllTheThings (лицензия MIT).
@@ -7,4 +7,4 @@
 ## Dependencies: TransmogHub
 ## IconTexture: Interface\Icons\INV_Misc_Map_01
 
-ATT.lua
+ATTForever.lua

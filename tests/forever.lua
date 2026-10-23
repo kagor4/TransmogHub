@@ -100,6 +100,19 @@ do
 	for name in pairs(names) do assert(TH:IsCharName(name), "только имена Forever: " .. name) end
 end
 
+-- «где найти» в Forever — своя база ATT (Camelot), её и грузит TransmogHub_Sources
+do
+	local toc = assert(io.open(dir .. "/TransmogHub_Sources/TransmogHub_Sources.toc")):read("*a")
+	assert(toc:find("\nATTForever%.lua") and not toc:find("\nATT%.lua") and toc:find("16001"), "toc Forever")
+	local saved = TransmogHub_ATT
+	dofile(dir .. "/TransmogHub_Sources/ATTForever.lua")
+	local n = 0
+	for _ in pairs(TransmogHub_ATT.items) do n = n + 1 end
+	assert(n > 1000, "вещей в базе Forever: " .. n)
+	assert(TransmogHub_ATT.items[22108], "вещь из Наксрамаса")
+	TransmogHub_ATT = saved
+end
+
 -- знаки, которых нет в шрифтах Forever, заменены
 local lns = {}
 assert(loadfile(dir .. "/Locales/Locale.lua"))("TransmogHub", lns)

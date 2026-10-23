@@ -8,9 +8,10 @@
 --   o<объект>, a<достижение>, p<профессия>, h<заголовок ATT>
 --   цена: g<медь>, c<валюта>x<сколько>, i<предмет>x<сколько> через запятую
 -- Названия заголовков и объектов ATT — на ruRU/enUS/esES/deDE/frFR (остальное игра назовёт сама).
-local attDir, out = arg[1], arg[2]
-assert(attDir and out, "usage: build.lua <AllTheThings dir> <out.lua>")
-local db = attDir .. "/db/Standard/"
+-- третий аргумент — папка базы ATT: Standard (основная игра, по умолчанию) или Camelot (WoW Forever)
+local attDir, out, flavor = arg[1], arg[2], arg[3] or "Standard"
+assert(attDir and out, "usage: build.lua <AllTheThings dir> <out.lua> [Standard|Camelot]")
+local db = attDir .. "/db/" .. flavor .. "/"
 
 -- Файлы ATT начинаются с BOM — без него
 local function LoadFile(path)
