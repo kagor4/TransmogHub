@@ -1660,6 +1660,13 @@ end
 -- с аддоном, недавно бывшие в сети (сначала самые недавние). Другую фракцию пропускаем.
 -- Регион игры буквами, как в каталоге: образы и игроки из каталога без пометки — Европа
 local REGION_TAG = { [1] = "us", [2] = "kr", [3] = "eu", [4] = "tw", [5] = "cn" }
+
+-- Телефонная книга Forever: каталог собирается в основной игре, его имена в Forever
+-- не существуют. Пока своей книги нет — персонажи разработчика, к ним стучатся первыми.
+local FOREVER_PEERS = {
+	{ "Кагор Палович", "H" },
+	{ "Первый Каг", "A" },
+}
 function Net.RegionTag()
 	return REGION_TAG[GetCurrentRegion and GetCurrentRegion() or 3] or "eu"
 end
@@ -1686,6 +1693,9 @@ function Net:KnockCandidates()
 	end
 	for _, p in ipairs(bundled.peers or {}) do
 		if (p[4] or "eu") == region then Consider(p[1], p[2], p[3]) end
+	end
+	if TH.FOREVER then
+		for _, p in ipairs(FOREVER_PEERS) do Consider(p[1], p[2], now) end
 	end
 	for name, p in pairs(DB().presence or {}) do Consider(name, p[1] ~= "-" and p[1] or nil, p[2]) end
 	local list = {}

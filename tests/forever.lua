@@ -83,6 +83,16 @@ for _, id in ipairs({ "hid_bloodtank", "hid_lunar", "hid_raidguide", "hid_rwf", 
 	assert(TransmogHub_Secrets[id] == TransmogHub_SecretsForever[id], "тайна Forever не подменила основную: " .. id)
 end
 
+-- телефонная книга Forever: к персонажу разработчика своей фракции, себя пропускаем
+do
+	UnitFactionGroup = function() return "Alliance" end
+	local names = {}
+	for _, c in ipairs(Net:KnockCandidates()) do names[c[1]] = true end
+	assert(names["Первый Каг"], "альянс стучится к Первому Кагу")
+	assert(not names["Кагор Палович"], "себя и другую фракцию пропускаем")
+	for name in pairs(names) do assert(TH:IsCharName(name), "только имена Forever: " .. name) end
+end
+
 -- знаки, которых нет в шрифтах Forever, заменены
 local lns = {}
 assert(loadfile(dir .. "/Locales/Locale.lua"))("TransmogHub", lns)
