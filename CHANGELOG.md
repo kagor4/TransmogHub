@@ -1,5 +1,8 @@
 # Transmog Hub — Changelog
 
+## 1.16.1
+- Fixed a Lua error with protected names and texts in group, map and «Where to find» info.
+
 ## 1.16.0
 - **German and French.** The whole interface, help, achievements and tags are now in German and French for German and French game clients. Hidden achievements are translated too.
 - Where to find: source names from AllTheThings in German and French.
