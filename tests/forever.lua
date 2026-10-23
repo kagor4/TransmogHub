@@ -83,6 +83,10 @@ for _, id in ipairs({ "hid_bloodtank", "hid_lunar", "hid_raidguide", "hid_rwf", 
 	assert(TransmogHub_Secrets[id] == TransmogHub_SecretsForever[id], "тайна Forever не подменила основную: " .. id)
 end
 
+-- каталог и чарт основной игры в Forever не показываются
+assert(TransmogHub_Bundled == nil and TransmogHub_Charts == nil and TH:GetCharts() == nil)
+for _, set in ipairs(TH.feed and TH.feed.sets or {}) do assert(not set.author or TH:IsCharName(set.author), "образ основной игры в ленте: " .. tostring(set.author)) end
+
 -- телефонная книга Forever: к персонажу разработчика своей фракции, себя пропускаем
 do
 	UnitFactionGroup = function() return "Alliance" end
