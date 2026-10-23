@@ -1,0 +1,102 @@
+# Выпуск для WoW Forever из ветки forever: архив с TransmogHub и TransmogHub_Sources
+# (база «где найти» из ATT для Forever), выпуск на GitHub и файл на CurseForge
+# с версией игры Forever. Запуск вручную: Actions → Forever release → Run workflow.
+# dry_run — собрать архив и показать версии игры CurseForge, ничего не выкладывая.
+name: Forever release
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Только проверить (ничего не выкладывать)"
+        type: boolean
+        default: true
+      release_type:
+        description: "Тип файла на CurseForge"
+        type: choice
+        options: [release, beta, alpha]
+        default: release
+
+concurrency:
+  group: forever-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      CF_API_KEY: ${{ secrets.CF_API_KEY }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: forever
+          fetch-depth: 0
+
+      - name: Tests
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq lua5.1
+          for t in smoke filter locales charts att crypto forever; do lua5.1 tests/$t.lua . > /dev/null; done
+          echo "Тесты пройдены"
+
+      - name: Package
+        run: |
+          V="$(tr -d ' \n' < VERSION)-forever"
+          TAG="forever-v$(tr -d ' \n' < VERSION).$(date -u +%Y%m%d)"
+          P="$RUNNER_TEMP/pkg"
+          mkdir -p "$P/TransmogHub"
+          git archive HEAD | tar -x -C "$P/TransmogHub"
+          cd "$P/TransmogHub"
+          rm -rf docs tests tools .github .pkgmeta .gitignore README.md VERSION CHANGELOG.md
+          mv TransmogHub_Sources ..
+          rm -f ../TransmogHub_Sources/ATT.lua # база основной игры; Forever грузит ATTForever.lua
+          sed -i "s/@project-version@/$V/" TransmogHub.toc ../TransmogHub_Sources/TransmogHub_Sources.toc
+          cd "$P"
+          ZIP="$RUNNER_TEMP/TransmogHub-$V.zip"
+          zip -qr "$ZIP" TransmogHub TransmogHub_Sources
+          echo "ZIP=$ZIP" >> "$GITHUB_ENV"
+          echo "V=$V" >> "$GITHUB_ENV"
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+          unzip -l "$ZIP" | tail -1
+          # список изменений: верхний раздел docs/FOREVER_CHANGELOG.md (ветка forever), иначе CHANGELOG.md
+          CL="$GITHUB_WORKSPACE/docs/FOREVER_CHANGELOG.md"
+          [ -f "$CL" ] || CL="$GITHUB_WORKSPACE/CHANGELOG.md"
+          awk '/^## /{n++} n==1' "$CL" > "$RUNNER_TEMP/changelog.md"
+          cat "$RUNNER_TEMP/changelog.md"
+
+      - name: CurseForge game version
+        run: |
+          [ -n "$CF_API_KEY" ] || { echo "Нет секрета CF_API_KEY"; exit 1; }
+          API=https://wow.curseforge.com/api
+          curl -sf -H "X-Api-Token: $CF_API_KEY" "$API/game/version-types" > types.json
+          curl -sf -H "X-Api-Token: $CF_API_KEY" "$API/game/versions" > versions.json
+          echo "Типы версий, похожие на Forever:"
+          jq -r '.[] | select((.name + " " + .slug) | test("forever|camelot"; "i")) | "\(.id) \(.name) \(.slug)"' types.json
+          TYPES=$(jq '[.[] | select((.name + " " + .slug) | test("forever|camelot"; "i")) | .id]' types.json)
+          echo "Версии этих типов:"
+          jq -r --argjson t "$TYPES" '.[] | select(.gameVersionTypeID as $x | $t | index($x)) | "\(.id) \(.name)"' versions.json
+          ID=$(jq -r --argjson t "$TYPES" '[.[] | select(.gameVersionTypeID as $x | $t | index($x))] | max_by(.id) | .id // empty' versions.json)
+          [ -n "$ID" ] || { echo "Версия игры Forever на CurseForge не найдена"; exit 1; }
+          echo "Выбрана версия игры: $ID"
+          echo "CF_VERSION=$ID" >> "$GITHUB_ENV"
+
+      - name: GitHub release
+        if: ${{ !inputs.dry_run }}
+        run: |
+          if gh release view "$TAG" > /dev/null 2>&1; then echo "Выпуск $TAG уже есть"; exit 1; fi
+          gh release create "$TAG" "$ZIP" --target forever --title "$V" \
+            --notes-file "$RUNNER_TEMP/changelog.md" --latest=false
+
+      - name: CurseForge upload
+        if: ${{ !inputs.dry_run }}
+        run: |
+          PROJECT=$(sed -n 's/^## X-Curse-Project-ID: *//p' TransmogHub.toc | tr -d '\r')
+          META=$(jq -n --arg cl "$(cat "$RUNNER_TEMP/changelog.md")" --arg name "$V" \
+            --arg rt "${{ inputs.release_type }}" --argjson gv "$CF_VERSION" \
+            '{changelog: $cl, changelogType: "markdown", displayName: $name, gameVersions: [$gv], releaseType: $rt}')
+          curl -sf -H "X-Api-Token: $CF_API_KEY" -F "metadata=$META" -F "file=@$ZIP" \
+            "https://wow.curseforge.com/api/projects/$PROJECT/upload-file"
+          echo
+          echo "Файл выложен на CurseForge"
