@@ -1782,7 +1782,7 @@ function Net:NoteGroup()
 		local name, realm
 		if unit then name, realm = UnitFullName(unit) end
 		if type(name) == "string" and not Secret(name) and name ~= "" then
-			self:NoteContact(Net.FullName((realm and realm ~= "" and not Secret(realm)) and (name .. "-" .. realm) or name))
+			self:NoteContact(Net.FullName((realm and not Secret(realm) and realm ~= "") and (name .. "-" .. realm) or name))
 		end
 	end
 end
