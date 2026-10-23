@@ -1112,6 +1112,8 @@ function TH:LoadFeed()
 	self.byId = {}
 	local function add(set)
 		if self.byId[set.id] or self.db.hidden[set.id] or net.tombstones[set.id] then return end
+		-- в Forever образы основной игры (автор «Имя-Сервер»), пришедшие раньше, не показываем
+		if self.FOREVER and not self:IsCharName(set.author) then return end
 		if not self:IsSetTextAllowed(set) or self:IsBlocked(set) or self:IsAutoHidden(set) then return end
 		local votes = net.votes[set.id]
 		local c, stamp = voteCache[set.id], stamps[set.id] or 0

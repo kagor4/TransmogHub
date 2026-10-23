@@ -87,6 +87,9 @@ end
 assert(TransmogHub_Bundled == nil and TransmogHub_Charts == nil and TH:GetCharts() == nil)
 for _, set in ipairs(TH.feed and TH.feed.sets or {}) do assert(not set.author or TH:IsCharName(set.author), "образ основной игры в ленте: " .. tostring(set.author)) end
 
+-- образ автора из основной игры в Forever не принимается
+assert(not Net:StoreSet({ id = "n1", author = "Шуншуня-Гордунни", name = "Мао", items = {} }, "Киса Мрр"))
+
 -- телефонная книга Forever: к персонажу разработчика своей фракции, себя пропускаем
 do
 	UnitFactionGroup = function() return "Alliance" end

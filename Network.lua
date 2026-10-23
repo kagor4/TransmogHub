@@ -596,6 +596,8 @@ local function DB()
 end
 
 function Net:StoreSet(set, sender)
+	-- в Forever — только образы авторов из Forever («Имя Фамилия»)
+	if TH.FOREVER and not TH:IsCharName(set.author) then return false end
 	local db = DB()
 	set.name = TH.FormatSetName(set.name)
 	if db.tombstones[set.id] then return false end
