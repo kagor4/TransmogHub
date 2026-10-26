@@ -1,12 +1,12 @@
 -- Официальный чарт Transmog Hub. Файл создаётся автоматически (tools/charts/build.lua), не правьте руками.
 TransmogHub_Charts = {
-	date = "2026-10-25",
-	t = 1792911001,
+	date = "2026-10-26",
+	t = 1792997487,
 	version = 1,
 	minVotes = 1,
-	activeVoters = 2,
-	top = { "n6ad228debb967d42002", "n6ad729f0df13a618002", "n6ad2030379259173002", "n6ad20ce2e7b2219e004", "n6ad20e12824e54bc002", "n6ad4d594f4c0d409004", "n6ad5b9f1516ef7f3002", "n6ad5bab5ce86ac68004", "n6ad6ff9eb1880926002", "n6ad6ffe133bdc341004", "n6ad7001de93056c6006", "n6ad700f9877394ce008", "n6ad7027e8a1ffa1b00a", "n6ad722821eefa0d1004", "n6ad738fc2a7c752f002", "n6ada7a3de1a27ef9002", "n6ad289f966d80293003", "n6ad28bf4b7052d73008", "n6ad4d0a54e0f1322002", "n6ad2816a9e818070002", "n6ad14375a9ae022b002", "n6ad28b9dc5d7c14d006" },
-	trending = { "n6ad228debb967d42002", "n6ad729f0df13a618002", "n6ad2816a9e818070002", "n6ad2030379259173002", "n6ad20ce2e7b2219e004", "n6ad20e12824e54bc002", "n6ad4d594f4c0d409004", "n6ad5b9f1516ef7f3002", "n6ad5bab5ce86ac68004", "n6ad6ff9eb1880926002", "n6ad6ffe133bdc341004", "n6ad7001de93056c6006", "n6ad700f9877394ce008", "n6ad7027e8a1ffa1b00a", "n6ad722821eefa0d1004", "n6ad738fc2a7c752f002", "n6ada7a3de1a27ef9002", "n6ad28b9dc5d7c14d006", "n6ad289f966d80293003", "n6ad28bf4b7052d73008", "n6ad4d0a54e0f1322002", "n6ad14375a9ae022b002" },
+	activeVoters = 1,
+	top = { "n6ad228debb967d42002", "n6ad729f0df13a618002", "n6ad2030379259173002", "n6ad20ce2e7b2219e004", "n6ad20e12824e54bc002", "n6ad22b2f31bca93e002", "n6ad4d594f4c0d409004", "n6ad5b9f1516ef7f3002", "n6ad5bab5ce86ac68004", "n6ad6ff9eb1880926002", "n6ad6ffe133bdc341004", "n6ad7001de93056c6006", "n6ad700f9877394ce008", "n6ad7027e8a1ffa1b00a", "n6ad722821eefa0d1004", "n6ad738fc2a7c752f002", "n6ada7a3de1a27ef9002", "n6ad289f966d80293003", "n6ad229c60db90c82002", "n6ad28bf4b7052d73008", "n6ad4d0a54e0f1322002", "n6ad14375a9ae022b002", "n6ad2816a9e818070002", "n6ad28b9dc5d7c14d006", "n6ad22a9b6a22b15f002" },
+	trending = { "n6ad228debb967d42002", "n6ad729f0df13a618002", "n6ad2816a9e818070002", "n6ad289f966d80293003", "n6ad28b9dc5d7c14d006", "n6ad14375a9ae022b002", "n6ad2030379259173002", "n6ad20ce2e7b2219e004", "n6ad20e12824e54bc002", "n6ad22b2f31bca93e002", "n6ad4d594f4c0d409004", "n6ad5b9f1516ef7f3002", "n6ad5bab5ce86ac68004", "n6ad6ff9eb1880926002", "n6ad6ffe133bdc341004", "n6ad7001de93056c6006", "n6ad700f9877394ce008", "n6ad7027e8a1ffa1b00a", "n6ad722821eefa0d1004", "n6ad738fc2a7c752f002", "n6ada7a3de1a27ef9002", "n6ad229c60db90c82002", "n6ad28bf4b7052d73008", "n6ad4d0a54e0f1322002", "n6ad22a9b6a22b15f002" },
 	tags = {
 	},
 	hof = {
@@ -15,6 +15,7 @@ TransmogHub_Charts = {
 		["n6ad20ce2e7b2219e004"] = { 0, 1, 2963, false },
 		["n6ad20e12824e54bc002"] = { 0, 1, 2963, false },
 		["n6ad228debb967d42002"] = { 1, 1, 2963, false },
+		["n6ad22b2f31bca93e002"] = { 0, 1, 2963, false },
 		["n6ad2816a9e818070002"] = { 0, 1, 2963, false },
 		["n6ad289f966d80293003"] = { 0, 1, 2963, false },
 		["n6ad28b9dc5d7c14d006"] = { 0, 1, 2963, false },
