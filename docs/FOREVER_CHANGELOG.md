@@ -1,5 +1,9 @@
 # Transmog Hub for WoW Forever — Changelog
 
+## 1.16.4
+- Cyrillic player names no longer show as empty squares on English, German, French and Spanish clients when the addon uses the game font.
+- Settings: the Blizzard window style is now called «Game default» instead of «Common».
+
 ## 1.16.3
 - Maintenance update.
 
