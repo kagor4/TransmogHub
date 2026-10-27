@@ -1967,6 +1967,17 @@ end)()
 	assert(TH:GetFontPath() == nil, "no EllesmereUI — game font")
 	TH:SetFont("default")
 	TH.fontProbe = nil
+do -- шрифт игры текстам аддона не ставится заново: иначе пропадает запасной шрифт с кириллицей
+  local calls = 0
+  local fs = { GetFont = function() return "Fonts\\FRIZQT__.TTF", 12, "" end,
+    SetFont = function() calls = calls + 1 return true end, GetObjectType = function() return "FontString" end }
+  local win = { GetRegions = function() return fs end, GetChildren = function() end, HookScript = function() end }
+  local wasWin, wasFont = TH.WINDOWS, TH.db.font
+  _G.TransmogHubFontTest, TH.WINDOWS, TH.db.font = win, { "TransmogHubFontTest" }, "default"
+  TH:ApplyFont()
+  assert(calls == 0, "game font left untouched")
+  TH.WINDOWS, TH.db.font, _G.TransmogHubFontTest = wasWin, wasFont, nil
+end
 end)()
 -- теги: темы ссылаются только на существующие теги, у цветов есть обводка, ключи уникальны
 ;(function()

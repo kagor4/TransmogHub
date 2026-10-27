@@ -168,19 +168,30 @@ end
 -- Поставить шрифт тексту, сохранив размер и обводку; «по умолчанию» — вернуть родной
 local function ApplyTo(fs, path)
 	if not fs.GetFont then return end
+	-- шрифт игры: текст не трогаем. Шрифт игры — семейство с запасными шрифтами для
+	-- других алфавитов (кириллица на английском клиенте); SetFont с одним файлом их
+	-- отключает, и русские имена становятся квадратиками
+	if not path then
+		if fs.thFontNow and fs.thFontOrig then
+			local orig = fs.thFontOrig
+			if orig.object and fs.SetFontObject then fs:SetFontObject(orig.object) else fs:SetFont(orig[1], orig[2], orig[3]) end
+			fs.thFontNow = nil
+		end
+		return
+	end
 	if not fs.thFontOrig then
 		local file, size, flags = fs:GetFont()
 		if not file or not size then return end
-		fs.thFontOrig = { file, size, flags or "" }
+		fs.thFontOrig = { file, size, flags or "", object = fs.GetFontObject and fs:GetFontObject() or nil }
 	end
 	local orig = fs.thFontOrig
-	local target = path or orig[1]
+	local target = path
 	if fs.thFontNow == target then return end
 	if fs:SetFont(target, orig[2], orig[3]) then
 		fs.thFontNow = target
 	else
-		fs:SetFont(orig[1], orig[2], orig[3])
-		fs.thFontNow = orig[1]
+		if orig.object and fs.SetFontObject then fs:SetFontObject(orig.object) else fs:SetFont(orig[1], orig[2], orig[3]) end
+		fs.thFontNow = nil
 	end
 end
 
