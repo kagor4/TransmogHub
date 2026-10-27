@@ -157,7 +157,7 @@ local function Build()
 	left:Choice(L["Оформление"], {
 		{ key = "auto", name = L["Авто"], hint = L["Как EllesmereUI, если он стоит; иначе обычное. Меняется после /reload."] },
 		{ key = "eui", name = "EllesmereUI", hint = L["Плоские тёмные окна с акцентным цветом. Меняется после /reload."] },
-		{ key = "blizzard", name = L["Обычное"], hint = L["Как окна игры. Меняется после /reload."] },
+		{ key = "blizzard", name = L["Как в игре"], hint = L["Как окна игры. Меняется после /reload."] },
 	}, function() return db.style end, function(v) db.style = v; TH:Print(L["Оформление изменится после /reload."]) end)
 	-- шрифт: только те, где есть все русские и латинские буквы (проверка в Fonts.lua)
 	local fontBtn = left:Choice(L["Шрифт"], function()
