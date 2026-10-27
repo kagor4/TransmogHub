@@ -1,5 +1,8 @@
 # Transmog Hub — Changelog
 
+## 1.16.2
+- The network line at the bottom of the window (outfits still arriving, sending, outfit count) now updates live while the window is open.
+
 ## 1.16.1
 - Fixed a Lua error with protected names and texts in group, map and «Where to find» info.
 
