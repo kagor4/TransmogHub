@@ -173,6 +173,15 @@ function UI:Build()
 		TH:MarkClock() -- когда открывали окно (для одной тайны)
 		TH:CheckAchievements()
 	end)
+	-- строка сети внизу (догружается, отправляется, число образов) живёт сама,
+	-- пока окно открыто: без этого она менялась только при перерисовке окна
+	local statusWait = 0
+	self:SetScript("OnUpdate", function(_, elapsed)
+		statusWait = statusWait - elapsed
+		if statusWait > 0 or not self.status then return end
+		statusWait = 0.5
+		self:RefreshStatus()
+	end)
 	tinsert(UISpecialFrames, self:GetName())
 
 	local title = self:CreateFontString(nil, "OVERLAY", "GameFontHighlight")

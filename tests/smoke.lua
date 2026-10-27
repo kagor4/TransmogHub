@@ -334,6 +334,14 @@ for _, v in ipairs({ "top", "trending", "new", "favorites", "mine" }) do TH.UI:S
 TH.UI:SetView("top"); TH.UI:Select(set.serverId); TH:ToggleFavorite(set.serverId); TH.UI:SetView("favorites")
 assert(#TH.UI.results == 1)
 TH.UI:OpenRaceMenu(frame()); TH.UI:Scroll(10)
+do -- строка сети внизу окна обновляется сама, без перерисовки окна
+  local was = Net.IncomingCount
+  Net.IncomingCount = function() return 7 end
+  TH.UI.scripts.OnUpdate(TH.UI, 1)
+  assert(TH.UI.status.text:find("7"), "status updates live: " .. tostring(TH.UI.status.text))
+  Net.IncomingCount = was
+  TH.UI.scripts.OnUpdate(TH.UI, 1)
+end
 -- окно тегов: поиск, популярность, фильтр списка
 TH.UI:OpenTagMenu(frame())
 local picker = TH.UI.tagFrame.picker
