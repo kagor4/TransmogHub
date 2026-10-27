@@ -1809,7 +1809,8 @@ end)()
 	-- автор подписался в ответ: уведомление «подписался на вас», подписка взаимная
 	local shown = {}
 	local realToast = TH.ShowToast
-	TH.ShowToast = function(_, kind, data) shown[#shown + 1] = { kind, data } end
+	-- тосты достижений зависят от данных чарта и в этих проверках не нужны
+	TH.ShowToast = function(_, kind, data) if kind ~= "ach" then shown[#shown + 1] = { kind, data } end end
 	receive({ "Sf" .. me .. "\t1\t" .. Net.Enc(Net.Now()) }, author)
 	assert(TH:FollowsMe(author) and TH:IsMutual(author), "mutual follow")
 	assert(shown[1] and shown[1][1] == "note" and shown[1][2].title:find("подписался"), "follow notification")
