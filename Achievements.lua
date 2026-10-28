@@ -1600,7 +1600,7 @@ end
 
 function TH:BuildAchievementsPanel(panel)
 	panel.header = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	panel.header:SetPoint("TOPLEFT", 12, -10)
+	panel.header:SetPoint("TOPLEFT", 8, -10) -- левый край — как у вкладок категорий и сетки (8)
 
 	panel.cards, panel.offset = {}, 0
 	local function Wheel(_, delta) TH:ScrollAchievementsPanel(panel, delta) end
@@ -1631,7 +1631,11 @@ function TH:BuildAchievementsPanel(panel)
 	panel.up, panel.down = panel.bar.up, panel.bar.down
 	panel.bar.step = CARD_H + GAP -- стрелки — на ряд карточек
 	panel.pos = panel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-	panel.pos:SetPoint("TOPRIGHT", -12, -12)
+	-- подсказка про прокрутку — на месте кнопки «Показать» (в рейтинге её нет): правый
+	-- край по сетке карточек, по высоте — по центру ряда кнопок
+	panel.pos:SetPoint("RIGHT", panel, "TOPLEFT", 8 + COLS * CARD_W + (COLS - 1) * 6, -17)
+	panel.pos:SetWidth(190) -- шире места «Показать» не растёт, длинная надпись — в две строки
+	panel.pos:SetJustifyH("RIGHT")
 	panel.empty = panel:CreateFontString(nil, "OVERLAY", "GameFontDisable")
 	panel.empty:SetPoint("CENTER")
 	panel.empty:SetText(L["Таких достижений нет."])
@@ -2174,7 +2178,9 @@ function TH:BuildLeaderboard(panel)
 	b.join = CreateFrame("Button", nil, b, "UIPanelButtonTemplate")
 	TH.PadButton(b.join)
 	b.join:SetSize(200, 22)
-	b.join:SetPoint("TOPRIGHT", -150, 0)
+	-- под кнопкой «Рейтинг»: тот же правый край (кнопки шапки идут от правого края сетки)
+	local gridRight = 8 + COLS * CARD_W + (COLS - 1) * 6
+	b.join:SetPoint("TOPRIGHT", panel, "TOPLEFT", gridRight - 190 - 12, -32)
 	b.join:SetText(L["Основной персонаж"])
 	b.join:SetScript("OnClick", function(btn)
 		if not (MenuUtil and MenuUtil.CreateContextMenu) then return end
@@ -2197,7 +2203,8 @@ function TH:BuildLeaderboard(panel)
 
 	b.optOut = CreateFrame("CheckButton", nil, b, "UICheckButtonTemplate")
 	b.optOut:SetSize(22, 22)
-	b.optOut:SetPoint("TOPRIGHT", -120, 0)
+	-- под местом кнопки «Показать» (в рейтинге она скрыта): тот же левый край
+	b.optOut:SetPoint("TOPLEFT", panel, "TOPLEFT", gridRight - 190, -32)
 	b.optOut:SetScript("OnClick", function(cb) TH:SetLeaderOptOut(cb:GetChecked()); TH:RefreshLeaderboard(panel) end)
 	local ol = b:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 	ol:SetPoint("LEFT", b.optOut, "RIGHT", 2, 0)
