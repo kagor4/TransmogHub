@@ -849,7 +849,6 @@ ns.LOCALES.deDE = {
 	["Подробности — в чате"] = "Details im Chat",
 	["Новый образ от "] = "Neues Outfit von ",
 	[" оценил ваш образ «"] = " hat dein Outfit «",
-	[" из 5"] = " von 5",
 	[" оценил ваш образ"] = " hat dein Outfit bewertet",
 	[" добавил ваш образ «"] = " hat dein Outfit \"",
 	["» в избранное"] = "\" zu den Favoriten hinzugefügt",

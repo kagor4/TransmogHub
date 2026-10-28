@@ -13,11 +13,6 @@ local NOTIFY_WINDOW = 3 * 86400  -- старше — не уведомляем (
 local FOLLOW_WINDOW = 7 * 86400
 local BATCH_DELAY, BATCH_SHOW = 3, 3 -- события копим 3 с; больше трёх — сводкой
 local NOTE_COLOR = { 0.2, 0.75, 0.95 }
--- звёзды значками игры: символа ★ в шрифтах игры нет (квадратики)
-local function StarMarkup(r, g, b)
-	return CreateAtlasMarkup and CreateAtlasMarkup("PetJournal-FavoritesIcon", 12, 12, 0, 0, r, g, b) or "*"
-end
-
 function TH:IsFollowing(name)
 	return name ~= nil and self.db.following[name] ~= nil
 end
@@ -203,11 +198,12 @@ function TH:OnVoteStored(setId, voter, stars, t)
 		for _ in pairs(self.db.net.votes[setId] or {}) do n = n + 1 end
 		if n > s.voteLimit then return end
 	end
-	local starsText = string.rep(StarMarkup(255, 255, 255), stars) .. string.rep(StarMarkup(90, 90, 90), 5 - stars)
-	Push("v:" .. setId .. ":" .. voter, self.Net.Now(), Short(voter) .. L[" оценил ваш образ «"] .. (TH:SetName(set) or "?") .. "»: " .. stars .. L[" из 5"], {
+	-- сколько звёзд поставил, не показываем: кто оценил — видно, а оценка остаётся
+	-- его делом (иначе за низкую оценку можно обидеться и ответить тем же)
+	Push("v:" .. setId .. ":" .. voter, self.Net.Now(), Short(voter) .. L[" оценил ваш образ «"] .. (TH:SetName(set) or "?") .. "»", {
 		icon = self:GetSetIcon(set),
 		title = Short(voter) .. L[" оценил ваш образ"],
-		text = "«" .. (TH:SetName(set) or "?") .. "»  " .. starsText,
+		text = "«" .. (TH:SetName(set) or "?") .. "»",
 		onClick = function() self.UI:Open(); self.UI:SetView("mine"); self.UI:Select(setId) end,
 	})
 end
