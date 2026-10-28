@@ -849,7 +849,6 @@ ns.LOCALES.esES = {
 	["Подробности — в чате"] = "Detalles en el chat",
 	["Новый образ от "] = "Nuevo atuendo de ",
 	[" оценил ваш образ «"] = " valoró tu atuendo «",
-	[" из 5"] = " de 5",
 	[" оценил ваш образ"] = " valoró tu atuendo",
 	[" добавил ваш образ «"] = " añadió tu atuendo «",
 	["» в избранное"] = "» a favoritos",
