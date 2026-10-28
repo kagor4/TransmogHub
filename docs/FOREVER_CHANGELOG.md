@@ -1,5 +1,9 @@
 # Transmog Hub for WoW Forever — Changelog
 
+## 1.16.5
+- Rating notifications no longer show how many stars the player gave — only who rated your outfit.
+- Where to find: fresh AllTheThings database for Forever.
+
 ## 1.16.4
 - Cyrillic player names no longer show as empty squares on English, German, French and Spanish clients when the addon uses the game font.
 - Settings: the Blizzard window style is now called «Game default» instead of «Common».
