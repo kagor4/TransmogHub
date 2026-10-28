@@ -849,7 +849,6 @@ ns.LOCALES.enUS = {
 	["Подробности — в чате"] = "Details in chat",
 	["Новый образ от "] = "New outfit by ",
 	[" оценил ваш образ «"] = " rated your outfit «",
-	[" из 5"] = " out of 5",
 	[" оценил ваш образ"] = " rated your outfit",
 	[" добавил ваш образ «"] = " added your outfit \"",
 	["» в избранное"] = "\" to favorites",

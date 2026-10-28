@@ -1843,6 +1843,7 @@ end)()
 		receive({ "SV" .. mine.id .. "\t5\t" .. Net.Enc(Net.Now()) }, "Оценщик1-Гордунни")
 		receive({ "SV" .. mine.id .. "\t4\t" .. Net.Enc(Net.Now()) }, "Оценщик2-Гордунни")
 		assert(#shown == before + 1 and shown[#shown][2].title:find("оценил"), "only first votes notify")
+		assert(not shown[#shown][2].text:find("PetJournal", 1, true), "vote toast does not show the stars")
 		-- избранное: уведомление один раз
 		local n = #shown
 		receive({ "SF" .. mine.id .. "\t1\t" .. Net.Enc(Net.Now()) }, "Оценщик1-Гордунни")

@@ -849,7 +849,6 @@ ns.LOCALES.frFR = {
 	["Подробности — в чате"] = "Détails dans le chat",
 	["Новый образ от "] = "Nouvelle tenue de ",
 	[" оценил ваш образ «"] = " a noté votre tenue «",
-	[" из 5"] = " sur 5",
 	[" оценил ваш образ"] = " a noté votre tenue",
 	[" добавил ваш образ «"] = " a ajouté votre tenue \"",
 	["» в избранное"] = "\" aux favoris",
