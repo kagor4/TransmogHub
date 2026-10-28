@@ -1,6 +1,6 @@
 -- Источники вещей с обликами: данные AllTheThings (лицензия MIT, см. LICENSE-AllTheThings.txt).
 -- Собирается tools/att/build.lua — руками не править.
-TransmogHub_ATT = { schema = 1, generated = 1792765660,
+TransmogHub_ATT = { schema = 1, generated = 1793173761,
 headers = {
 [-796]={enUS="Starter Gear",ruRU="Starter Gear",esES="Starter Gear",deDE="Starter Gear",frFR="Starter Gear"},
 [-698]={enUS="@TRANSMOG_SOURCE_4",ruRU="@TRANSMOG_SOURCE_4",esES="@TRANSMOG_SOURCE_4",deDE="@TRANSMOG_SOURCE_4",frFR="@TRANSMOG_SOURCE_4"},
@@ -1788,6 +1788,7 @@ items = {
 [5093]="Z|m1413|h-63|1413:41.8:79.6|",
 [5094]="Z|m1413|h-63|1413:41.6:79|",
 [5107]="Z|m1413|h-63||",
+[5108]="I|I231|h-63|1426:18.4:38.6|;I|I231|n6228|1426:18.4:38.6|",
 [5109]="Z|m1432|h-63||",
 [5110]="Z|m1421|h-63||",
 [5111]="Z|m1413|n3470|1413:47.6:19.2|",
@@ -6560,7 +6561,7 @@ items = {
 [19597]="P|m1460|n14754|1413:46.6:8.4|;P|m1460|n14753|1440:61.6:83.8|",
 [19808]="H||o180248||",
 [19969]="H||q8225|1434:27.4:76.9|i19803x1",
-[19970]="H||q8193|1434:27.4:76.9|",
+[19970]="H||q8193|1434:27.4:76.9|i19807x40",
 [19972]="H||q8221|1434:27.4:76.9|i19805x1",
 [19982]="I|I237|q8236|1447:29.6:40.6|",
 [19984]="I|I237|q8236|1447:29.6:40.6|",
