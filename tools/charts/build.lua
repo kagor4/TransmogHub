@@ -31,6 +31,10 @@ if secretsDir == "" then secretsDir = nil end
 local env = dofile(dir .. "/tools/charts/env.lua")
 local now = tonumber(nowArg) or os.time()
 env.install(now)
+-- TH_FOREVER=1 — чарт и каталог WoW Forever (ветка forever, снимок клиента _forever_):
+-- аддон грузится в режиме Forever (имена «Имя Фамилия», свои тайны и ключи)
+local FOREVER = os.getenv("TH_FOREVER") == "1"
+if FOREVER then WOW_PROJECT_ID, WOW_PROJECT_CAMELOT = 18, 18 end
 
 -- прошлая сводка источников: находки копятся, журнал модератора ограничен
 TransmogHub_Sources = nil
@@ -58,6 +62,8 @@ local ownRegion -- [имя своего персонажа] = регион, кр
 do
 	local raw = TransmogHubDB
 	local cur = raw.regions and raw.region or 3
+	-- Forever: сеть клиента Forever одна — та, что в снимке, регион не важен
+	if FOREVER then cur = 3; raw.regions = nil end
 	if cur ~= 3 then
 		otherNets[#otherNets + 1] = { REGION_TAG[cur] or tostring(cur), raw.net }
 		raw.net = raw.regions[3] and raw.regions[3].net or nil
