@@ -1077,23 +1077,77 @@ function TH:IsCharted(set)
 	return r ~= nil and (r.n or 0) >= self:GetMinChartVotes() and not self:GetSuspicion(set)
 end
 
+-- Тихое снижение веса за систематическое занижение. Сравниваем оценку игрока
+-- со средней оценкой ОСТАЛЬНЫХ за тот же образ (честная единица плохому образу,
+-- который и другие оценили низко, не в счёт). Чем сильнее и устойчивее занижение и
+-- чем меньше у игрока своих опубликованных образов, тем меньше весят его голоса:
+--   отклонение: до −1★ — ничего, от −1★ до −2.5★ — сила от 0 до 1;
+--   уверенность: оценок за 90 дней меньше 10 — ничего, от 10 до 30 — от 0 до 1;
+--   свои образы: 0 — ×1, 1 — ×½, 2 — ×¼, 3 и больше — не снижаем (автор со своим вкусом);
+--   вес = 1 − 0.75 × сила × уверенность × образы, не меньше 0.25.
+-- Без уведомлений и позорных достижений; условие перестало выполняться — вес вернулся.
+-- Тот же расчёт — в официальном чарте (tools/charts/build.lua).
+local HARSH_WINDOW, HARSH_MIN, HARSH_FULL = 90 * 86400, 10, 30
+local HARSH_FROM, HARSH_SPAN, HARSH_MAX_CUT = 1, 1.5, 0.75
+local HARSH_OWN = { [0] = 1, 0.5, 0.25 }
+function TH.HarshVoterWeights(votesBySet, sets, tombstones, now)
+	local own = {}
+	for id, set in pairs(sets or {}) do
+		if set.author and not (tombstones and tombstones[id]) then own[set.author] = (own[set.author] or 0) + 1 end
+	end
+	local acc = {} -- [имя] = { n, compared, deviation }
+	for _, votes in pairs(votesBySet or {}) do
+		local total, count = 0, 0
+		for _, v in pairs(votes) do
+			if (v[1] or 0) > 0 then total, count = total + v[1], count + 1 end
+		end
+		for name, v in pairs(votes) do
+			if (v[1] or 0) > 0 and now - (v[2] or now) <= HARSH_WINDOW then
+				local a = acc[name]
+				if not a then a = { 0, 0, 0 } acc[name] = a end
+				a[1] = a[1] + 1
+				if count > 1 then
+					a[2] = a[2] + 1
+					a[3] = a[3] + v[1] - (total - v[1]) / (count - 1)
+				end
+			end
+		end
+	end
+	local weights = {}
+	for name, a in pairs(acc) do
+		local outfits = HARSH_OWN[own[name] or 0] or 0
+		if a[1] >= HARSH_MIN and a[2] > 0 and outfits > 0 then
+			local dev = a[3] / a[2]
+			local strength = math.min(1, (-dev - HARSH_FROM) / HARSH_SPAN)
+			if strength > 0 then
+				local confidence = math.min(1, (a[1] - HARSH_MIN) / (HARSH_FULL - HARSH_MIN))
+				local w = math.max(1 - HARSH_MAX_CUT, 1 - HARSH_MAX_CUT * strength * confidence * outfits)
+				if w < 1 then weights[name] = w end
+			end
+		end
+	end
+	return weights
+end
+
 -- Рейтинг и «в тренде» по голосам из сети. «В тренде» — сумма звёзд
 -- за последние TREND_DAYS дней. У образов из подборок без голосов в сети
--- остаётся рейтинг из подборки.
-local function ApplyVotes(set, votes, now)
+-- остаётся рейтинг из подборки. Голоса систематически занижающих весят меньше
+-- (TH.HarshVoterWeights); число оценок на карточке — по-прежнему число голосов.
+local function ApplyVotes(set, votes, now, harsh)
 	if not votes or not next(votes) then return end
-	local n, sum, trend, dist = 0, 0, 0, { 0, 0, 0, 0, 0 }
-	for _, v in pairs(votes) do
-		n, sum = n + 1, sum + v[1]
+	local n, w, sum, trend, dist = 0, 0, 0, 0, { 0, 0, 0, 0, 0 }
+	for name, v in pairs(votes) do
+		local k = harsh and harsh[name] or 1
+		n, w, sum = n + 1, w + k, sum + k * v[1]
 		dist[v[1]] = (dist[v[1]] or 0) + 1
-		if now - v[2] < TREND_WINDOW then trend = trend + v[1] end
+		if now - v[2] < TREND_WINDOW then trend = trend + k * v[1] end
 	end
 	-- образ из каталога: пока своих голосов меньше, чем в официальном итоге, верим итогу
 	local base = set.baseRating
 	if base and (base.n or 0) > n then
 		set.rating = base
 	else
-		set.rating = { avg = sum / n, n = n, dist = dist }
+		set.rating = { avg = sum / w, n = n, dist = dist }
 	end
 	set.trend = trend
 end
@@ -1101,6 +1155,7 @@ end
 -- Рейтинг пересчитываем только у образов, где голоса изменились (или раз в час —
 -- «в тренде» зависит от времени): при тысячах образов полный пересчёт заметно тормозит
 local voteCache = {}  -- [setId] = { stamp, at, rating, trend }
+local harshCache = { at = -math.huge, weights = {}, key = "" } -- веса занижающих: считаем раз в 10 минут
 local formatted = setmetatable({}, { __mode = "k" }) -- названия, уже приведённые к виду
 local VOTE_CACHE_TTL = 3600
 
@@ -1111,6 +1166,17 @@ function TH:LoadFeed()
 	local stamps = self.Net.voteStamp or {}
 	local sets, changed = {}, {}
 	self.byId = {}
+	if now - harshCache.at > 600 then
+		local weights = TH.HarshVoterWeights(net.votes, net.sets, net.tombstones, now)
+		local parts = {}
+		for name, w in pairs(weights) do parts[#parts + 1] = name .. "=" .. string.format("%.2f", w) end
+		table.sort(parts)
+		local key = table.concat(parts, ",")
+		-- веса изменились — пересчитать рейтинг всех образов, а не только с новыми голосами
+		if key ~= harshCache.key then wipe(voteCache) end
+		harshCache.at, harshCache.weights, harshCache.key = now, weights, key
+	end
+	local harsh = harshCache.weights
 	local function add(set)
 		if self.byId[set.id] or self.db.hidden[set.id] or net.tombstones[set.id] then return end
 		-- в Forever образы основной игры (автор «Имя-Сервер»), пришедшие раньше, не показываем
@@ -1121,7 +1187,7 @@ function TH:LoadFeed()
 		if c and c.stamp == stamp and c.votes == votes and now - c.at < VOTE_CACHE_TTL then
 			if c.rating then set.rating, set.trend = c.rating, c.trend end
 		else
-			ApplyVotes(set, votes, now)
+			ApplyVotes(set, votes, now, harsh)
 			changed[#changed + 1] = set.id
 			voteCache[set.id] = { stamp = stamp, at = now, votes = votes,
 				rating = votes and next(votes) and set.rating or nil, trend = set.trend }

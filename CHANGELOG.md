@@ -1,5 +1,8 @@
 # Transmog Hub — Changelog
 
+## 1.16.7
+- Fairer ratings: votes from players who consistently rate far below everyone else and have no published outfits of their own count for less. The more such votes and the bigger the gap, the smaller their weight; publishing outfits or rating closer to others restores it.
+
 ## 1.16.6
 - Tidier layout: the top buttons and the search box line up with the panels below; the search box stretches to the nearest button (also on the Achievements tab); equal gaps between the Achievements buttons; the ranking controls line up with the buttons above them.
 

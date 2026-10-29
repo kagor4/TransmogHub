@@ -14,6 +14,7 @@
 -- загружает логику аддона без игры и считает тем же кодом, что и клиент:
 --   * вес голоса: свой образ — 0; голосовавший недавно или оценил меньше
 --     3 образов — 0.5; остальные — 1. Твинк ради одной пятёрки почти ничего не весит;
+--     систематически занижающий без своих образов — ещё меньше (TH.HarshVoterWeights);
 --   * в чарте — образы с весом оценок не меньше порога дня (5% игроков с оценками
 --     в день, медиана за неделю, минимум TH.MIN_CHART_VOTES) без подозрения на накрутку;
 --   * списки «Лучшие», «В тренде», по тегам; награды за места и долю лучших;
@@ -142,10 +143,16 @@ for _, votes in pairs(db.net.votes) do
 	end
 end
 
+-- систематически занижающие без своих образов — тише (тот же расчёт, что в аддоне)
+local harsh = TH.HarshVoterWeights(db.net.votes, db.net.sets, db.net.tombstones, now)
+local harshCount = 0
+for _ in pairs(harsh) do harshCount = harshCount + 1 end
+
 local function Weight(voter, author)
 	if voter == author then return 0 end
-	if (voterSets[voter] or 0) >= 3 and now - (voterFirst[voter] or now) >= WEEK then return 1 end
-	return 0.5
+	local k = harsh[voter] or 1
+	if (voterSets[voter] or 0) >= 3 and now - (voterFirst[voter] or now) >= WEEK then return k end
+	return 0.5 * k
 end
 
 for _, set in ipairs(TH.feed.sets) do
@@ -750,5 +757,6 @@ end
 print(string.format("Порог чарта: %d оценок (игроков с оценками в день: %d)", minVotes, activeVoters))
 print(string.format("Чарт %s: в чарте %d образов, тегов %d, игроков %d, первооткрывателей %d, награждённых %d",
 	os.date("!%Y-%m-%d", now), #top, #SortedKeys(byTag), #entries, #SortedKeys(firsts), #SortedKeys(awards)))
+if harshCount > 0 then print(string.format("Тише весят голоса %d игроков (систематическое занижение)", harshCount)) end
 if bundledPath and bundledPath ~= "" then print(string.format("Каталог: %d образов, телефонная книга: %d игроков", bundledCount, bundledPeers)) end
 if sourcesPath and sourcesPath ~= "" then print(string.format("Где найти: %d предметов", sourcesCount)) end
