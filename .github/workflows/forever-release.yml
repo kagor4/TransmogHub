@@ -2,9 +2,16 @@
 # (база «где найти» из ATT для Forever), выпуск на GitHub и файл на CurseForge
 # с версией игры Forever. Запуск вручную: Actions → Forever release → Run workflow.
 # dry_run — собрать архив и показать версии игры CurseForge, ничего не выкладывая.
+# Сам запускается пушем в forever со свежим каталогом и чартом Forever
+# (tools/charts/release-forever.sh): раз в день, второй раз за день не выкладывает.
 name: Forever release
 
 on:
+  push:
+    branches: [forever]
+    paths:
+      - Data/ChartsForever.lua
+      - Data/BundledForever.lua
   workflow_dispatch:
     inputs:
       dry_run:
@@ -66,7 +73,18 @@ jobs:
           awk '/^## /{n++} n==1' "$CL" > "$RUNNER_TEMP/changelog.md"
           cat "$RUNNER_TEMP/changelog.md"
 
+      # пуш с каталогом: сегодня уже выкладывали — второй раз не нужно (новый каталог
+      # уйдёт завтра). Ручной запуск догружает пропущенное (см. шаг GitHub release)
+      - name: Already released today
+        if: github.event_name == 'push'
+        run: |
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "Выпуск $TAG уже есть — сегодня уже выкладывали"
+            echo "SKIP=1" >> "$GITHUB_ENV"
+          fi
+
       - name: CurseForge game version
+        if: env.SKIP != '1'
         run: |
           [ -n "$CF_API_KEY" ] || { echo "Нет секрета CF_API_KEY"; exit 1; }
           API=https://wow.curseforge.com/api
@@ -83,7 +101,7 @@ jobs:
           echo "CF_VERSION=$ID" >> "$GITHUB_ENV"
 
       - name: GitHub release
-        if: ${{ !inputs.dry_run }}
+        if: ${{ !inputs.dry_run && env.SKIP != '1' }}
         run: |
           # повторный запуск (например, после сбоя загрузки на CurseForge): выпуск на GitHub
           # уже есть — не создаём второй и идём дальше, к CurseForge
@@ -92,13 +110,13 @@ jobs:
             --notes-file "$RUNNER_TEMP/changelog.md" --latest=false
 
       - name: CurseForge upload
-        if: ${{ !inputs.dry_run }}
+        if: ${{ !inputs.dry_run && env.SKIP != '1' }}
         run: |
           PROJECT=$(sed -n 's/^## X-Curse-Project-ID: *//p' TransmogHub.toc | tr -d '\r')
           # метаданные — файлом: в -F "поле=значение" curl режет значение на «;» (а в списке
           # изменений бывают точки с запятой), «<файл» передаёт содержимое как есть
           jq -n --arg cl "$(cat "$RUNNER_TEMP/changelog.md")" --arg name "$V" \
-            --arg rt "${{ inputs.release_type }}" --argjson gv "$CF_VERSION" \
+            --arg rt "${{ inputs.release_type || 'release' }}" --argjson gv "$CF_VERSION" \
             '{changelog: $cl, changelogType: "markdown", displayName: $name, gameVersions: [$gv], releaseType: $rt}' > "$RUNNER_TEMP/meta.json"
           # ответ CurseForge показываем и при ошибке — по нему видно, что не так
           CODE=$(curl -sS -o cf.json -w "%{http_code}" -H "X-Api-Token: $CF_API_KEY" \

@@ -49,6 +49,9 @@
 персонаж на другой учётной записи (своя папка в `WTF\Account`), коннектор выгрузит её
 базу отдельно — в `snapshots/TransmogHub-us.lua.gz`.
 
+WoW Forever (клиент `_forever_` рядом с `_retail_`): свежайший файл аддона оттуда уходит
+в `snapshots/TransmogHub-forever.lua.gz`, из него собираются каталог и чарт Forever.
+
 Убрать из планировщика: `.\TransmogHubConnector.ps1 -Uninstall`.
 Журнал работы: `%APPDATA%\TransmogHubConnector\connector.log`.
 
