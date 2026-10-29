@@ -1,5 +1,8 @@
 # Transmog Hub for WoW Forever — Changelog
 
+## 1.16.6
+- Tidier layout: the top buttons and the search box line up with the panels below; the search box stretches to the nearest button (also on the Achievements tab); equal gaps between the Achievements buttons; the ranking controls line up with the buttons above them.
+
 ## 1.16.5
 - Rating notifications no longer show how many stars the player gave — only who rated your outfit.
 - Where to find: fresh AllTheThings database for Forever.
