@@ -85,7 +85,9 @@ jobs:
       - name: GitHub release
         if: ${{ !inputs.dry_run }}
         run: |
-          if gh release view "$TAG" > /dev/null 2>&1; then echo "Выпуск $TAG уже есть"; exit 1; fi
+          # повторный запуск (например, после сбоя загрузки на CurseForge): выпуск на GitHub
+          # уже есть — не создаём второй и идём дальше, к CurseForge
+          if gh release view "$TAG" > /dev/null 2>&1; then echo "Выпуск $TAG на GitHub уже есть — пропускаю"; exit 0; fi
           gh release create "$TAG" "$ZIP" --target forever --title "$V" \
             --notes-file "$RUNNER_TEMP/changelog.md" --latest=false
 
@@ -96,7 +98,9 @@ jobs:
           META=$(jq -n --arg cl "$(cat "$RUNNER_TEMP/changelog.md")" --arg name "$V" \
             --arg rt "${{ inputs.release_type }}" --argjson gv "$CF_VERSION" \
             '{changelog: $cl, changelogType: "markdown", displayName: $name, gameVersions: [$gv], releaseType: $rt}')
-          curl -sf -H "X-Api-Token: $CF_API_KEY" -F "metadata=$META" -F "file=@$ZIP" \
-            "https://wow.curseforge.com/api/projects/$PROJECT/upload-file"
-          echo
-          echo "Файл выложен на CurseForge"
+          # ответ CurseForge показываем и при ошибке — по нему видно, что не так
+          CODE=$(curl -sS -o cf.json -w "%{http_code}" -H "X-Api-Token: $CF_API_KEY" \
+            -F "metadata=$META" -F "file=@$ZIP" \
+            "https://wow.curseforge.com/api/projects/$PROJECT/upload-file")
+          echo "CurseForge ответил $CODE:"; cat cf.json; echo
+          case "$CODE" in 2*) echo "Файл выложен на CurseForge" ;; *) exit 1 ;; esac
