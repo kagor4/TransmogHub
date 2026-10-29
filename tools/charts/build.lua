@@ -63,8 +63,6 @@ local ownRegion -- [имя своего персонажа] = регион, кр
 do
 	local raw = TransmogHubDB
 	local cur = raw.regions and raw.region or 3
-	-- Forever: сеть клиента Forever одна — та, что в снимке, регион не важен
-	if FOREVER then cur = 3; raw.regions = nil end
 	if cur ~= 3 then
 		otherNets[#otherNets + 1] = { REGION_TAG[cur] or tostring(cur), raw.net }
 		raw.net = raw.regions[3] and raw.regions[3].net or nil
