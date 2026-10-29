@@ -69,13 +69,16 @@ function TH:GetAccent()
 end
 
 -- Плоский фон с рамкой в 1 пиксель (свои текстуры, поверх ничего не рисуют)
-local function Flat(frame, color, edge)
+-- left — сдвиг левого края (поле поиска: у шаблона игры рамка левее самого поля)
+local function Flat(frame, color, edge, left)
 	if frame.thFlat then
 		frame.thFlat:SetColorTexture(unpack(color))
 		return
 	end
+	left = left or 0
 	local bg = frame:CreateTexture(nil, "BACKGROUND", nil, -8)
-	bg:SetAllPoints()
+	bg:SetPoint("TOPLEFT", left, 0)
+	bg:SetPoint("BOTTOMRIGHT")
 	bg:SetColorTexture(unpack(color))
 	frame.thFlat = bg
 	edge = edge or EDGE
@@ -83,12 +86,13 @@ local function Flat(frame, color, edge)
 		local t = frame:CreateTexture(nil, "BORDER", nil, 7)
 		t:SetColorTexture(unpack(edge))
 		if side == "TOP" or side == "BOTTOM" then
-			t:SetPoint(side .. "LEFT")
+			t:SetPoint(side .. "LEFT", left, 0)
 			t:SetPoint(side .. "RIGHT")
 			t:SetHeight(1)
 		else
-			t:SetPoint("TOP" .. side)
-			t:SetPoint("BOTTOM" .. side)
+			local x = side == "LEFT" and left or 0
+			t:SetPoint("TOP" .. side, x, 0)
+			t:SetPoint("BOTTOM" .. side, x, 0)
 			t:SetWidth(1)
 		end
 	end
@@ -228,7 +232,7 @@ local function SkinFrame(frame, accent, top)
 	if ftype == "Button" and T(frame.Left) and T(frame.Middle) and T(frame.Right) then
 		SkinButton(frame, accent)
 	elseif ftype == "EditBox" then
-		if HideArt(frame, EDIT_ART) then Flat(frame, { 0.03, 0.03, 0.04, 1 }, { 0.25, 0.25, 0.28, 1 }) end
+		if HideArt(frame, EDIT_ART) then Flat(frame, { 0.03, 0.03, 0.04, 1 }, { 0.25, 0.25, 0.28, 1 }, frame.thArtLeft) end
 	elseif ftype == "Slider" and T(frame.thumb) then
 		frame.thumb:SetColorTexture(accent[1], accent[2], accent[3], 0.9)
 		-- стрелки полосы — рисунок игры, перекрашенный в акцент

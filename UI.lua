@@ -553,7 +553,7 @@ function UI:BuildToolbar()
 	-- первый ряд: лента слева, личное (профиль, достижения, модерация) справа
 	local RIGHT_KEYS = { me = true, achievements = true, moderation = true }
 	local GROUP_GAP = 24
-	local room = W - 12 - 12 - (n - 2) * GAP - GROUP_GAP
+	local room = W - 10 - 10 - (n - 2) * GAP - GROUP_GAP
 	local function FitTabs()
 		local function Measure()
 			local sum, widths = 0, {}
@@ -574,7 +574,7 @@ function UI:BuildToolbar()
 			widths, sum = Measure()
 		end
 		local pad = math.max(6, math.min(22, math.floor((room - sum) / n)))
-		local x, right = 12, {}
+		local x, right = 10, {} -- края ряда — по краям панелей под ним (10)
 		for i, b in ipairs(self.tabs) do
 			local w = math.floor(widths[i] + pad)
 			b.thMinW, b.thExtra = 0, pad - 24 -- PadButton держит ту же ширину при смене текста
@@ -588,7 +588,7 @@ function UI:BuildToolbar()
 			end
 		end
 		-- правая группа — ровно над «Новым образом»: тот же правый край и та же общая ширина
-		local SAVE_W, SAVE_RIGHT = 184, -14
+		local SAVE_W, SAVE_RIGHT = 184, -10
 		local total = (#right - 1) * GAP
 		for _, r in ipairs(right) do total = total + r[2] end
 		if #right > 0 then
@@ -617,13 +617,14 @@ function UI:BuildToolbar()
 		C_Timer.After(0.1, FitTabs)
 	end)
 
-	-- поиск занимает место между вкладками и кнопкой «Теги»
-	-- второй ряд: поиск на всю ширину, «Теги» и «Новый образ» справа
-	local searchW = W - 18 - 294 - 30 -- до «Теги» (и крестика сброса тегов слева от неё)
+	-- второй ряд: поиск до ближайшей кнопки справа («Теги», крестик сброса тегов
+	-- или «Новый образ»), отступ между ними тот же, что между кнопками (6).
+	-- Рамка поля у шаблона игры начинается на 5 левее самого поля: поле на 15 —
+	-- рамка ровно по краю панелей (10)
 	local search = CreateFrame("EditBox", nil, self, "SearchBoxTemplate")
 	self.search = search
-	search:SetSize(searchW, 20)
-	search:SetPoint("TOPLEFT", 18, -57)
+	search:SetHeight(20)
+	search.thArtLeft = -5 -- для оформления EllesmereUI: фон поля там же, где рамка игры
 	search:SetAutoFocus(false)
 	-- лупа и подпись чуть левее: у шаблона игры они сдвинуты вправо от края поля
 	local icon = search.searchIcon or search.SearchIcon
@@ -644,7 +645,7 @@ function UI:BuildToolbar()
 	end)
 
 	self.tagsBtn = Button(self, L["Теги"], 90)
-	self.tagsBtn:SetPoint("TOPRIGHT", -204, -56) -- левее кнопки «Новый образ» (184)
+	self.tagsBtn:SetPoint("TOPRIGHT", -200, -56) -- левее кнопки «Новый образ» (184) на 6
 	self.tagsBtn:SetScript("OnClick", function(b) self:OpenTagMenu(b) end)
 
 	-- Сброс фильтра тегов: виден, только когда выбран хотя бы один тег
@@ -686,8 +687,19 @@ function UI:BuildToolbar()
 		fs:SetPoint("CENTER", 9, 0)
 	end
 	self.saveBtn = saveBtn
-	saveBtn:SetPoint("TOPRIGHT", -14, -54)
+	saveBtn:SetPoint("TOPRIGHT", -10, -54)
 	saveBtn:SetScript("OnClick", function() TH:OpenSaveDialog() end)
+	self:FitSearch()
+end
+
+-- Правый край поиска — у ближайшей видимой кнопки справа (по центру ряда, -67)
+function UI:FitSearch()
+	local search = self.search
+	if not search then return end
+	local target = (self.tagsReset:IsShown() and self.tagsReset) or (self.tagsBtn:IsShown() and self.tagsBtn) or self.saveBtn
+	search:ClearAllPoints()
+	search:SetPoint("LEFT", self, "TOPLEFT", 15, -67)
+	search:SetPoint("RIGHT", target, "LEFT", target == self.tagsReset and -2 or -6, 0)
 end
 
 function UI:BuildList(list)
@@ -1446,6 +1458,7 @@ function UI:SetView(key)
 		self.tagsReset:Hide()
 		if self.tagFrame then self.tagFrame:Hide() end
 	end
+	self:FitSearch()
 	self:Refresh()
 end
 
@@ -1839,7 +1852,10 @@ function UI:Refresh()
 	local nTags = 0
 	for _ in pairs(self.filter.tags) do nTags = nTags + 1 end
 	self.tagsBtn:SetText(nTags > 0 and (L["Теги ("] .. nTags .. ")") or L["Теги"])
-	self.tagsReset:SetShown(nTags > 0)
+	if self.tagsReset:IsShown() ~= (nTags > 0) then
+		self.tagsReset:SetShown(nTags > 0)
+		self:FitSearch()
+	end
 	if self.tagFrame and self.tagFrame:IsShown() then self.tagFrame.picker:Refresh() end
 
 	local sortable = SORTABLE[self.view]
