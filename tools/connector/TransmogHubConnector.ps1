@@ -192,6 +192,11 @@ function Invoke-Sync {
     }
     if ($snapshot) { Sync-Snapshot $config $snapshot } else { Write-Log "снимок базы - нет файла модератора" }
     if ($snapshotUs) { Sync-Snapshot $config $snapshotUs "snapshots/TransmogHub-us.lua.gz" }
+    # WoW Forever (клиент _forever_): своя сеть, свой каталог и чарт — свежайший файл
+    # аддона из папки Forever, snapshots/TransmogHub-forever.lua.gz
+    $forever = Get-ChildItem -Path (Join-Path $config.WowPath "_forever_\WTF\Account\*\SavedVariables\TransmogHub.lua") -ErrorAction SilentlyContinue |
+        Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    if ($forever) { Sync-Snapshot $config $forever "snapshots/TransmogHub-forever.lua.gz" }
 }
 
 try {
