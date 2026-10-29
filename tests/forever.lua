@@ -9,6 +9,9 @@ UnitName = function() return "Кагор" end
 GetUnitName = function(_, full) return full and "Кагор Палович" or "Кагор" end
 local races = {}
 C_CreatureInfo.GetRaceInfo = function(id) races[#races + 1] = id return { raceName = "Раса" .. id } end
+-- каталог и чарт Forever (их собирает release-forever.sh) — вместо основных
+TransmogHub_BundledForever = { generated = 1800000000, sets = {}, peers = { { "Тест Альянсов", "A", 1800000000 } } }
+TransmogHub_ChartsForever = nil
 local TH = env.load(dir)
 local Net = TH.Net
 
@@ -84,7 +87,8 @@ for _, id in ipairs({ "hid_bloodtank", "hid_lunar", "hid_raidguide", "hid_rwf", 
 end
 
 -- каталог и чарт основной игры в Forever не показываются
-assert(TransmogHub_Bundled == nil and TransmogHub_Charts == nil and TH:GetCharts() == nil)
+assert(TransmogHub_Bundled == TransmogHub_BundledForever, "каталог Forever вместо основного")
+assert(TransmogHub_Charts == nil and TH:GetCharts() == nil, "чарта Forever ещё нет — основной не подставляется")
 for _, set in ipairs(TH.feed and TH.feed.sets or {}) do assert(not set.author or TH:IsCharName(set.author), "образ основной игры в ленте: " .. tostring(set.author)) end
 
 -- образ автора из основной игры в Forever не принимается
@@ -96,6 +100,7 @@ do
 	local names = {}
 	for _, c in ipairs(Net:KnockCandidates()) do names[c[1]] = true end
 	assert(names["Первый Каг"], "альянс стучится к Первому Кагу")
+	assert(names["Тест Альянсов"], "телефонная книга Forever из каталога")
 	assert(not names["Кагор Палович"], "себя и другую фракцию пропускаем")
 	for name in pairs(names) do assert(TH:IsCharName(name), "только имена Forever: " .. name) end
 end

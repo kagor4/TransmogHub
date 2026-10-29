@@ -19,8 +19,10 @@ Locales\frFR.lua
 
 # Подборки образов, которые приходят с обновлением аддона
 Data\Bundled.lua
+Data\BundledForever.lua
 Data\Blocklist.lua
 Data\Charts.lua
+Data\ChartsForever.lua
 Data\LetterKey.lua
 Data\Secrets.lua
 Data\TagIcons.lua

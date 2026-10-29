@@ -13,10 +13,11 @@ do
 		or (type(toc) == "number" and toc >= 16000 and toc < 20000)
 end
 
--- Каталог, телефонная книга и официальный чарт собираются по базе основной игры: в Forever
--- таких обликов и имён нет, поэтому там их не показываем, пока у Forever нет своих
+-- Каталог, телефонная книга и официальный чарт основной игры в Forever не годятся (там другие
+-- облики и имена) — у Forever свои, из снимка клиента Forever (Data/BundledForever.lua,
+-- Data/ChartsForever.lua). Через них образы и оценки доходят до всех серверов и обеих фракций
 if TH.FOREVER then
-	TransmogHub_Bundled, TransmogHub_Charts = nil, nil
+	TransmogHub_Bundled, TransmogHub_Charts = TransmogHub_BundledForever, TransmogHub_ChartsForever
 end
 
 -- Тайны Forever (свои условия и тексты, свой ключ) заменяют тайны основной игры
