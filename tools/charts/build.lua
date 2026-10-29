@@ -624,7 +624,10 @@ if bundledPath and bundledPath ~= "" then
 	end
 	local peers = {}
 	for name, s in pairs(seen) do
-		if now - s.t <= PEERS_FRESH and s.t <= now and name:find("-", 1, true) and not TH:IsBanned(name) then
+		-- имя персонажа: «Имя-Сервер», в Forever — «Имя Фамилия»
+		local isChar
+		if FOREVER then isChar = name:find("^[^%s%-]+ [^%s%-]+$") else isChar = name:find("-", 1, true) end
+		if now - s.t <= PEERS_FRESH and s.t <= now and isChar and not TH:IsBanned(name) then
 			peers[#peers + 1] = { name, s.faction or TH.Net.RaceFaction(s.race), s.t }
 		end
 	end
