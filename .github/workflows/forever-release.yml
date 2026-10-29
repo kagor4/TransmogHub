@@ -95,12 +95,14 @@ jobs:
         if: ${{ !inputs.dry_run }}
         run: |
           PROJECT=$(sed -n 's/^## X-Curse-Project-ID: *//p' TransmogHub.toc | tr -d '\r')
-          META=$(jq -n --arg cl "$(cat "$RUNNER_TEMP/changelog.md")" --arg name "$V" \
+          # метаданные — файлом: в -F "поле=значение" curl режет значение на «;» (а в списке
+          # изменений бывают точки с запятой), «<файл» передаёт содержимое как есть
+          jq -n --arg cl "$(cat "$RUNNER_TEMP/changelog.md")" --arg name "$V" \
             --arg rt "${{ inputs.release_type }}" --argjson gv "$CF_VERSION" \
-            '{changelog: $cl, changelogType: "markdown", displayName: $name, gameVersions: [$gv], releaseType: $rt}')
+            '{changelog: $cl, changelogType: "markdown", displayName: $name, gameVersions: [$gv], releaseType: $rt}' > "$RUNNER_TEMP/meta.json"
           # ответ CurseForge показываем и при ошибке — по нему видно, что не так
           CODE=$(curl -sS -o cf.json -w "%{http_code}" -H "X-Api-Token: $CF_API_KEY" \
-            -F "metadata=$META" -F "file=@$ZIP" \
+            -F "metadata=<$RUNNER_TEMP/meta.json" -F "file=@$ZIP" \
             "https://wow.curseforge.com/api/projects/$PROJECT/upload-file")
           echo "CurseForge ответил $CODE:"; cat cf.json; echo
           case "$CODE" in 2*) echo "Файл выложен на CurseForge" ;; *) exit 1 ;; esac
