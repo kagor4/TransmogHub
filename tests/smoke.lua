@@ -334,6 +334,27 @@ for _, v in ipairs({ "top", "trending", "new", "favorites", "mine" }) do TH.UI:S
 TH.UI:SetView("top"); TH.UI:Select(set.serverId); TH:ToggleFavorite(set.serverId); TH.UI:SetView("favorites")
 assert(#TH.UI.results == 1)
 TH.UI:OpenRaceMenu(frame()); TH.UI:Scroll(10)
+do -- тихое снижение веса: систематически занижает, своих образов нет
+  local now = 1800000000
+  local function Build(n, own)
+    local votes, sets = {}, {}
+    for i = 1, n do
+      votes["s" .. i] = { ["Строгий-Сервер"] = { 1, now - 3600 }, ["Другой-Сервер"] = { 5, now - 3600 }, ["Третий-Сервер"] = { 4, now - 3600 } }
+    end
+    for i = 1, own do sets["o" .. i] = { id = "o" .. i, author = "Строгий-Сервер" } end
+    return TH.HarshVoterWeights(votes, sets, {}, now)
+  end
+  local w = Build(30, 0)
+  assert(math.abs(w["Строгий-Сервер"] - 0.25) < 1e-6, "30 оценок на 3.5★ ниже, своих образов нет — вес 0.25")
+  assert(w["Другой-Сервер"] == nil, "остальных не трогаем")
+  assert(Build(9, 0)["Строгий-Сервер"] == nil, "меньше 10 оценок — не трогаем")
+  assert(Build(30, 3)["Строгий-Сервер"] == nil, "автор трёх образов — не трогаем")
+  assert(Build(30, 1)["Строгий-Сервер"] > 0.6, "один свой образ — снижение вдвое слабее")
+  -- честная единица плохому образу, который и другие оценили низко, не в счёт
+  local votes = {}
+  for i = 1, 30 do votes["s" .. i] = { ["Строгий-Сервер"] = { 1, now }, ["Другой-Сервер"] = { 1, now }, ["Третий-Сервер"] = { 2, now } } end
+  assert(TH.HarshVoterWeights(votes, {}, {}, now)["Строгий-Сервер"] == nil, "согласен с остальными — не занижение")
+end
 do -- строка сети внизу окна обновляется сама, без перерисовки окна
   local was = Net.IncomingCount
   Net.IncomingCount = function() return 7 end
