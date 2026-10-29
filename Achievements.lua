@@ -1656,15 +1656,16 @@ function TH:BuildAchievementsPanel(panel)
 		end)
 		return b
 	end
-	-- справа, вровень с правым краем сетки карточек: [Мои достижения][Рейтинг]  [Показать]
+	-- справа, вровень с правым краем сетки карточек: [Зал славы][Мои достижения][Рейтинг][Показать],
+	-- между кнопками одинаково — 6, как в шапке окна
 	local GRID_RIGHT = 8 + COLS * CARD_W + (COLS - 1) * 6
-	panel.cardsBtn = ModeButton(L["Мои достижения"], "cards", GRID_RIGHT - 190 - 12 - 150 - 4 - 150)
-	panel.boardBtn = ModeButton(L["Рейтинг"], "board", GRID_RIGHT - 190 - 12 - 150)
+	panel.cardsBtn = ModeButton(L["Мои достижения"], "cards", GRID_RIGHT - 190 - 6 - 150 - 6 - 150)
+	panel.boardBtn = ModeButton(L["Рейтинг"], "board", GRID_RIGHT - 190 - 6 - 150)
 	-- Зал славы — список образов (как вкладка с образами)
 	panel.hallBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
 	TH.PadButton(panel.hallBtn)
 	panel.hallBtn:SetSize(120, 22)
-	panel.hallBtn:SetPoint("RIGHT", panel.cardsBtn, "LEFT", -4, 0)
+	panel.hallBtn:SetPoint("RIGHT", panel.cardsBtn, "LEFT", -6, 0)
 	panel.hallBtn:SetText(L["Зал славы"])
 	panel.hallBtn:SetScript("OnClick", function() TH.UI:SetView("hall") end)
 	panel.hallBtn:SetScript("OnEnter", function(b)
@@ -2177,10 +2178,10 @@ function TH:BuildLeaderboard(panel)
 	-- выбор основного персонажа
 	b.join = CreateFrame("Button", nil, b, "UIPanelButtonTemplate")
 	TH.PadButton(b.join)
-	b.join:SetSize(200, 22)
-	-- под кнопкой «Рейтинг»: тот же правый край (кнопки шапки идут от правого края сетки)
+	b.join:SetSize(150, 22)
+	-- ровно под кнопкой «Рейтинг»: та же ширина и те же края
 	local gridRight = 8 + COLS * CARD_W + (COLS - 1) * 6
-	b.join:SetPoint("TOPRIGHT", panel, "TOPLEFT", gridRight - 190 - 12, -32)
+	b.join:SetPoint("TOPRIGHT", panel, "TOPLEFT", gridRight - 190 - 6, -32)
 	b.join:SetText(L["Основной персонаж"])
 	b.join:SetScript("OnClick", function(btn)
 		if not (MenuUtil and MenuUtil.CreateContextMenu) then return end
