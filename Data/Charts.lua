@@ -1,12 +1,12 @@
 -- Официальный чарт Transmog Hub. Файл создаётся автоматически (tools/charts/build.lua), не правьте руками.
 TransmogHub_Charts = {
-	date = "2026-10-29",
-	t = 1793256613,
+	date = "2026-10-31",
+	t = 1793429353,
 	version = 1,
 	minVotes = 1,
 	activeVoters = 1,
-	top = { "n6ad228debb967d42002", "n6ad729f0df13a618002", "n6ada7a3de1a27ef9002", "n6adf3388c8ecbe9c002", "n6adf44eb23f631b3008", "n6ad22b2f31bca93e002", "n6adf218cdd57157d002", "n6adf43f6ddc1a071004", "n6adf447f5eb0d8e1006", "n6adde39b6c890761002", "n6ad4d594f4c0d409004", "n6ad6ffe133bdc341004", "n6ad738fc2a7c752f002", "n6adf4374d1b0083e002", "n6ad5b7ebcf0a6b94004", "n6ad5b90315011cc0006", "n6ad2030379259173002", "n6ad20ce2e7b2219e004", "n6ad20e12824e54bc002", "n6ad5b9f1516ef7f3002", "n6ad5bab5ce86ac68004", "n6ad7001de93056c6006", "n6ad28bf4b7052d73008", "n6ad4d0a54e0f1322002", "n6ad6ff9eb1880926002", "n6ad700f9877394ce008", "n6ad7027e8a1ffa1b00a", "n6ad722821eefa0d1004", "n6ad14375a9ae022b002", "n6ad554996aacf401002", "n6ad5b95a4e032b79002", "n6ad289f966d80293003", "n6ad5b788946b2b79002", "n6ad2816a9e818070002", "n6ad229c60db90c82002", "n6ad22a9b6a22b15f002", "n6ad28b9dc5d7c14d006" },
-	trending = { "n6ad228debb967d42002", "n6ad729f0df13a618002", "n6ada7a3de1a27ef9002", "n6ad2816a9e818070002", "n6adf3388c8ecbe9c002", "n6adf44eb23f631b3008", "n6ad22b2f31bca93e002", "n6adf218cdd57157d002", "n6adf43f6ddc1a071004", "n6adf447f5eb0d8e1006", "n6ad14375a9ae022b002", "n6ad4d594f4c0d409004", "n6ad6ffe133bdc341004", "n6ad738fc2a7c752f002", "n6adf4374d1b0083e002", "n6ad289f966d80293003", "n6ad28b9dc5d7c14d006", "n6ad2030379259173002", "n6ad20ce2e7b2219e004", "n6ad20e12824e54bc002", "n6ad5b9f1516ef7f3002", "n6ad5bab5ce86ac68004", "n6ad7001de93056c6006", "n6ad28bf4b7052d73008", "n6ad4d0a54e0f1322002", "n6ad6ff9eb1880926002", "n6ad700f9877394ce008", "n6ad7027e8a1ffa1b00a", "n6ad722821eefa0d1004", "n6adde39b6c890761002", "n6ad5b7ebcf0a6b94004", "n6ad5b90315011cc0006", "n6ad229c60db90c82002", "n6ad554996aacf401002", "n6ad5b95a4e032b79002", "n6ad22a9b6a22b15f002", "n6ad5b788946b2b79002" },
+	top = { "n6ad228debb967d42002", "n6ad729f0df13a618002", "n6ada7a3de1a27ef9002", "n6adf3388c8ecbe9c002", "n6adf44eb23f631b3008", "n6adf218cdd57157d002", "n6adf43f6ddc1a071004", "n6adf447f5eb0d8e1006", "n6ad22b2f31bca93e002", "n6adde39b6c890761002", "n6ad4d594f4c0d409004", "n6ad6ffe133bdc341004", "n6ad738fc2a7c752f002", "n6ad2030379259173002", "n6ad20ce2e7b2219e004", "n6ad20e12824e54bc002", "n6ad5b9f1516ef7f3002", "n6ad5bab5ce86ac68004", "n6ad7001de93056c6006", "n6adf4374d1b0083e002", "n6ad6ff9eb1880926002", "n6ad700f9877394ce008", "n6ad7027e8a1ffa1b00a", "n6ad722821eefa0d1004", "n6ad14375a9ae022b002", "n6ad28bf4b7052d73008", "n6ad4d0a54e0f1322002", "n6ad289f966d80293003", "n6ad229c60db90c82002", "n6ad2816a9e818070002", "n6ad28b9dc5d7c14d006", "n6ad22a9b6a22b15f002" },
+	trending = { "n6ad228debb967d42002", "n6ad729f0df13a618002", "n6ada7a3de1a27ef9002", "n6adf3388c8ecbe9c002", "n6adf44eb23f631b3008", "n6ad2816a9e818070002", "n6adf218cdd57157d002", "n6adf43f6ddc1a071004", "n6adf447f5eb0d8e1006", "n6ad14375a9ae022b002", "n6adf4374d1b0083e002", "n6ad289f966d80293003", "n6ad28b9dc5d7c14d006", "n6ad22b2f31bca93e002", "n6ad4d594f4c0d409004", "n6ad6ffe133bdc341004", "n6ad738fc2a7c752f002", "n6ad2030379259173002", "n6ad20ce2e7b2219e004", "n6ad20e12824e54bc002", "n6ad5b9f1516ef7f3002", "n6ad5bab5ce86ac68004", "n6ad7001de93056c6006", "n6ad6ff9eb1880926002", "n6ad700f9877394ce008", "n6ad7027e8a1ffa1b00a", "n6ad722821eefa0d1004", "n6adde39b6c890761002", "n6ad28bf4b7052d73008", "n6ad4d0a54e0f1322002", "n6ad229c60db90c82002", "n6ad22a9b6a22b15f002" },
 	tags = {
 	},
 	hof = {
@@ -51,13 +51,13 @@ TransmogHub_Charts = {
 		{ "Muerog-Illidan", 15 },
 		{ "Mytix-Archimonde", 15 },
 		{ "Søulbreäth-Kazzak", 15 },
+		{ "Lisarosa-ArgentDawn", 5 },
 		{ "Ozric-Darkspear", 5 },
 		{ "Satedany-Blackmoore", 5 },
 		{ "Wismond-Antonidas", 5 },
 		{ "Damiria-Drak'thul", 0 },
 		{ "Fakturantt-Drak'thul", 0 },
 		{ "Kuhthiecutie-Eredar", 0 },
-		{ "Lisarosa-ArgentDawn", 0 },
 		{ "Okologiko-Draenor", 0 },
 		{ "Rethoficial-Sanguino", 0 },
 		{ "Sabrenya-Draenor", 0 },
