@@ -1,5 +1,8 @@
 # Transmog Hub — Changelog
 
+## 1.16.8
+- The official daily chart now applies only in regions it covers. Elsewhere (for now, everything outside Europe) the addon works as before the official chart: it ranks players, counts style points and awards placement achievements itself, and nobody waits at the bottom of the ranking to be verified.
+
 ## 1.16.7
 - Fairer ratings: votes from players who consistently rate far below everyone else and have no published outfits of their own count for less. The more such votes and the bigger the gap, the smaller their weight; publishing outfits or rating closer to others restores it.
 

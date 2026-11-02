@@ -334,6 +334,17 @@ for _, v in ipairs({ "top", "trending", "new", "favorites", "mine" }) do TH.UI:S
 TH.UI:SetView("top"); TH.UI:Select(set.serverId); TH:ToggleFavorite(set.serverId); TH.UI:SetView("favorites")
 assert(#TH.UI.results == 1)
 TH.UI:OpenRaceMenu(frame()); TH.UI:Scroll(10)
+do -- официальный чарт — только в регионах, за которые он ручается
+  local wasCharts, wasTag = TransmogHub_Charts, Net.RegionTag
+  TransmogHub_Charts = { t = 1800000000, awards = {}, regions = { "eu" } }
+  Net.RegionTag = function() return "eu" end
+  assert(TH:GetCharts() == TransmogHub_Charts, "Европа — чарт действует")
+  Net.RegionTag = function() return "us" end
+  assert(TH:GetCharts() == nil, "Америка без снимка — аддон считает сам")
+  TransmogHub_Charts.regions = nil
+  assert(TH:GetCharts() ~= nil, "старый чарт без списка регионов — как раньше")
+  TransmogHub_Charts, Net.RegionTag = wasCharts, wasTag
+end
 do -- тихое снижение веса: систематически занижает, своих образов нет
   local now = 1800000000
   local function Build(n, own)
