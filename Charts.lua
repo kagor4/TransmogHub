@@ -45,9 +45,19 @@ function TH:ApplyServerSecrets()
 	end
 end
 
+-- Официальный чарт — только для регионов, за которые он ручается (c.regions: где у
+-- модератора свежий снимок). В остальных регионах аддон считает места, очки и
+-- достижения сам, как до чарта, и никто не висит внизу рейтинга «непроверенным».
 function TH:GetCharts()
 	local c = TransmogHub_Charts
-	if type(c) == "table" and type(c.t) == "number" and type(c.awards) == "table" then return c end
+	if not (type(c) == "table" and type(c.t) == "number" and type(c.awards) == "table") then return nil end
+	if type(c.regions) == "table" then
+		local tag = self.Net and self.Net.RegionTag and self.Net.RegionTag() or "eu"
+		local ok = false
+		for _, r in ipairs(c.regions) do if r == tag then ok = true break end end
+		if not ok then return nil end
+	end
+	return c
 end
 
 -- Сколько дней чарту (nil — чарта нет)
