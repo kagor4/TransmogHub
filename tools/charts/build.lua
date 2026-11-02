@@ -94,8 +94,23 @@ for tag, path in (extraArg or ""):gmatch("(%a+)=([^,]+)") do
 	TransmogHubDB = db
 	if other then otherNets[#otherNets + 1] = { tag, other } end
 end
+-- Регионы, за которые чарт ручается: Европа (основной снимок) и регионы, где персонаж
+-- модератора был в сети последние 7 дней. Игроки остальных регионов живут без
+-- официального чарта: места, очки и достижения считает их аддон (TH:GetCharts).
+local REGION_FRESH = 7 * 86400
+local covered = { eu = true }
+local function Latest(net)
+	local t = 0
+	for _, p in pairs(net.presence or {}) do if type(p) == "table" then t = math.max(t, tonumber(p[2]) or 0) end end
+	for _, sc in pairs(net.scores or {}) do if type(sc) == "table" then t = math.max(t, tonumber(sc.t) or 0) end end
+	for _, list in pairs(net.votes or {}) do
+		for _, v in pairs(list) do if type(v) == "table" then t = math.max(t, tonumber(v[2]) or 0) end end
+	end
+	return t
+end
 for _, entry in ipairs(otherNets) do
 	local tag, other = entry[1], entry[2]
+	if now - Latest(other) <= REGION_FRESH then covered[tag] = true end
 	do
 		for id, set in pairs(other.sets or {}) do
 			if not db.net.sets[id] and not db.net.tombstones[id] then
@@ -468,6 +483,11 @@ local lines = {
 	"\tversion = 1,",
 	string.format("\tminVotes = %d,", minVotes),
 	string.format("\tactiveVoters = %d,", activeVoters),
+	"\tregions = { " .. (function()
+		local out = {}
+		for _, tag in ipairs(SortedKeys(covered)) do out[#out + 1] = Q(tag) end
+		return table.concat(out, ", ")
+	end)() .. " },",
 	"\ttop = " .. IdList(top) .. ",",
 	"\ttrending = " .. IdList(trending) .. ",",
 	"\ttags = {",
