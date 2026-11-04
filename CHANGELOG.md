@@ -1,5 +1,9 @@
 # Transmog Hub — Changelog
 
+## 1.17.0
+- Hall of Fame outfits stay visible in Best and Trending while the addon is small, with a gold «Hall of Fame» mark. They still take no places and no placement awards, and they will leave the lists on their own once new outfits arrive steadily (30 a week for three weeks in a row).
+- The Hall of Fame is easier to find: a trophy button above the outfit list (next to the dice) and a «Hall of Fame (N)» link at the bottom of Best. The button on the Achievements tab stays.
+
 ## 1.16.8
 - The official daily chart now applies only in regions it covers. Elsewhere (for now, everything outside Europe) the addon works as before the official chart: it ranks players, counts style points and awards placement achievements itself, and nobody waits at the bottom of the ranking to be verified.
 

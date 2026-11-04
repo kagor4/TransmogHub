@@ -198,6 +198,8 @@ for _, id in ipairs(TransmogHub_Charts.top) do assert(id ~= leader, "hall set is
 local hallAward = false
 for _, list in pairs(TransmogHub_Charts.awards) do if list.hall_1 then hallAward = true end end
 assert(hallAward, "hall achievement awarded")
+-- новых образов мало (меньше 30 в неделю) — зал пока остаётся в «Лучших» у клиентов
+assert(TransmogHub_Charts.hallInTop == true, "small catalog: hall stays in the top lists")
 
 -- снимок базы из другого региона (Америка): его образы и отметки «в сети» — в общем
 -- каталоге с пометкой региона (стучаться аддон будет только к своему региону)

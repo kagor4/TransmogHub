@@ -251,6 +251,19 @@ for id in pairs(inHall) do
 	for _, s in ipairs(hallList) do if s.id == id then listed = true end end
 	if set and not listed then hallList[#hallList + 1] = set end
 end
+-- Пока аддон маленький, Зал славы не уходит из «Лучших» и «В тренде»: образы там
+-- видны с пометкой, но мест и наград за места не берут. Уйдут, когда новых образов
+-- станет стабильно много: каждую из последних HALL_GROWTH_WEEKS недель — от HALL_GROWTH
+local HALL_GROWTH, HALL_GROWTH_WEEKS = 30, 3
+local hallInTop = false
+for k = 0, HALL_GROWTH_WEEKS - 1 do
+	local n = 0
+	for _, set in ipairs(TH.feed.sets) do
+		local c = set.created or 0
+		if c >= now - (k + 1) * WEEK and c < now - k * WEEK then n = n + 1 end
+	end
+	if n < HALL_GROWTH then hallInTop = true end
+end
 local byTag = {}
 for _, set in ipairs(top) do -- уже по баллу
 	for _, tag in ipairs(TH:GetActiveTags(set)) do -- оспоренные теги не в счёт
@@ -488,6 +501,7 @@ local lines = {
 		for _, tag in ipairs(SortedKeys(covered)) do out[#out + 1] = Q(tag) end
 		return table.concat(out, ", ")
 	end)() .. " },",
+	hallInTop and "\thallInTop = true," or "\thallInTop = false,",
 	"\ttop = " .. IdList(top) .. ",",
 	"\ttrending = " .. IdList(trending) .. ",",
 	"\ttags = {",

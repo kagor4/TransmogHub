@@ -831,7 +831,7 @@ function UI:BuildList(list)
 	end
 	-- вкладки делят ровно место до кубика: поля одинаковые, сколько останется от текста
 	local function FitSortTabs()
-		local avail = 292 - 20 - 4 - TAB_GAP * (#self.sortTabs - 1)
+		local avail = 292 - 20 - 4 - 20 - 4 - TAB_GAP * (#self.sortTabs - 1) -- справа кубок и кубик
 		local widths, sum = {}, 0
 		for i, b in ipairs(self.sortTabs) do
 			local fs = b:GetFontString()
@@ -865,12 +865,20 @@ function UI:BuildList(list)
 		self:SetSort("recommended")
 	end)
 	Tip(self.shuffleBtn, L["Перемешать"], L["Показать рекомендуемые новые образы в другом случайном порядке."])
-	-- последняя вкладка растянута между соседкой и кубиком: на кубик она не залезет,
+	-- кубок — Зал славы: образы, которые уже вне конкурса
+	self.hallBtn = CreateFrame("Button", nil, list)
+	self.hallBtn:SetSize(20, 20)
+	self.hallBtn:SetPoint("RIGHT", self.shuffleBtn, "LEFT", -4, 0)
+	self.hallBtn:SetNormalTexture("Interface\\Icons\\INV_Misc_Trophy_Argent")
+	self.hallBtn:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
+	self.hallBtn:SetScript("OnClick", function() self:SetView("hall") end)
+	Tip(self.hallBtn, L["Зал славы"], L["Образы, которые трижды были первыми в «Лучших» за неделю или 8 недель держались в топ-10. Они вне конкурса: мест и наград за места больше не получают, а их авторы — достижение «Зал славы»."])
+	-- последняя вкладка растянута между соседкой и кубком: на кубик она не залезет,
 	-- даже если ширина текста посчитается неверно (шрифт ещё не загружен)
 	local last = self.sortTabs[#self.sortTabs]
 	last:ClearAllPoints()
 	last:SetPoint("LEFT", self.sortTabs[#self.sortTabs - 1], "RIGHT", TAB_GAP, 0)
-	last:SetPoint("RIGHT", self.shuffleBtn, "LEFT", -4, 0)
+	last:SetPoint("RIGHT", self.hallBtn, "LEFT", -4, 0)
 	-- в разделах без сортировки на этом месте — заголовок
 	self.listTitle = Label(list, "GameFontNormal", 180)
 	self.listTitle:SetPoint("TOPLEFT", 12, -10)
@@ -952,6 +960,18 @@ function UI:BuildList(list)
 	-- список листается колесом мыши и ползунком; внизу — какие образы сейчас видны
 	self.pageText = Label(list, "GameFontHighlightSmall")
 	self.pageText:SetPoint("BOTTOM", 0, 14)
+	-- в «Лучших» внизу — ссылка на Зал славы
+	self.hallLink = CreateFrame("Button", nil, list)
+	self.hallLink:SetSize(110, 16)
+	self.hallLink:SetPoint("BOTTOMRIGHT", -26, 12)
+	self.hallLink:SetNormalFontObject(GameFontNormalSmall)
+	self.hallLink:SetHighlightFontObject(GameFontHighlightSmall)
+	self.hallLink:SetText(" ")
+	local hfs = self.hallLink:GetFontString()
+	if hfs then hfs:ClearAllPoints(); hfs:SetPoint("RIGHT") end
+	self.hallLink:SetScript("OnClick", function() self:SetView("hall") end)
+	Tip(self.hallLink, L["Зал славы"], L["Образы, которые трижды были первыми в «Лучших» за неделю или 8 недель держались в топ-10. Они вне конкурса: мест и наград за места больше не получают, а их авторы — достижение «Зал славы»."])
+	self.hallLink:Hide()
 
 	list:EnableMouseWheel(true)
 	list:SetScript("OnMouseWheel", function(_, delta) self:Scroll(-delta) end)
@@ -1865,6 +1885,7 @@ function UI:Refresh()
 		b:SetText(b.key == self:GetSort() and ("|cffffffff" .. SORT_TEXT[b.key] .. "|r") or SORT_TEXT[b.key])
 	end
 	self.shuffleBtn:SetShown(sortable and self.view ~= "subs")
+	self.hallBtn:SetShown(sortable)
 	if sortable and self.FitSortTabs then self.FitSortTabs() end
 	self.listTitle:SetText(not sortable and (LIST_TITLES[self.view] or "") or "")
 	self.authorsBtn:SetShown(self.view == "subs")
@@ -1923,6 +1944,10 @@ function UI:RefreshList()
 
 			local have, total = TH:GetCollectedStats(set)
 			row.extra:SetText("")
+			-- Зал славы — золотая пометка (образ вне конкурса, но пока в списках)
+			if self.view ~= "mine" and self.view ~= "moderation" and self.view ~= "hall" and TH:GetHallDate(set.id) then
+				row.extra:SetText(L["  |cffe6cc80Зал славы|r"])
+			end
 			row.bar:SetShown(total > 0)
 			row.barFill:SetShown(have > 0 and total > 0)
 			if total > 0 then row.barFill:SetWidth(math.max(1, 36 * have / total)) end
@@ -1950,6 +1975,9 @@ function UI:RefreshList()
 		page = L["Образы "] .. (self.authorFilter or "?"):gsub("%-.*", "") .. (page ~= "" and (": " .. page) or "")
 	end
 	self.pageText:SetText(page)
+	local hallN = (self.view == "top" and self:GetSort() == "top") and TH:GetHallCount() or 0
+	if hallN > 0 then self.hallLink:SetText(string.format(L["Зал славы (%d)"], hallN)) end
+	self.hallLink:SetShown(hallN > 0)
 	local filtered = (self.filter.text or "") ~= "" or next(self.filter.tags) ~= nil
 	self.emptyText:SetText(filtered and L["По вашему запросу ничего нет.\n\nПопробуйте другие слова или сбросьте теги."]
 		or (self.view == "guild" and not TH:GetGuildNames() and L["Вы не состоите в гильдии."])

@@ -35,6 +35,7 @@ ns.LOCALES.deDE = {
 	["Пожалуйтесь на образ, который модератор затем уберёт."] = "Melde ein Outfit, das ein Moderator anschließend entfernt.",
 	["Стражи подиума проверили. Вы были правы. Вы почти всегда правы, но тут — официально."] = "Die Hüter des Laufstegs haben nachgeprüft. Du hattest recht. Du hast fast immer recht, aber jetzt ist es offiziell.",
 	["Зал славы"] = "Ruhmeshalle",
+	["Зал славы (%d)"] = "Ruhmeshalle (%d)",
 	["Ваш образ попал в Зал славы: трижды первый в «Лучших» за неделю или 8 недель в топ-10."] = "Dein Outfit ist in die Ruhmeshalle eingezogen: dreimal eine Woche lang Platz 1 bei «Beste» oder 8 Wochen in den Top 10.",
 	["Статую уже заказали у дворфов Стальгорна. Обещают сходство. Примерно."] = "Bei den Zwergen von Eisenschmiede wurde eine Statue bestellt. Sie versprechen Ähnlichkeit. Ungefähr.",
 	["Страж порядка"] = "Hüter des Friedens",

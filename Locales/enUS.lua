@@ -35,6 +35,7 @@ ns.LOCALES.enUS = {
 	["Пожалуйтесь на образ, который модератор затем уберёт."] = "Report an outfit that a moderator then removes.",
 	["Стражи подиума проверили. Вы были правы. Вы почти всегда правы, но тут — официально."] = "The Runway Guardians checked. You were right. You're almost always right, but now it's official.",
 	["Зал славы"] = "Hall of Fame",
+	["Зал славы (%d)"] = "Hall of Fame (%d)",
 	["Ваш образ попал в Зал славы: трижды первый в «Лучших» за неделю или 8 недель в топ-10."] = "Your outfit entered the Hall of Fame: #1 in \"Best\" for a week three times, or 8 weeks in the top 10.",
 	["Статую уже заказали у дворфов Стальгорна. Обещают сходство. Примерно."] = "A statue has been ordered from the dwarves of Ironforge. They promise a likeness. Roughly.",
 	["Страж порядка"] = "Keeper of the Peace",

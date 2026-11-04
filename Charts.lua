@@ -143,6 +143,22 @@ function TH:GetHallDate(setId)
 	return h and h[4] or nil
 end
 
+-- Пока новых образов мало, Зал славы остаётся в «Лучших» и «В тренде» (решает чарт)
+function TH:HallInTop()
+	local c = self:GetCharts()
+	return c and c.hallInTop and true or false
+end
+
+-- Сколько образов в Зале славы (видимых в ленте)
+function TH:GetHallCount()
+	local c = self:GetCharts()
+	local n = 0
+	if c and type(c.hof) == "table" then
+		for id, h in pairs(c.hof) do if h[4] and self.byId and self.byId[id] then n = n + 1 end end
+	end
+	return n
+end
+
 -- Неделя в топ-10 и первых мест: для подсказки «до Зала славы»
 function TH:GetHallProgress(setId)
 	local c = self:GetCharts()
