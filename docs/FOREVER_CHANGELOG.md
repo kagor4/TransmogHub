@@ -1,5 +1,9 @@
 # Transmog Hub for WoW Forever — Changelog
 
+## 1.17.0
+- Hall of Fame outfits stay visible in Best and Trending while the chart is small (under 100 other outfits), with a gold «Hall of Fame» mark; they still take no places and no placement awards.
+- The Hall of Fame has its own tab in the top row, next to Subscriptions.
+
 ## 1.16.8
 - The official daily chart now applies only in regions it covers; elsewhere the addon ranks players, counts style points and awards placement achievements itself.
 
