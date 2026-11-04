@@ -251,6 +251,11 @@ for id in pairs(inHall) do
 	for _, s in ipairs(hallList) do if s.id == id then listed = true end end
 	if set and not listed then hallList[#hallList + 1] = set end
 end
+-- Пока чарт маленький, Зал славы не уходит из «Лучших» и «В тренде»: образы там
+-- видны с пометкой, но мест и наград за места не берут. Уйдут, когда в чарте без
+-- них наберётся HALL_MIN_CHART образов
+local HALL_MIN_CHART = 100
+local hallInTop = #top < HALL_MIN_CHART
 local byTag = {}
 for _, set in ipairs(top) do -- уже по баллу
 	for _, tag in ipairs(TH:GetActiveTags(set)) do -- оспоренные теги не в счёт
@@ -488,6 +493,7 @@ local lines = {
 		for _, tag in ipairs(SortedKeys(covered)) do out[#out + 1] = Q(tag) end
 		return table.concat(out, ", ")
 	end)() .. " },",
+	hallInTop and "\thallInTop = true," or "\thallInTop = false,",
 	"\ttop = " .. IdList(top) .. ",",
 	"\ttrending = " .. IdList(trending) .. ",",
 	"\ttags = {",

@@ -1301,10 +1301,10 @@ function TH:QuerySets(view, filter)
 			score[set] = self:GetScore(set)
 		end
 		if FEED_VIEWS[view] then
-			-- только чарт и без Зала славы: те образы уже вне конкурса
-			local only = {}
+			-- только чарт; Зал славы — вне конкурса, но пока образов мало, он остаётся в списке
+			local only, hallIn = {}, self:HallInTop()
 			for _, set in ipairs(out) do
-				if charted[set] and not self:GetHallDate(set.id) then only[#only + 1] = set end
+				if charted[set] and (hallIn or not self:GetHallDate(set.id)) then only[#only + 1] = set end
 			end
 			out = only
 		end
