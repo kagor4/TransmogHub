@@ -343,6 +343,20 @@ do -- официальный чарт — только в регионах, за
   assert(TH:GetCharts() == nil, "Америка без снимка — аддон считает сам")
   TransmogHub_Charts.regions = nil
   assert(TH:GetCharts() ~= nil, "старый чарт без списка регионов — как раньше")
+  -- Зал славы: пока новых образов мало (hallInTop), образ остаётся в «Лучших»
+  local hallId
+  for _, s in ipairs(top) do
+    for _, f in ipairs(TH.feed.sets) do if f == s then hallId = hallId or s.id end end
+  end
+  TransmogHub_Charts.hof = { [hallId] = { 3, 3, 1, "2026-11-01" } }
+  local function InTop()
+    for _, s in ipairs(TH:QuerySets("top", {})) do if s.id == hallId then return true end end
+  end
+  assert(not InTop(), "hall set leaves «Лучшие» when the catalog is big")
+  TransmogHub_Charts.hallInTop = true
+  assert(InTop() and TH:HallInTop(), "small catalog: hall set stays in «Лучшие»")
+  assert(#TH:QuerySets("hall", {}) == 1, "hall view")
+  TH.UI:SetView("top"); TH.UI:SetView("hall")
   TransmogHub_Charts, Net.RegionTag = wasCharts, wasTag
 end
 do -- тихое снижение веса: систематически занижает, своих образов нет

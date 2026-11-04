@@ -143,6 +143,12 @@ function TH:GetHallDate(setId)
 	return h and h[4] or nil
 end
 
+-- Пока новых образов мало, Зал славы остаётся в «Лучших» и «В тренде» (решает чарт)
+function TH:HallInTop()
+	local c = self:GetCharts()
+	return c and c.hallInTop and true or false
+end
+
 -- Неделя в топ-10 и первых мест: для подсказки «до Зала славы»
 function TH:GetHallProgress(setId)
 	local c = self:GetCharts()
