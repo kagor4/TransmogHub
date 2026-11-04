@@ -35,7 +35,6 @@ ns.LOCALES.esES = {
 	["Пожалуйтесь на образ, который модератор затем уберёт."] = "Denuncia un atuendo que luego retire un moderador.",
 	["Стражи подиума проверили. Вы были правы. Вы почти всегда правы, но тут — официально."] = "Los Guardianes de la Pasarela lo comprobaron. Tenías razón. Casi siempre la tienes, pero ahora es oficial.",
 	["Зал славы"] = "Salón de la Fama",
-	["Зал славы (%d)"] = "Salón de la Fama (%d)",
 	["Ваш образ попал в Зал славы: трижды первый в «Лучших» за неделю или 8 недель в топ-10."] = "Tu atuendo entró en el Salón de la Fama: n.º 1 en «Lo mejor» durante una semana tres veces, u 8 semanas en el top 10.",
 	["Статую уже заказали у дворфов Стальгорна. Обещают сходство. Примерно."] = "Ya han encargado una estatua a los enanos de Forjaz. Prometen parecido. Más o menos.",
 	["Страж порядка"] = "Guardián de la paz",

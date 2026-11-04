@@ -17,6 +17,7 @@ local VIEWS = {
 	{ key = "guild", text = L["Гильдия"] },
 	{ key = "favorites", text = L["Избранное"] },
 	{ key = "subs", text = L["Подписки"] },
+	{ key = "hall", text = L["Зал славы"] },
 	{ key = "me", text = L["Мой профиль"] }, -- свой профиль; старый список «Мои» открывается из него
 	{ key = "achievements", text = L["Достижения"] },
 	-- «Модерация» — не вкладкой, а щитом в шапке окна (он есть только у модераторов)
@@ -331,6 +332,7 @@ local TAB_TIPS = {
 	guild = { L["Гильдия"], L["Образы ваших согильдийцев с аддоном."] },
 	favorites = { L["Избранное"], L["Образы, отмеченные золотой звёздочкой в списке."] },
 	subs = { L["Подписки"], L["Образы авторов, на которых вы подписаны: лучшие, в тренде, новые. Значок справа от сортировки — авторы: профиль, уведомления от каждого, отписка. Подписаться: профиль автора или правый клик по образу."] },
+	hall = { L["Зал славы"], L["Образы, которые трижды были первыми в «Лучших» за неделю или 8 недель держались в топ-10. Они вне конкурса: мест и наград за места больше не получают, а их авторы — достижение «Зал славы»."] },
 	me = { L["Мой профиль"], L["Ваши образы и черновики, достижения, место в рейтинге, аватар и звание."] },
 	achievements = { L["Достижения"], L["Все достижения и рейтинг очков стиля среди игроков."] },
 	moderation = { L["Модерация"], L["Образы с жалобами и с подозрением на накрутку оценок. Видна только модераторам."] },
@@ -952,18 +954,6 @@ function UI:BuildList(list)
 	-- список листается колесом мыши и ползунком; внизу — какие образы сейчас видны
 	self.pageText = Label(list, "GameFontHighlightSmall")
 	self.pageText:SetPoint("BOTTOM", 0, 14)
-	-- внизу списка — ссылка на Зал славы (кубок и число образов)
-	self.hallLink = CreateFrame("Button", nil, list)
-	self.hallLink:SetSize(130, 16)
-	self.hallLink:SetPoint("BOTTOMRIGHT", -26, 12)
-	self.hallLink:SetNormalFontObject(GameFontNormalSmall)
-	self.hallLink:SetHighlightFontObject(GameFontHighlightSmall)
-	self.hallLink:SetText(" ")
-	local hfs = self.hallLink:GetFontString()
-	if hfs then hfs:ClearAllPoints(); hfs:SetPoint("RIGHT") end
-	self.hallLink:SetScript("OnClick", function() self:SetView("hall") end)
-	Tip(self.hallLink, L["Зал славы"], L["Образы, которые трижды были первыми в «Лучших» за неделю или 8 недель держались в топ-10. Они вне конкурса: мест и наград за места больше не получают, а их авторы — достижение «Зал славы»."])
-	self.hallLink:Hide()
 
 	list:EnableMouseWheel(true)
 	list:SetScript("OnMouseWheel", function(_, delta) self:Scroll(-delta) end)
@@ -1966,11 +1956,6 @@ function UI:RefreshList()
 		page = L["Образы "] .. (self.authorFilter or "?"):gsub("%-.*", "") .. (page ~= "" and (": " .. page) or "")
 	end
 	self.pageText:SetText(page)
-	local hallN = SORTABLE[self.view] and TH:GetHallCount() or 0
-	if hallN > 0 then
-		self.hallLink:SetText("|TInterface\\Icons\\INV_Misc_Trophy_Argent:14:14|t " .. string.format(L["Зал славы (%d)"], hallN))
-	end
-	self.hallLink:SetShown(hallN > 0)
 	local filtered = (self.filter.text or "") ~= "" or next(self.filter.tags) ~= nil
 	self.emptyText:SetText(filtered and L["По вашему запросу ничего нет.\n\nПопробуйте другие слова или сбросьте теги."]
 		or (self.view == "guild" and not TH:GetGuildNames() and L["Вы не состоите в гильдии."])

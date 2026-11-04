@@ -354,7 +354,7 @@ do -- официальный чарт — только в регионах, за
   end
   assert(not InTop(), "hall set leaves «Лучшие» when the catalog is big")
   TransmogHub_Charts.hallInTop = true
-  assert(InTop() and TH:HallInTop() and TH:GetHallCount() == 1, "small catalog: hall set stays in «Лучшие»")
+  assert(InTop() and TH:HallInTop(), "small catalog: hall set stays in «Лучшие»")
   assert(#TH:QuerySets("hall", {}) == 1, "hall view")
   TH.UI:SetView("top"); TH.UI:SetView("hall")
   TransmogHub_Charts, Net.RegionTag = wasCharts, wasTag

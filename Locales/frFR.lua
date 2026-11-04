@@ -35,7 +35,6 @@ ns.LOCALES.frFR = {
 	["Пожалуйтесь на образ, который модератор затем уберёт."] = "Signalez une tenue qu'un modérateur supprime ensuite.",
 	["Стражи подиума проверили. Вы были правы. Вы почти всегда правы, но тут — официально."] = "Les Gardiens du Podium ont vérifié. Vous aviez raison. Vous avez presque toujours raison, mais là, c'est officiel.",
 	["Зал славы"] = "Panthéon",
-	["Зал славы (%d)"] = "Panthéon (%d)",
 	["Ваш образ попал в Зал славы: трижды первый в «Лучших» за неделю или 8 недель в топ-10."] = "Votre tenue est entrée au Panthéon : trois fois 1re des «Meilleures» de la semaine, ou 8 semaines dans le top 10.",
 	["Статую уже заказали у дворфов Стальгорна. Обещают сходство. Примерно."] = "Une statue a été commandée aux nains de Forgefer. Ils promettent la ressemblance. À peu près.",
 	["Страж порядка"] = "Gardien de la paix",
