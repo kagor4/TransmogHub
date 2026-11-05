@@ -1,20 +1,21 @@
 -- Официальный чарт Transmog Hub. Файл создаётся автоматически (tools/charts/build.lua), не правьте руками.
 TransmogHub_Charts = {
-	date = "2026-11-04",
-	t = 1793774998,
+	date = "2026-11-05",
+	t = 1793861458,
 	version = 1,
 	minVotes = 1,
 	activeVoters = 0,
 	regions = { "eu" },
-	top = { "n6adf3388c8ecbe9c002", "n6adf44eb23f631b3008", "n6ad729f0df13a618002", "n6ada7a3de1a27ef9002", "n6adf218cdd57157d002", "n6adf43f6ddc1a071004", "n6adf447f5eb0d8e1006", "n6ad22b2f31bca93e002", "n6adde39b6c890761002", "n6ad4d594f4c0d409004", "n6ad6ffe133bdc341004", "n6ad738fc2a7c752f002", "n6ad2030379259173002", "n6ad20ce2e7b2219e004", "n6ad20e12824e54bc002", "n6ad5b9f1516ef7f3002", "n6ad5bab5ce86ac68004", "n6ad7001de93056c6006", "n6adf4374d1b0083e002", "n6ad6ff9eb1880926002", "n6ad700f9877394ce008", "n6ad7027e8a1ffa1b00a", "n6ad722821eefa0d1004", "n6ad14375a9ae022b002", "n6ad28bf4b7052d73008", "n6ad4d0a54e0f1322002", "n6ad289f966d80293003", "n6ad229c60db90c82002", "n6ad2816a9e818070002", "n6ad28b9dc5d7c14d006", "n6ad22a9b6a22b15f002" },
-	trending = { "n6ad729f0df13a618002", "n6adf3388c8ecbe9c002", "n6adf44eb23f631b3008", "n6adf218cdd57157d002", "n6adf43f6ddc1a071004", "n6adf447f5eb0d8e1006", "n6ada7a3de1a27ef9002", "n6adf4374d1b0083e002", "n6ad2816a9e818070002", "n6ad14375a9ae022b002", "n6ad289f966d80293003", "n6ad28b9dc5d7c14d006", "n6ad22b2f31bca93e002", "n6ad4d594f4c0d409004", "n6ad6ffe133bdc341004", "n6ad738fc2a7c752f002", "n6ad2030379259173002", "n6ad20ce2e7b2219e004", "n6ad20e12824e54bc002", "n6ad5b9f1516ef7f3002", "n6ad5bab5ce86ac68004", "n6ad7001de93056c6006", "n6ad6ff9eb1880926002", "n6ad700f9877394ce008", "n6ad7027e8a1ffa1b00a", "n6ad722821eefa0d1004", "n6adde39b6c890761002", "n6ad28bf4b7052d73008", "n6ad4d0a54e0f1322002", "n6ad229c60db90c82002", "n6ad22a9b6a22b15f002" },
+	hallInTop = true,
+	top = { "n6adf3388c8ecbe9c002", "n6adf44eb23f631b3008", "n6ad729f0df13a618002", "n6ada7a3de1a27ef9002", "n6adf218cdd57157d002", "n6adf43f6ddc1a071004", "n6adf447f5eb0d8e1006", "n6ad20e12824e54bc002", "n6ad22b2f31bca93e002", "n6adde39b6c890761002", "n6ad700f9877394ce008", "n6ad722821eefa0d1004", "n6ad4d594f4c0d409004", "n6ad6ffe133bdc341004", "n6ad738fc2a7c752f002", "n6ad2030379259173002", "n6ad20ce2e7b2219e004", "n6ad5b9f1516ef7f3002", "n6ad5bab5ce86ac68004", "n6ad7001de93056c6006", "n6ad28bf4b7052d73008", "n6adf4374d1b0083e002", "n6ad6ff9eb1880926002", "n6ad7027e8a1ffa1b00a", "n6ad14375a9ae022b002", "n6ad4d0a54e0f1322002", "n6ad289f966d80293003", "n6ad229c60db90c82002", "n6ad2816a9e818070002", "n6ad28b9dc5d7c14d006", "n6ad22a9b6a22b15f002" },
+	trending = { "n6ad729f0df13a618002", "n6adf3388c8ecbe9c002", "n6adf44eb23f631b3008", "n6adf218cdd57157d002", "n6adf43f6ddc1a071004", "n6adf447f5eb0d8e1006", "n6ada7a3de1a27ef9002", "n6ad20e12824e54bc002", "n6adf4374d1b0083e002", "n6ad700f9877394ce008", "n6ad722821eefa0d1004", "n6ad2816a9e818070002", "n6ad28bf4b7052d73008", "n6ad14375a9ae022b002", "n6ad289f966d80293003", "n6ad28b9dc5d7c14d006", "n6ad22b2f31bca93e002", "n6ad4d594f4c0d409004", "n6ad6ffe133bdc341004", "n6ad738fc2a7c752f002", "n6ad2030379259173002", "n6ad20ce2e7b2219e004", "n6ad5b9f1516ef7f3002", "n6ad5bab5ce86ac68004", "n6ad7001de93056c6006", "n6ad6ff9eb1880926002", "n6ad7027e8a1ffa1b00a", "n6adde39b6c890761002", "n6ad4d0a54e0f1322002", "n6ad229c60db90c82002", "n6ad22a9b6a22b15f002" },
 	tags = {
 	},
 	hof = {
 		["n6ad14375a9ae022b002"] = { 0, 1, 2963, false },
 		["n6ad2030379259173002"] = { 0, 2, 2964, false },
 		["n6ad20ce2e7b2219e004"] = { 0, 2, 2964, false },
-		["n6ad20e12824e54bc002"] = { 0, 1, 2963, false },
+		["n6ad20e12824e54bc002"] = { 0, 2, 2965, false },
 		["n6ad228debb967d42002"] = { 3, 3, 2965, "2026-11-04" },
 		["n6ad22b2f31bca93e002"] = { 0, 3, 2965, false },
 		["n6ad2816a9e818070002"] = { 0, 1, 2963, false },
@@ -51,6 +52,7 @@ TransmogHub_Charts = {
 		{ "Nebiros-Outland", 30 },
 		{ "Кискалисичка-Гордунни", 30 },
 		{ "Jazminel-ArgentDawn", 20 },
+		{ "Драгомм-ЧерныйШрам", 20 },
 		{ "Muerog-Illidan", 15 },
 		{ "Mytix-Archimonde", 15 },
 		{ "Søulbreäth-Kazzak", 15 },
@@ -102,5 +104,6 @@ TransmogHub_Charts = {
 		["Шунш-Гордунни"] = { pct_top_25 = 1, top_10 = 1 },
 		["Шунша-Гордунни"] = { pct_top_25 = 1, top_10 = 1, trend_10 = 1 },
 		["Шуншилла-Ревущийфьорд"] = { top_10 = 1 },
+		["Шуншуня-Гордунни"] = { trend_10 = 1 },
 	},
 }
