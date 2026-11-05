@@ -1,2 +1,11 @@
--- Каталог WoW Forever: собирает tools/charts/release-forever.sh, руками не править.
-TransmogHub_BundledForever = nil
+-- Каталог образов, который приходит вместе с обновлением аддона.
+-- Файл собирает tools/charts/build.lua из снимка базы модератора, не правьте руками.
+TransmogHub_BundledForever = {
+	schema = 1,
+	generated = 1793863471,
+	sets = {
+	},
+	peers = {
+		{ "Сикс Севн", "H", 1793836800 },
+	},
+}
