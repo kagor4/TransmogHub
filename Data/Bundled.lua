@@ -2,7 +2,7 @@
 -- Файл собирает tools/charts/build.lua из снимка базы модератора, не правьте руками.
 TransmogHub_Bundled = {
 	schema = 1,
-	generated = 1793947755,
+	generated = 1794034151,
 	sets = {
 		{ id = "n6ad14375a9ae022b002", name = "Класик Эльф", author = "Кискилисички-Гордунни", created = 1792099189, tags = { "mage" }, items = { [1] = { 88918 }, [3] = { 190152 }, [5] = { 190148 }, [6] = { 190150 }, [7] = { 190156 }, [8] = { 190153 }, [9] = { 190157 }, [10] = { 190155 }, [15] = { 225046 }, [16] = { 15589 } }, race = 4, sex = 1, class = "DRUID", rating = { avg = 3.817, n = 1, dist = { 1, 0, 0, 1, 1 } } },
 		{ id = "n6ad2030379259173002", name = "Кирии", author = "Шунша-Гордунни", created = 1792148226, tags = { "light", "holy", "c_white" }, items = { [1] = { 115993 }, [3] = { 77343 }, [5] = { 115998 }, [6] = { 115995 }, [7] = { 115994 }, [8] = { 115991 }, [9] = { 115996 }, [10] = { 115992 }, [15] = { 113552 }, [16] = { 285320, nil, 5360 }, [17] = { 78648 } }, desc = "ШЛ", race = 11, sex = 1, class = "SHAMAN", rating = { avg = 4.353, n = 1, dist = { 0, 1, 0, 0, 1 } } },
@@ -204,15 +204,5 @@ TransmogHub_Bundled = {
 		{ "Showbidra-Draenor", "H", 1792800000 },
 		{ "Moonelf-BurningBlade", "A", 1792800000 },
 		{ "Elvendruid-BurningBlade", "A", 1792800000 },
-		{ "Lyorina-ArgentDawn", "H", 1792800000 },
-		{ "Nomyx-Archimonde", "H", 1792713600 },
-		{ "Spaceman-Archimonde", "H", 1792713600 },
-		{ "Ramira-BurningBlade", "A", 1792713600 },
-		{ "Atastar-Ravencrest", "A", 1792713600 },
-		{ "Showbiztwist-TwistingNether", "H", 1792713600 },
-		{ "Relentlëss-Kazzak", "A", 1792713600 },
-		{ "Aelrïth-Aggra(Português)", "H", 1792713600 },
-		{ "Søulbreäth-Kazzak", "H", 1792713600 },
-		{ "Søulbreäth-Moonglade", "H", 1792713600 },
 	},
 }
