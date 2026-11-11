@@ -2,13 +2,13 @@
 -- Файл собирает tools/charts/build.lua из снимка базы модератора, не правьте руками.
 TransmogHub_BundledForever = {
 	schema = 1,
-	generated = 1794295695,
+	generated = 1794382065,
 	sets = {
 	},
 	peers = {
-		{ "Boingboing Boingboing", "H", 1794182400 },
-		{ "Face Book", "H", 1794182400 },
-		{ "Сикс Севн", "H", 1794182400 },
+		{ "Face Book", "H", 1794268800 },
+		{ "Boingboing Boingboing", "H", 1794268800 },
+		{ "Сикс Севн", "H", 1794268800 },
 		{ "Xylella Hellbloom", "H", 1794182400 },
 		{ "Xylella Banks", "H", 1794096000 },
 		{ "Otto Respawned", "H", 1794096000 },
