@@ -1,7 +1,7 @@
 -- Официальный чарт Transmog Hub. Файл создаётся автоматически (tools/charts/build.lua), не правьте руками.
 TransmogHub_ChartsForever = {
-	date = "2026-11-15",
-	t = 1794727455,
+	date = "2026-11-16",
+	t = 1794813869,
 	version = 1,
 	minVotes = 1,
 	activeVoters = 0,
