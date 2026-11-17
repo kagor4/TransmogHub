@@ -2,7 +2,7 @@
 -- Файл собирает tools/charts/build.lua из снимка базы модератора, не правьте руками.
 TransmogHub_BundledForever = {
 	schema = 1,
-	generated = 1794813869,
+	generated = 1794900218,
 	sets = {
 		{ id = "n6af2006fdde6538d002", name = "Si:7 Rogue", author = "Ayela Razorwind", created = 1794244718, tags = { "rogue", "assassin", "battle", "mercenary", "bandit" }, items = { [1] = { 77344 }, [3] = { 77343, 157858 }, [4] = { 156907 }, [5] = { 156770 }, [6] = { 159522 }, [7] = { 311435 }, [8] = { 304869 }, [9] = { 104604 }, [10] = { 159527 }, [15] = { 77345 }, [16] = { 156668 }, [17] = { 158045 } }, desc = "A SI:7 Themed Rogue for Mid levels", race = 95, sex = 1, class = "ROGUE", rating = { avg = 5.000, n = 1, dist = { 0, 0, 0, 0, 2 } } },
 		{ id = "n6af4aeead93656c6002", name = "213sdas", author = "Принцесса Евстолия", created = 1794420461, tags = { "dark" }, items = { [1] = { 77344 }, [3] = { 77343 }, [4] = { 83202 }, [5] = { 157016 }, [6] = { 84223 }, [7] = { 158273 }, [8] = { 158130 }, [9] = { 308448 }, [10] = { 94331 }, [15] = { 317484 }, [16] = { 158720, nil, 805 } }, desc = "3213sdad", race = 5, sex = 1, class = "PALADIN" },
