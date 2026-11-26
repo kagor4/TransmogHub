@@ -83,6 +83,20 @@ local KIND = {
 local categories = {}
 local handlers = {}
 local app = setmetatable({
+	-- ATT разворачивает фракционные данные до обработки дочерних записей.
+	-- Без игрового контекста выбираем ту же ветку, что и ATT по умолчанию.
+	ResolveQuestData = function(data)
+		local quest = data.aqd or data.hqd
+		if not quest then return data end
+		if quest.g and data.g then
+			for i = #quest.g, 1, -1 do table.insert(data.g, 1, quest.g[i]) end
+			quest.g = data.g
+		end
+		for key, value in pairs(data) do
+			if key ~= "aqd" and key ~= "hqd" and quest[key] == nil then quest[key] = value end
+		end
+		return quest
+	end,
 	AddEventHandler = function(event, fn) if event == "OnBuildDataCache" then handlers[#handlers + 1] = fn end end,
 	L = setmetatable({}, { __index = function() return setmetatable({}, { __index = function() return "" end }) end }),
 }, { __index = function(_, name)
