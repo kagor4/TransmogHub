@@ -1,14 +1,14 @@
 -- Официальный чарт Transmog Hub. Файл создаётся автоматически (tools/charts/build.lua), не правьте руками.
 TransmogHub_Charts = {
-	date = "2026-11-25",
-	t = 1795628361,
+	date = "2026-11-26",
+	t = 1795713714,
 	version = 1,
 	minVotes = 1,
 	activeVoters = 0,
 	regions = { "eu" },
 	hallInTop = true,
 	top = { "n6adf3388c8ecbe9c002", "n6adf44eb23f631b3008", "n6ad729f0df13a618002", "n6adf43f6ddc1a071004", "n6ad20e12824e54bc002", "n6ada7a3de1a27ef9002", "n6ad700f9877394ce008", "n6ad722821eefa0d1004", "n6adf218cdd57157d002", "n6adf447f5eb0d8e1006", "n6ad28bf4b7052d73008", "n6ad22b2f31bca93e002", "n6adde39b6c890761002", "n6ae9ab600b09733a002", "n6ae9abde807e9484002", "n6aec6275eebb9fc8002", "n6aec62b551bb6c6b004", "n6aec62d8d623b57e006", "n6ad4d594f4c0d409004", "n6ad6ffe133bdc341004", "n6ad738fc2a7c752f002", "n6ad2030379259173002", "n6ad20ce2e7b2219e004", "n6ad5b9f1516ef7f3002", "n6ad5bab5ce86ac68004", "n6ad7001de93056c6006", "n6adf4374d1b0083e002", "n6ad6ff9eb1880926002", "n6ad7027e8a1ffa1b00a", "n6ad14375a9ae022b002", "n6ad4d0a54e0f1322002", "n6ad289f966d80293003", "n6ad229c60db90c82002", "n6ad2816a9e818070002", "n6ad28b9dc5d7c14d006", "n6ad22a9b6a22b15f002" },
-	trending = { "n6adf43f6ddc1a071004", "n6ad28bf4b7052d73008", "n6ad20e12824e54bc002", "n6ad700f9877394ce008", "n6ad722821eefa0d1004", "n6adf3388c8ecbe9c002", "n6adf44eb23f631b3008", "n6ae9ab600b09733a002", "n6ae9abde807e9484002", "n6aec6275eebb9fc8002", "n6aec62b551bb6c6b004", "n6aec62d8d623b57e006", "n6adf218cdd57157d002", "n6adf447f5eb0d8e1006", "n6adf4374d1b0083e002", "n6ad22b2f31bca93e002", "n6ad729f0df13a618002", "n6ad4d594f4c0d409004", "n6ad6ffe133bdc341004", "n6ad738fc2a7c752f002", "n6ad4d0a54e0f1322002", "n6ad22a9b6a22b15f002", "n6ad2030379259173002", "n6ad20ce2e7b2219e004", "n6ad5b9f1516ef7f3002", "n6ad5bab5ce86ac68004", "n6ad7001de93056c6006", "n6ad2816a9e818070002", "n6ad6ff9eb1880926002", "n6ad7027e8a1ffa1b00a", "n6ad14375a9ae022b002", "n6ad289f966d80293003", "n6ad229c60db90c82002", "n6ad28b9dc5d7c14d006", "n6ada7a3de1a27ef9002", "n6adde39b6c890761002" },
+	trending = { "n6ad28bf4b7052d73008", "n6ad20e12824e54bc002", "n6ad700f9877394ce008", "n6ad722821eefa0d1004", "n6ae9ab600b09733a002", "n6ae9abde807e9484002", "n6aec6275eebb9fc8002", "n6aec62b551bb6c6b004", "n6aec62d8d623b57e006", "n6adf43f6ddc1a071004", "n6ad22b2f31bca93e002", "n6ad729f0df13a618002", "n6ad4d594f4c0d409004", "n6ad6ffe133bdc341004", "n6ad738fc2a7c752f002", "n6ad4d0a54e0f1322002", "n6ad22a9b6a22b15f002", "n6ad2030379259173002", "n6ad20ce2e7b2219e004", "n6ad5b9f1516ef7f3002", "n6ad5bab5ce86ac68004", "n6ad7001de93056c6006", "n6ad2816a9e818070002", "n6ad6ff9eb1880926002", "n6ad7027e8a1ffa1b00a", "n6ad14375a9ae022b002", "n6ad289f966d80293003", "n6ad229c60db90c82002", "n6ad28b9dc5d7c14d006", "n6adf3388c8ecbe9c002", "n6adf44eb23f631b3008", "n6ada7a3de1a27ef9002", "n6adf218cdd57157d002", "n6adf447f5eb0d8e1006", "n6adde39b6c890761002", "n6adf4374d1b0083e002" },
 	tags = {
 	},
 	hof = {
@@ -42,7 +42,7 @@ TransmogHub_Charts = {
 		{ "Лесатуля-Гордунни", 318 },
 		{ "Kataskia-Drak'thul", 195 },
 		{ "Сингурд-Галакронд", 163 },
-		{ "Шоуприст-Ревущийфьорд", 139 },
+		{ "Шоуприст-Ревущийфьорд", 152 },
 		{ "Deepsmorgant-Drak'thul", 88 },
 		{ "Dpsmorgant-Drak'thul", 88 },
 		{ "Healmorgant-Drak'thul", 88 },
@@ -80,6 +80,7 @@ TransmogHub_Charts = {
 		{ "Sabrenya-Draenor", 0 },
 		{ "Selaehra-Draenor", 0 },
 		{ "Ter-Ravencrest", 0 },
+		{ "Trahulo-Sylvanas", 0 },
 		{ "Valorius-Skullcrusher", 0 },
 		{ "Xmens-Doomhammer", 0 },
 		{ "Вольфурион-Гордунни", 0 },
@@ -113,7 +114,7 @@ TransmogHub_Charts = {
 		["Монбланж-Гордунни"] = { board_10 = 1, pct_board_25 = 1, trend_10 = 1 },
 		["Сингурд-Галакронд"] = { board_10 = 1, pct_board_25 = 1 },
 		["Шиншиллита-Гордунни"] = { top_10 = 1 },
-		["Шоуприст-Ревущийфьорд"] = { board_10 = 1, pct_board_25 = 1, trend_10 = 1 },
+		["Шоуприст-Ревущийфьорд"] = { board_10 = 1, pct_board_25 = 1, trend_1 = 1, trend_10 = 1 },
 		["Шунш-Гордунни"] = { pct_top_25 = 1, top_10 = 1 },
 		["Шунша-Гордунни"] = { pct_top_25 = 1, top_10 = 1, trend_10 = 1 },
 		["Шуншилла-Ревущийфьорд"] = { pct_top_25 = 1, top_10 = 1, trend_10 = 1 },
